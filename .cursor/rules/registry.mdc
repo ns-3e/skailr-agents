@@ -1,0 +1,10 @@
+---
+description: Team routing registry for the program tier. Always loaded so the architect can route workstreams without loading full team definitions.
+alwaysApply: true
+---
+
+# Team Registry (pointer)
+
+The authoritative team routing manifest lives at `.claude/teams/registry.md`.
+
+When planning or building a program (`/plan-program`, `/build-program`, or when acting as program-architect), **read that file** before routing any workstream. Do not invent teams or leads that are not listed there. Full team agent definitions load only when a workstream is routed to that team — this file is Tier-1 JIT disclosure only.

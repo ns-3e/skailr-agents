@@ -1,0 +1,37 @@
+---
+description: Begin a large initiative — run discovery until the intent is a confirmed, shared understanding
+argument-hint: <long description of what you want built>
+allowed-tools: Task, Read, Write, Bash
+---
+
+You are the Program Orchestrator, at the discovery stage. Your job here is narrow: get from a long, ambiguous request to a brief the user has explicitly confirmed. You do not plan or build yet.
+
+**Initiative request:** $ARGUMENTS
+
+## Setup
+
+Create `.claude/program/` and its subdirectories if absent: `contracts/`, `channels/` (with `PROTOCOL.md` and an empty `program.md` board — copy from the tracked templates under `.claude/program/channels/` if present), and a `workstreams/` directory. If a previous program's artifacts are present, confirm with the user whether to archive them to `.claude/program/archive/<timestamp>/` before starting — never blend two initiatives' state.
+
+Write the raw request verbatim to `.claude/program/request.md`.
+
+## Optional light research first
+
+If the initiative clearly touches an existing codebase, invoke the `researcher` subagent for a fast orientation pass so the architect's questions are grounded in what exists. Keep this lightweight — it informs the questions, it is not the full per-feature research (that happens inside each workstream later).
+
+## Discovery
+
+Invoke the `program-architect` subagent. Instruct it to run **Job 1 (Discovery) only** — do not decompose yet. It should read the request and any orientation research, then produce a focused, numbered, prioritized batch of clarifying questions, each paired with the assumption it would make if unanswered.
+
+## GATE — the discovery loop
+
+Relay the architect's questions to the user exactly as structured, leading with the highest-impact ones. Then **end your turn** and wait for answers. This is a genuine conversation, not a one-shot.
+
+When the user responds, pass their answers back to the `program-architect` to either ask a tighter follow-up batch or, if ambiguity is now low enough that any reasonable resolution yields the same architecture, write `.claude/program/brief.md` and present the settled understanding for final confirmation.
+
+Loop until the user explicitly confirms the brief. Do not shortcut this — every ambiguity resolved here is one that cannot become divergent work across parallel teams later.
+
+When the brief is confirmed, tell the user:
+
+**"Understanding confirmed and written to brief.md. Run `/plan-program` to decompose this into workstreams and contracts."**
+
+End your turn. Do not decompose.

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check agent name frontmatter matches filename
+        run: |
+          set -e
+          fail=0
+          for f in .claude/agents/*.md .claude/agents/content/*.md; do
+            stem=$(basename "$f" .md)
+            name=$(grep -m1 '^name:' "$f" | sed 's/^name:[[:space:]]*//')
+            if [ "$name" != "$stem" ]; then
+              echo "MISMATCH: $f has name=$name expected=$stem"
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Check manifest paths resolve
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+          root = Path(".")
+          manifest = json.loads((root / "manifest.json").read_text())
+          missing = []
+          for a in manifest["artifacts"]:
+              for key in ("claude_path", "cursor_path"):
+                  p = a.get(key)
+                  if not p:
+                      continue
+                  if not (root / p).exists():
+                      missing.append(p)
+          if missing:
+              print("Missing:", missing)
+              sys.exit(1)
+          print(f"OK: {len(manifest['artifacts'])} artifacts")
+          PY
+
+      - name: Install smoke test
+        run: |
+          set -e
+          TMP=$(mktemp -d)
+          ./install.sh "$TMP"
+          test -f "$TMP/.claude/program/channels/PROTOCOL.md"
+          test -f "$TMP/.claude/agents/validator.md"
+          test -f "$TMP/.cursor/commands/build-feature.md"
+          ./install.sh "$TMP" | grep -q 'already has'
+          rm -rf "$TMP"
+          echo "install OK"

@@ -1,0 +1,182 @@
+{
+  "name": "skailr-agents",
+  "description": "Two-tier multi-agent software-and-content build system for Claude Code and Cursor",
+  "version": "1.1.0",
+  "artifacts": [
+    {
+      "id": "architect",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/architect.md",
+      "cursor_path": ".cursor/rules/architect.mdc"
+    },
+    {
+      "id": "backend-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/backend-engineer.md",
+      "cursor_path": ".cursor/rules/backend-engineer.mdc"
+    },
+    {
+      "id": "data-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/data-engineer.md",
+      "cursor_path": ".cursor/rules/data-engineer.mdc"
+    },
+    {
+      "id": "e2e-verifier",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/e2e-verifier.md",
+      "cursor_path": ".cursor/rules/e2e-verifier.mdc"
+    },
+    {
+      "id": "frontend-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/frontend-engineer.md",
+      "cursor_path": ".cursor/rules/frontend-engineer.mdc"
+    },
+    {
+      "id": "integration-verifier",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/integration-verifier.md",
+      "cursor_path": ".cursor/rules/integration-verifier.mdc"
+    },
+    {
+      "id": "program-architect",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program-architect.md",
+      "cursor_path": ".cursor/rules/program-architect.mdc"
+    },
+    {
+      "id": "program-documenter",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program-documenter.md",
+      "cursor_path": ".cursor/rules/program-documenter.mdc"
+    },
+    {
+      "id": "program-validator",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program-validator.md",
+      "cursor_path": ".cursor/rules/program-validator.mdc"
+    },
+    {
+      "id": "researcher",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/researcher.md",
+      "cursor_path": ".cursor/rules/researcher.mdc"
+    },
+    {
+      "id": "story-writer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/story-writer.md",
+      "cursor_path": ".cursor/rules/story-writer.mdc"
+    },
+    {
+      "id": "validator",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/validator.md",
+      "cursor_path": ".cursor/rules/validator.mdc"
+    },
+    {
+      "id": "content-editor",
+      "tier": "content",
+      "type": "agent",
+      "claude_path": ".claude/agents/content/content-editor.md",
+      "cursor_path": ".cursor/rules/content-editor.mdc"
+    },
+    {
+      "id": "content-lead",
+      "tier": "content",
+      "type": "agent",
+      "claude_path": ".claude/agents/content/content-lead.md",
+      "cursor_path": ".cursor/rules/content-lead.mdc"
+    },
+    {
+      "id": "content-strategist",
+      "tier": "content",
+      "type": "agent",
+      "claude_path": ".claude/agents/content/content-strategist.md",
+      "cursor_path": ".cursor/rules/content-strategist.mdc"
+    },
+    {
+      "id": "content-writer",
+      "tier": "content",
+      "type": "agent",
+      "claude_path": ".claude/agents/content/content-writer.md",
+      "cursor_path": ".cursor/rules/content-writer.mdc"
+    },
+    {
+      "id": "build-feature",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/build-feature.md",
+      "cursor_path": ".cursor/commands/build-feature.md"
+    },
+    {
+      "id": "build-program",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/build-program.md",
+      "cursor_path": ".cursor/commands/build-program.md"
+    },
+    {
+      "id": "discover",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/discover.md",
+      "cursor_path": ".cursor/commands/discover.md"
+    },
+    {
+      "id": "plan-program",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/plan-program.md",
+      "cursor_path": ".cursor/commands/plan-program.md"
+    },
+    {
+      "id": "ship-feature",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/ship-feature.md",
+      "cursor_path": ".cursor/commands/ship-feature.md"
+    },
+    {
+      "id": "registry",
+      "tier": "program",
+      "type": "registry",
+      "claude_path": ".claude/teams/registry.md",
+      "cursor_path": ".cursor/rules/registry.mdc"
+    },
+    {
+      "id": "channels-PROTOCOL",
+      "tier": "program",
+      "type": "template",
+      "claude_path": ".claude/program/channels/PROTOCOL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "channels-program",
+      "tier": "program",
+      "type": "template",
+      "claude_path": ".claude/program/channels/program.md",
+      "cursor_path": null
+    },
+    {
+      "id": "channels-feature",
+      "tier": "program",
+      "type": "template",
+      "claude_path": ".claude/program/channels/feature.md",
+      "cursor_path": null
+    }
+  ]
+}
