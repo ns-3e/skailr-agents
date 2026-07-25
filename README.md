@@ -1,18 +1,20 @@
 # skailr-agents
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blue)](https://docs.anthropic.com/en/docs/claude-code)
-[![Cursor](https://img.shields.io/badge/Cursor-compatible-black)](https://cursor.com/docs)
-[![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-co--author-000000)](https://github.com/cursoragent)
+[License: MIT](LICENSE)
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+[Cursor](https://cursor.com/docs)
+[Cursor Agent](https://github.com/cursoragent)
 
 **A multi-agent operating model for Claude Code and Cursor**, not an agent framework or a hosted runtime. skailr-agents is an open-source prompt pack that structures AI coding agents like a real project organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, and frozen contracts so parallel workstreams can ship without colliding.
 
 Install it into a repo. Claude Code or Cursor runs the agents. You get hierarchy, division of labor, and change control that out-of-the-box single-agent chat does not provide.
 
-| You have… | Start with… |
-|---|---|
-| One feature, clear enough to ship | Workstream tier: `/ship-feature` → `/build-feature` |
+
+| You have…                                 | Start with…                                                    |
+| ----------------------------------------- | -------------------------------------------------------------- |
+| One feature, clear enough to ship         | Workstream tier: `/ship-feature` → `/build-feature`            |
 | A large, ambiguous, multi-part initiative | Program tier: `/discover` → `/plan-program` → `/build-program` |
+
 
 ---
 
@@ -52,13 +54,15 @@ If your agents are failing on large work, the model may not be the problem. **Th
 
 ## Five capabilities that make it different
 
-| Capability | What it means |
-|---|---|
-| **Hierarchy of agents** | A planning layer deconstructs work before build; then project teams execute. Program: `/discover` → `/plan-program` → `/build-program`. Feature: `/ship-feature` → `/build-feature`. |
-| **Division of labor** | Domain and role-specific agents with a single job (researcher, story-writer, architect, backend/frontend/data engineers, verifiers, validators, documenter), plus a content team for written deliverables. |
-| **Progressive disclosure of context** | Three tiers: thin team registry → team lead → workers and heavy domain refs. A pure-engineering program never loads content/marketing/finance tokens. |
-| **Agent message board** | Append-only markdown channels (`.claude/program/channels/`). Agents post typed messages and end their turn; the orchestrator routes replies. Coordination is auditable, not buried in chat. |
-| **Frozen contracts** | Cross-team seams freeze after plan approval. Downstream builds against stubs in parallel. Only the program-architect may change a frozen contract, and only after you approve the blast radius. |
+
+| Capability                            | What it means                                                                                                                                                                                              |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Hierarchy of agents**               | A planning layer deconstructs work before build; then project teams execute. Program: `/discover` → `/plan-program` → `/build-program`. Feature: `/ship-feature` → `/build-feature`.                       |
+| **Division of labor**                 | Domain and role-specific agents with a single job (researcher, story-writer, architect, backend/frontend/data engineers, verifiers, validators, documenter), plus a content team for written deliverables. |
+| **Progressive disclosure of context** | Three tiers: thin team registry → team lead → workers and heavy domain refs. A pure-engineering program never loads content/marketing/finance tokens.                                                      |
+| **Agent message board**               | Append-only markdown channels (`.claude/program/channels/`). Agents post typed messages and end their turn; the orchestrator routes replies. Coordination is auditable, not buried in chat.                |
+| **Frozen contracts**                  | Cross-team seams freeze after plan approval. Downstream builds against stubs in parallel. Only the program-architect may change a frozen contract, and only after you approve the blast radius.            |
+
 
 ---
 
@@ -128,12 +132,14 @@ When a request is long, ambiguous, or too big for one team, the program tier run
 
 ### Program roles
 
-| Agent | Writes code? | Purpose |
-|---|---|---|
-| program-architect | No | Discovery; decomposition; owns all cross-team contracts |
-| integration-verifier | Tests only | Proves independently-built workstreams compose (real against real) |
-| program-validator | No | Final sign-off of the whole delivery against the original brief |
-| program-documenter | Docs only | Changelog, API refs, runbooks from the diff, not the plan |
+
+| Agent                | Writes code? | Purpose                                                            |
+| -------------------- | ------------ | ------------------------------------------------------------------ |
+| program-architect    | No           | Discovery; decomposition; owns all cross-team contracts            |
+| integration-verifier | Tests only   | Proves independently-built workstreams compose (real against real) |
+| program-validator    | No           | Final sign-off of the whole delivery against the original brief    |
+| program-documenter   | Docs only    | Changelog, API refs, runbooks from the diff, not the plan          |
+
 
 Persistent state lives in `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`) so long-horizon programs resume across sessions.
 
@@ -145,7 +151,7 @@ Agents coordinate through an append-only board at `.claude/program/channels/` (`
 - The orchestrator is the **router**: it scans `status: open` messages, dispatches the addressee with that thread, and re-dispatches the blocked agent with the answer.
 - `@human` and `contract-change` messages **halt** for you; unrelated workstreams keep running.
 
-Posting discipline: post only when blocked or when another team must know something decision-relevant. Never negotiate a contract in the channel; flag `@architect` and stop. Full protocol: [`.claude/program/channels/PROTOCOL.md`](.claude/program/channels/PROTOCOL.md). Seeded example: [`program.md`](.claude/program/channels/program.md).
+Posting discipline: post only when blocked or when another team must know something decision-relevant. Never negotiate a contract in the channel; flag `@architect` and stop. Full protocol: `[.claude/program/channels/PROTOCOL.md](.claude/program/channels/PROTOCOL.md)`. Seeded example: `[program.md](.claude/program/channels/program.md)`.
 
 ### Documentation as a pipeline phase
 
@@ -165,13 +171,15 @@ Disclosure happens in three tiers so unused teams cost almost nothing:
 2. **Tier 2: team lead**, loaded only when a workstream routes to that team.
 3. **Tier 3: workers + domain reference**, loaded only as the lead dispatches them.
 
-| Team | Owns (boundary unit) | Verifier means |
-|---|---|---|
-| engineering | files / directories | behavior proven by tests |
-| content | content pieces / sections | facts sourced + brand voice + human prose |
-| design | assets / artboards | accessibility + design-system conformance |
-| marketing | channels / segments | message + measurement alignment |
-| finance | worksheets / models | numbers reconcile + assumptions traced |
+
+| Team        | Owns (boundary unit)      | Verifier means                            |
+| ----------- | ------------------------- | ----------------------------------------- |
+| engineering | files / directories       | behavior proven by tests                  |
+| content     | content pieces / sections | facts sourced + brand voice + human prose |
+| design      | assets / artboards        | accessibility + design-system conformance |
+| marketing   | channels / segments       | message + measurement alignment           |
+| finance     | worksheets / models       | numbers reconcile + assumptions traced    |
+
 
 Cross-domain handoffs use the same frozen-contract mechanism as code seams (e.g. engineering delivers feature X → content announces it → design lays it out → marketing distributes it).
 
@@ -194,16 +202,18 @@ One feature request in, a validated implementation out, with two human gates whe
 
 **Path:** researcher → story-writer → architect → backend + frontend engineers (optional `data-engineer`) → e2e-verifier → validator → program-documenter.
 
-| Agent | Writes code? | Scope | Purpose |
-|---|---|---|---|
-| researcher | No | Read-only | Maps what exists so nothing downstream hallucinates |
-| story-writer | Story doc | n/a | Testable acceptance criteria |
-| architect | Spec doc | n/a | Data model, API contract, disjoint work split |
-| backend-engineer | Yes | Backend globs only | Migrations, services, handlers, unit tests |
-| frontend-engineer | Yes | Frontend globs only | Components, state, API client, UI states |
-| data-engineer | Yes | Data-layer globs only | ETL/ELT, schemas, indexing (optional) |
-| e2e-verifier | Tests only | Test files | Proves the feature from the user's perspective |
-| validator | No | Read-only | Catches misses, skips, and security gaps |
+
+| Agent             | Writes code? | Scope                 | Purpose                                             |
+| ----------------- | ------------ | --------------------- | --------------------------------------------------- |
+| researcher        | No           | Read-only             | Maps what exists so nothing downstream hallucinates |
+| story-writer      | Story doc    | n/a                   | Testable acceptance criteria                        |
+| architect         | Spec doc     | n/a                   | Data model, API contract, disjoint work split       |
+| backend-engineer  | Yes          | Backend globs only    | Migrations, services, handlers, unit tests          |
+| frontend-engineer | Yes          | Frontend globs only   | Components, state, API client, UI states            |
+| data-engineer     | Yes          | Data-layer globs only | ETL/ELT, schemas, indexing (optional)               |
+| e2e-verifier      | Tests only   | Test files            | Proves the feature from the user's perspective      |
+| validator         | No           | Read-only             | Catches misses, skips, and security gaps            |
+
 
 **Why boundaries matter.** The engineers do not negotiate mid-build. The spec's API contract is the seam. Ownership globs must be disjoint; the orchestrator checks before dispatch, and each engineer verifies `git diff --name-only` before reporting.
 
@@ -226,7 +236,7 @@ cp -r .claude /path/to/your-repo/
 mkdir -p /path/to/your-repo/.claude/tmp /path/to/your-repo/.claude/program
 ```
 
-Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [`manifest.json`](manifest.json). License: [MIT](LICENSE).
+Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: `[manifest.json](manifest.json)`. License: [MIT](LICENSE).
 
 ---
 
@@ -263,7 +273,7 @@ The team posts `type: contract-change` to `@architect` and stops. The program-ar
 
 ### Can I add my own domain team (design, marketing, finance)?
 
-Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a sharp `route-when` in [`.claude/teams/registry.md`](.claude/teams/registry.md), and set `status: built`. Unused teams stay unloaded.
+Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a sharp `route-when` in `[.claude/teams/registry.md](.claude/teams/registry.md)`, and set `status: built`. Unused teams stay unloaded.
 
 ### Does this work only for software engineering?
 
