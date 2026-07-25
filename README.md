@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![Cursor](https://img.shields.io/badge/Cursor-compatible-black)](https://cursor.com/docs)
+[![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-co--author-000000)](https://github.com/cursoragent)
 
 **A multi-agent operating model for Claude Code and Cursor**, not an agent framework or a hosted runtime. skailr-agents is an open-source prompt pack that structures AI coding agents like a real project organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, and frozen contracts so parallel workstreams can ship without colliding.
 
