@@ -4,102 +4,167 @@
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![Cursor](https://img.shields.io/badge/Cursor-compatible-black)](https://cursor.com/docs)
 
-A two-tier, role-separated **agent prompt pack** for **Claude Code** and **Cursor**: a VP-level **program tier** that discovers and decomposes large initiatives into parallel teams, and a **workstream tier** — the feature pipeline (researcher → story → architect → parallel engineers → E2E → validator → documenter, with optional `data-engineer`) — that each team runs to build its slice.
+**A multi-agent operating model for Claude Code and Cursor**, not an agent framework or a hosted runtime. skailr-agents is an open-source prompt pack that structures AI coding agents like a real project organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, and frozen contracts so parallel workstreams can ship without colliding.
 
-**What this is:** markdown agent/command definitions, a team registry, an install script, and a Cursor mirror. You clone it and install into a project.
+Install it into a repo. Claude Code or Cursor runs the agents. You get hierarchy, division of labor, and change control that out-of-the-box single-agent chat does not provide.
 
-**What this is not:** a hosted SaaS, a model API, or a runtime that executes agents by itself — Claude Code or Cursor runs the prompts.
-
-**Claude Code vs Cursor.** `.claude/` is the authoritative source (agents under `.claude/agents/`, slash commands under `.claude/commands/`, team registry at `.claude/teams/registry.md`). `.cursor/` is a generated mirror: agents become agent-requestable rules in `.cursor/rules/`, commands become `.cursor/commands/`. Edit `.claude/` first, then run `./scripts/remirror.sh`.
-
-Small feature → use the workstream tier directly (`/ship-feature`). Large, ambiguous, multi-part initiative → start at the program tier (`/discover`), which fans out into multiple workstream teams running concurrently.
+| You have… | Start with… |
+|---|---|
+| One feature, clear enough to ship | Workstream tier: `/ship-feature` → `/build-feature` |
+| A large, ambiguous, multi-part initiative | Program tier: `/discover` → `/plan-program` → `/build-program` |
 
 ---
 
-## Program tier (for large initiatives)
+## Why this exists
 
-When a request is long, ambiguous, or too big for one team, the program tier runs first. It mirrors a VP overseeing simultaneous project teams.
+Single agents are asked to plan, architect, build, test, and validate in one pass. Models have gotten better at that, and “ok” results are common, but large projects still fail the same way large human projects fail: unclear scope, overlapping ownership, silent interface drift, and coordination buried in one long chat.
+
+skailr-agents applies how real organizations run delivery:
+
+1. **Plan first:** deconstruct the work before anyone builds.
+2. **Specialize:** each agent has one job (research, story, architecture, backend, frontend, verify, validate, document).
+3. **Disclose context just in time:** agents and domain teams load only when needed, so context stays lean.
+4. **Coordinate in the open:** questions and blockers go on an append-only markdown channel, not a private chat thread.
+5. **Freeze interfaces:** downstream teams build against frozen contracts (and stubs) in parallel; changing a contract requires explicit human approval.
+
+If your agents are failing on large work, the model may not be the problem. **The operating model** might be.
+
+---
+
+## What this is (and is not)
+
+**What this is**
+
+- An **agent operating model** expressed as markdown: agent definitions, slash commands, a team registry, channel protocol, and install scripts
+- Compatible with **Claude Code** (authoritative `.claude/` tree) and **Cursor** (generated `.cursor/` mirror)
+- A two-tier system: **program** (VP-level discovery + decomposition + parallel teams) and **workstream** (feature pipeline)
+
+**What this is not**
+
+- Not a hosted SaaS, model API, or orchestration runtime. Claude Code or Cursor executes the prompts.
+- Not LangGraph / CrewAI / AutoGen. Those are frameworks with code APIs; this is org design as prompts and conventions.
+- Not a replacement for human judgment. Discovery, plan approval, and contract changes still gate on you.
+
+**Claude Code vs Cursor.** `.claude/` is the source of truth (agents under `.claude/agents/`, commands under `.claude/commands/`, registry at `.claude/teams/registry.md`). `.cursor/` mirrors agents as requestable rules and commands as `.cursor/commands/`. Edit `.claude/` first, then run `./scripts/remirror.sh`.
+
+---
+
+## Five capabilities that make it different
+
+| Capability | What it means |
+|---|---|
+| **Hierarchy of agents** | A planning layer deconstructs work before build; then project teams execute. Program: `/discover` → `/plan-program` → `/build-program`. Feature: `/ship-feature` → `/build-feature`. |
+| **Division of labor** | Domain and role-specific agents with a single job (researcher, story-writer, architect, backend/frontend/data engineers, verifiers, validators, documenter), plus a content team for written deliverables. |
+| **Progressive disclosure of context** | Three tiers: thin team registry → team lead → workers and heavy domain refs. A pure-engineering program never loads content/marketing/finance tokens. |
+| **Agent message board** | Append-only markdown channels (`.claude/program/channels/`). Agents post typed messages and end their turn; the orchestrator routes replies. Coordination is auditable, not buried in chat. |
+| **Frozen contracts** | Cross-team seams freeze after plan approval. Downstream builds against stubs in parallel. Only the program-architect may change a frozen contract, and only after you approve the blast radius. |
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/ns-3e/skailr-agents.git
+cd skailr-agents
+./install.sh /path/to/your-project
+```
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/ns-3e/skailr-agents.git
+cd skailr-agents
+.\install.ps1 -TargetPath C:\path\to\your-project
+```
+
+Flags: `--claude-only` / `-ClaudeOnly`, `--cursor-only` / `-CursorOnly`.
+
+### Ship one feature
 
 ```
-/discover <long description>
+/ship-feature Users should get an email reminder 3 days before an invoice is due
 ```
-The **program-architect** runs a real clarifying-question loop with you until the intent is a confirmed, shared understanding, written to `brief.md`. Gated on your confirmation.
+
+Runs researcher → story-writer, then stops for your approval. Approve the story, then the architect runs and stops again for spec approval.
+
+```
+/build-feature
+```
+
+Runs the rest unattended: backend and frontend engineers in parallel → E2E verification → adversarial validation → documentation.
+
+### Run a large program
+
+```
+/discover <long description of the initiative>
+```
+
+Clarifying questions until you confirm a shared brief (`brief.md`).
 
 ```
 /plan-program
 ```
-The architect decomposes the brief into disjoint **workstreams**, a shared **kernel** (built once, then frozen and read-only to all teams), and the **frozen contracts** that form the seams between teams — plus a dependency DAG. Gated on your approval. On approval, contracts freeze.
+
+Workstreams, shared kernel, frozen contracts, dependency DAG. Approve to freeze contracts.
 
 ```
 /build-program
 ```
-Executes the DAG unattended: **foundation** (build + freeze the kernel) → **parallel workstreams** (every team in a concurrency group dispatched at once, each running the workstream pipeline against frozen contracts and stubs) → **integration** (real-against-real seam tests) → **program validation** (the whole delivery against the original brief).
+
+Foundation (build + freeze kernel) → parallel workstream teams → integration → program validation → release docs.
+
+---
+
+## Program tier (large initiatives)
+
+When a request is long, ambiguous, or too big for one team, the program tier runs first, like a VP overseeing simultaneous project teams.
 
 ### How conflict is designed out, not managed
 
-- **Spatial (two teams, same file):** decomposition *must* produce disjoint file ownership; the orchestrator verifies it before dispatching. A file two teams both need belongs in the frozen kernel, owned by no team.
-- **Temporal (Team B needs Team A's upstream):** contract-first. Team A publishes and freezes its interface; Team B builds against that contract with a stub, in parallel; they integrate at the end. Hard sequencing only when an upstream genuinely can't be stubbed.
-- **Change control:** once frozen, only the program-architect can change a contract, and a contract change halts for your approval before propagating — because that's the one move that can cascade a wrong assumption across parallel teams.
+- **Spatial (two teams, same file):** ownership must be disjoint; shared paths belong in the frozen kernel.
+- **Temporal (Team B needs Team A's output):** contract-first. A freezes an interface; B builds against a stub in parallel; they integrate at the end.
+- **Change control:** only the program-architect changes a frozen contract, and only after your approval. That is the one move that can cascade a wrong assumption across teams.
 
 ### Program roles
 
 | Agent | Writes code? | Purpose |
 |---|---|---|
-| program-architect | No | Discovery loop; decomposition; owns and controls all cross-team contracts |
-| integration-verifier | Tests only | Proves independently-built workstreams compose — real against real, no stubs |
+| program-architect | No | Discovery; decomposition; owns all cross-team contracts |
+| integration-verifier | Tests only | Proves independently-built workstreams compose (real against real) |
 | program-validator | No | Final sign-off of the whole delivery against the original brief |
-| program-documenter | Docs only | Durable release docs — changelog, API refs, runbooks — from the diff, not the plan; create + reconcile modes |
+| program-documenter | Docs only | Changelog, API refs, runbooks from the diff, not the plan |
 
-Persistent state lives in `.claude/program/` — `brief.md`, `plan.md`, `contracts/`, `ledger.md` — so a long-horizon program resumes cleanly across sessions.
+Persistent state lives in `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`) so long-horizon programs resume across sessions.
 
-### Channels — the agent message board
+### Channels: the agent message board
 
-Agents coordinate mid-build through an append-only message board at `.claude/program/channels/` (`.claude/tmp/channels/` for a single feature). It's a Slack-like transcript in markdown — but it's a **board, not a chat**, because agents run to completion and can't wait for a live reply. The mechanism:
+Agents coordinate through an append-only board at `.claude/program/channels/` (`.claude/tmp/channels/` for a single feature). It is a **board, not a chat**: agents run to completion and cannot wait for a live reply.
 
-- A blocked agent posts one typed message (`question`, `blocker`, `contract-change`, `heads-up`…), addressed with `@agent`/`@team`/`@architect`/`@human`, and **ends its turn**.
-- The orchestrator is the **router**: after each work step it scans for `status: open` messages, dispatches the addressee with just that thread, collects the answer, and **re-dispatches the blocked agent** with it in context so it resumes. Peer-to-peer in appearance, orchestrator-mediated in mechanism.
+- A blocked agent posts one typed message (`question`, `blocker`, `contract-change`, `heads-up`…), addresses `@agent` / `@team` / `@architect` / `@human`, and **ends its turn**.
+- The orchestrator is the **router**: it scans `status: open` messages, dispatches the addressee with that thread, and re-dispatches the blocked agent with the answer.
 - `@human` and `contract-change` messages **halt** for you; unrelated workstreams keep running.
 
-This **subsumes** the old per-team blocker files and the contract-change-requests directory — both are now typed channel messages, so there's one place to look and one router to run.
+Posting discipline: post only when blocked or when another team must know something decision-relevant. Never negotiate a contract in the channel; flag `@architect` and stop. Full protocol: [`.claude/program/channels/PROTOCOL.md`](.claude/program/channels/PROTOCOL.md). Seeded example: [`program.md`](.claude/program/channels/program.md).
 
-The **posting discipline** is what keeps it from becoming a talk-shop: post only when genuinely blocked or with a heads-up another team must know; never to chat, agree, or narrate; and never negotiate a contract in the channel — flag it to `@architect` and stop. Coordination is supposed to live in frozen contracts at planning time; the channel is the narrow exception for what contracts can't encode. A channel full of chatter is a failure signal.
+### Documentation as a pipeline phase
 
-Because it's append-only and every cross-team interaction flows through it, the channel is a **deliverable** — a complete audit trail of who asked what, what was decided, and what went to the human. The documenter and validator both read it. Full format and router spec: [`.claude/program/channels/PROTOCOL.md`](.claude/program/channels/PROTOCOL.md). The seeded [`program.md`](.claude/program/channels/program.md) file is a worked example you can delete once your own program is running.
-
-### Documentation
-
-Release documentation is a standard phase of both pipelines, not a separate errand. The `program-documenter` runs after validation (Phase E of `/build-program`, Phase 7 of `/build-feature`) and owns durable, outward-facing docs: changelog, API references, README/architecture/runbook/user-guide updates.
-
-It sits at the program tier because documentation is synthesis — it needs the whole delivered picture, which only exists after integration. Its two rules mirror the rest of the system:
-
-- **Document the diff, not the plan.** It reads the actual diff and the frozen contracts, not the aspirational brief. A drift between what was promised and what shipped becomes a *finding*, not silently-wrong docs. This is the doc analog of the validators' "diff wins over reports."
-- **Write for a named reader, not for completeness.** Comprehensive-but-lifeless docs nobody reads are a failure. Every document serves a specific reader — the integrating developer, the 3am operator, the user doing one task.
-
-It has two modes: **create** (new docs for what shipped) and **reconcile** (read the diff, find exactly the docs a change made stale, fix only those). Reconcile is where docs usually rot — running it on every change keeps documentation current automatically instead of as a discipline someone must remember.
-
-The light-touch complement: backend/frontend/data engineers leave **doc-anchors** — structured `DOC:` comments at the source marking things the release docs will need. The documenter harvests these rather than reverse-engineering intent, so an accurate breadcrumb from whoever owned the file beats a guess from a distant agent.
+`program-documenter` runs after validation. It documents the **diff**, not the plan; writes for a named reader; and supports **create** and **reconcile** modes so docs stay current. Engineers can leave `DOC:` anchors; the documenter harvests them.
 
 ---
 
 ## Domain teams and just-in-time disclosure
 
-Engineering is one team. The program tier is domain-agnostic — "break a big ambiguous ask into parallel teams that don't collide, with defined handoffs" is how any line of business runs — so other domains plug in as sibling teams under the same program-architect: content, design, marketing, finance.
+The program tier is domain-agnostic. Engineering is one team; content, design, marketing, and finance plug in as siblings under the same program-architect.
 
-**Built today:** engineering (via `/ship-feature` / `/build-feature`) and **content**. Design, marketing, and finance appear in the [registry](.claude/teams/registry.md) as stubs (`status: not built`) so routing shape is visible without shipping unfinished agents.
+**Built today:** engineering (`/ship-feature` / `/build-feature`) and **content**. Design, marketing, and finance are listed in the [registry](.claude/teams/registry.md) as stubs (`status: not built`).
 
-The cost of having many teams is not paid unless they're used, because disclosure happens in three tiers:
+Disclosure happens in three tiers so unused teams cost almost nothing:
 
-- **Tier 1 — the registry** (`.claude/teams/registry.md`, always loaded, ~5 lines/team): team name, capability, and a sharp `route-when` trigger. This is the *only* team-level file the architect reads to route a workstream. Adding a tenth team doesn't grow the architect's context.
-- **Tier 2 — the team lead** (loaded only when a workstream routes to that team): plans the domain workstream and knows its own workers.
-- **Tier 3 — workers + domain reference** (loaded only as the lead dispatches): the worker agents plus heavy reference (brand guidelines, design system, model conventions), themselves pulled via pointers the way skills load their reference files.
+1. **Tier 1: registry** (`.claude/teams/registry.md`, always loaded, ~5 lines/team): name, capability, `route-when`. The only team file the architect reads to route.
+2. **Tier 2: team lead**, loaded only when a workstream routes to that team.
+3. **Tier 3: workers + domain reference**, loaded only as the lead dispatches them.
 
-A pure-engineering program never loads a content, design, marketing, or finance token. A content workstream never loads finance. The system scales to ten domains with a context footprint that stays flat.
-
-### How a domain team mirrors engineering
-
-Every team, whatever the domain, has the same shape — a lead that plans, workers scoped to **disjoint owned units**, a verifier, and a validator against the workstream's contracts. What differs is the boundary unit and what the verifier means:
-
-| Team | owns (boundary unit) | verifier means |
+| Team | Owns (boundary unit) | Verifier means |
 |---|---|---|
 | engineering | files / directories | behavior proven by tests |
 | content | content pieces / sections | facts sourced + brand voice + human prose |
@@ -107,111 +172,103 @@ Every team, whatever the domain, has the same shape — a lead that plans, worke
 | marketing | channels / segments | message + measurement alignment |
 | finance | worksheets / models | numbers reconcile + assumptions traced |
 
-Cross-domain handoffs use the same frozen-contract mechanism as code seams: "engineering delivers feature X to spec" → "content announces feature X" → "design lays out the announcement" → "marketing distributes it" is a contract chain the architect builds into the DAG, so a full product-launch program runs as one coordinated effort.
+Cross-domain handoffs use the same frozen-contract mechanism as code seams (e.g. engineering delivers feature X → content announces it → design lays it out → marketing distributes it).
 
-### The content team (built, as the reference implementation)
+### Content team (reference domain implementation)
 
-`.claude/agents/content/`:
-- `content-lead` — writes the content brief, splits into disjoint pieces, owns the fact + brand gates
-- `content-strategist` — angle and structure before drafting (the story-writer analog)
-- `content-writer` — drafts one owned piece, grounded in named sources, in brand voice
-- `content-editor` — read-only fact audit + brand + AI-tell sweep (the verifier/validator analog)
+- `content-lead`: brief, disjoint pieces, fact + brand gates
+- `content-strategist`: angle and structure
+- `content-writer`: one owned piece, grounded in named sources
+- `content-editor`: fact audit + brand + AI-tell sweep
 
-Its prime directive is the content version of correctness: **never ship a false claim, never ship generic AI prose.** Pair with your own brand-voice or humanizer skills if you have them — they are not bundled in this package.
+Prime directive: **never ship a false claim, never ship generic AI prose.**
 
-### Adding another domain team
-
-1. Create `.claude/agents/<prefix>/` with a lead and workers in the same shape.
-2. Add a registry entry with a sharp `route-when` line and flip its status to built.
-3. Nothing in the program tier changes — the architect routes off the registry, and the team loads only when a workstream needs it.
+To add a domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` registry entry, flip `status` to built. The program tier does not need to change.
 
 ---
 
-## Workstream tier (the feature pipeline)
+## Workstream tier (feature pipeline)
 
-One feature request in, a validated implementation out — with two human approval gates where mistakes are cheapest. Each program workstream runs this internally; you can also run it directly for a standalone feature. Core path: researcher → story-writer → architect → backend + frontend engineers → e2e-verifier → validator → program-documenter. Optional: `data-engineer` for data-heavy slices.
+One feature request in, a validated implementation out, with two human gates where mistakes are cheapest. Program workstreams run this internally; you can also run it standalone.
 
-## Quick start
+**Path:** researcher → story-writer → architect → backend + frontend engineers (optional `data-engineer`) → e2e-verifier → validator → program-documenter.
+
+| Agent | Writes code? | Scope | Purpose |
+|---|---|---|---|
+| researcher | No | Read-only | Maps what exists so nothing downstream hallucinates |
+| story-writer | Story doc | n/a | Testable acceptance criteria |
+| architect | Spec doc | n/a | Data model, API contract, disjoint work split |
+| backend-engineer | Yes | Backend globs only | Migrations, services, handlers, unit tests |
+| frontend-engineer | Yes | Frontend globs only | Components, state, API client, UI states |
+| data-engineer | Yes | Data-layer globs only | ETL/ELT, schemas, indexing (optional) |
+| e2e-verifier | Tests only | Test files | Proves the feature from the user's perspective |
+| validator | No | Read-only | Catches misses, skips, and security gaps |
+
+**Why boundaries matter.** The engineers do not negotiate mid-build. The spec's API contract is the seam. Ownership globs must be disjoint; the orchestrator checks before dispatch, and each engineer verifies `git diff --name-only` before reporting.
+
+**Gates.** After the story (cheap requirement fix). After the spec (cheap data-model fix). Everything after the approved spec runs unattended.
+
+---
+
+## Install details
+
+The installer copies `.claude/` and `.cursor/` into your project, creates `.claude/tmp/` and `.claude/program/`, and appends ignore rules if missing. Idempotent and safe to re-run; it never strips unrelated `.gitignore` lines or foreign Cursor rules.
 
 ```bash
-git clone https://github.com/YOUR_ORG/skailr-agents.git
-cd skailr-agents
 ./install.sh /path/to/your-project
 ```
 
-On Windows (PowerShell):
-
-```powershell
-git clone https://github.com/YOUR_ORG/skailr-agents.git
-cd skailr-agents
-.\install.ps1 -TargetPath C:\path\to\your-project
-```
-
-Replace `YOUR_ORG` with the GitHub user or organization that hosts this repo. Flags: `--claude-only` / `-ClaudeOnly`, `--cursor-only` / `-CursorOnly`.
-
-## Install
-
-The installer copies `.claude/` (agents, commands, teams, channel templates) and `.cursor/` (rules + commands mirror) into your project, creates `.claude/tmp/` and `.claude/program/`, and appends ignore rules if missing. It is idempotent — safe to re-run; it never strips unrelated `.gitignore` lines or foreign Cursor rules.
-
-```bash
-./install.sh /path/to/your-project
-```
-
-Manual alternative (Claude Code only):
+Manual (Claude Code only):
 
 ```bash
 cp -r .claude /path/to/your-repo/
 mkdir -p /path/to/your-repo/.claude/tmp /path/to/your-repo/.claude/program
 ```
 
-Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and the tracked channel templates under `.claude/program/channels/` — the prompts are versioned artifacts and should evolve with the repo. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Full inventory: [`manifest.json`](manifest.json). License: [MIT](LICENSE).
+Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [`manifest.json`](manifest.json). License: [MIT](LICENSE).
 
-## Usage
-
-```
-/ship-feature Users should get an email reminder 3 days before an invoice is due
-```
-
-Runs researcher → story-writer, then stops for your approval. Approve, and it runs the architect and stops again for spec approval.
-
-```
-/build-feature
-```
-
-Runs the rest unattended: backend and frontend engineers in parallel, then E2E verification, then adversarial validation.
-
-## The roles
-
-| Agent | Writes code? | Scope | Purpose |
-|---|---|---|---|
-| researcher | No | Read-only | Maps what actually exists so nothing downstream hallucinates |
-| story-writer | Story doc | — | Turns a rough ask into testable acceptance criteria |
-| architect | Spec doc | — | Defines the data model, API contract, and the disjoint work split |
-| backend-engineer | Yes | Backend globs only | Migrations, services, handlers, unit tests |
-| frontend-engineer | Yes | Frontend globs only | Components, state, API client, UI states |
-| e2e-verifier | Tests only | Test files | Proves the feature works from the user's perspective |
-| validator | No | Read-only | Catches what was missed, skipped, or left insecure |
-| data-engineer | Yes | Data-layer globs only | ETL/ELT, schemas, indexing, query optimization, data security — optional, for data-heavy features |
-
-## Why the boundaries matter
-
-The two engineers never communicate. The spec's API contract is the only seam between them, which is why the architect's contract must be fully specified — exact field names, types, and error shapes. That constraint is what makes the parallel build safe.
-
-The ownership globs must be provably disjoint. The orchestrator checks this before dispatching, and each engineer verifies its own `git diff --name-only` before reporting. If both agents can write the same file, you have a race, not a pipeline.
-
-## Where the gates are
-
-- **After the story** — a misunderstood requirement caught here costs one message
-- **After the spec** — a wrong data model caught here costs one message; caught after the build it costs the build
-
-Everything after the spec runs unattended because it is constrained to a document you already approved.
+---
 
 ## Tuning
 
-- Swap `model:` in any agent's frontmatter. Researcher and story-writer run fine on Sonnet; architect, engineers, and validator benefit from Opus.
-- Add repo-specific conventions to each agent's Standards section rather than repeating them in every prompt.
-- If your repo does not split cleanly into backend and frontend, redefine the two engineer agents along whatever seam your codebase actually has — the pattern is disjoint ownership, not the specific names.
-- Back the boundary rule with a CI check that fails a PR whose backend commits touch frontend paths. Prompt-level scoping is a strong convention, not a hard sandbox.
+- Swap `model:` in agent frontmatter. Researcher and story-writer often fine on Sonnet; architect, engineers, and validator benefit from Opus.
+- Add repo-specific conventions to each agent's Standards section.
+- If your repo does not split into backend/frontend, redefine engineers along your real seam. The pattern is **disjoint ownership**, not the names.
+- Back boundaries with CI that fails PRs whose backend commits touch frontend paths. Prompt scoping is a strong convention, not a hard sandbox.
+
+---
+
+## FAQ
+
+### Is skailr-agents an agent framework?
+
+No. An agent framework (LangGraph, CrewAI, AutoGen, etc.) provides a runtime and APIs that execute agents. skailr-agents is an **agent operating model**: roles, hierarchy, contracts, and communication rules delivered as markdown for Claude Code and Cursor to run.
+
+### How is this different from built-in Cursor or Claude Code agents?
+
+Those tools give you powerful agents and chat. This pack adds **org structure on top**: planning before build, single-job roles, just-in-time context, a shared message board, and frozen cross-team contracts with human change control.
+
+### When should I use `/ship-feature` vs `/discover`?
+
+Use `/ship-feature` for one cohesive feature. Use `/discover` when the ask is large, ambiguous, or spans multiple teams/domains that must not collide.
+
+### Do agents talk to each other directly?
+
+They appear to, via markdown channels. Mechanism: an agent posts and ends its turn; the **orchestrator** routes the thread to the addressee and re-dispatches the blocked agent with the answer. See [PROTOCOL.md](.claude/program/channels/PROTOCOL.md).
+
+### What happens if a frozen contract is wrong?
+
+The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve before the contract updates and affected teams re-sync. Teams never silently edit frozen interfaces.
+
+### Can I add my own domain team (design, marketing, finance)?
+
+Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a sharp `route-when` in [`.claude/teams/registry.md`](.claude/teams/registry.md), and set `status: built`. Unused teams stay unloaded.
+
+### Does this work only for software engineering?
+
+No. The program tier is domain-agnostic. Engineering and content are built; other domains use the same frozen-contract and registry pattern.
+
+---
 
 ## Contributing
 
