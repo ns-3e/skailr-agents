@@ -1,9 +1,11 @@
 # skailr-agents
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blue)](https://docs.anthropic.com/en/docs/claude-code)
-[![Cursor](https://img.shields.io/badge/Cursor-compatible-black)](https://cursor.com/docs)
-[![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-co--author-000000)](https://github.com/cursoragent)
+[License: MIT](LICENSE)
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+[Cursor](https://cursor.com/docs)
+[Cursor Agent](https://github.com/cursoragent)
+
+![skailr-agents hero image](Assets/hero.png)
 
 **A multi-agent operating model for Claude Code and Cursor**, not an agent framework or a hosted runtime. skailr-agents is an open-source prompt pack that structures AI coding agents like a real project organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, and frozen contracts so parallel workstreams can ship without colliding.
 
@@ -17,6 +19,8 @@ Install it into a repo. Claude Code or Cursor runs the agents. You get hierarchy
 
 
 ---
+
+
 
 ## Why this exists
 
@@ -33,6 +37,8 @@ skailr-agents applies how real organizations run delivery:
 If your agents are failing on large work, the model may not be the problem. **The operating model** might be.
 
 ---
+
+
 
 ## What this is (and is not)
 
@@ -52,6 +58,8 @@ If your agents are failing on large work, the model may not be the problem. **Th
 
 ---
 
+
+
 ## Five capabilities that make it different
 
 
@@ -65,6 +73,8 @@ If your agents are failing on large work, the model may not be the problem. **Th
 
 
 ---
+
+
 
 ## Quick start
 
@@ -120,6 +130,8 @@ Foundation (build + freeze kernel) → parallel workstream teams → integration
 
 ---
 
+
+
 ## Program tier (large initiatives)
 
 When a request is long, ambiguous, or too big for one team, the program tier runs first, like a VP overseeing simultaneous project teams.
@@ -129,6 +141,8 @@ When a request is long, ambiguous, or too big for one team, the program tier run
 - **Spatial (two teams, same file):** ownership must be disjoint; shared paths belong in the frozen kernel.
 - **Temporal (Team B needs Team A's output):** contract-first. A freezes an interface; B builds against a stub in parallel; they integrate at the end.
 - **Change control:** only the program-architect changes a frozen contract, and only after your approval. That is the one move that can cascade a wrong assumption across teams.
+
+
 
 ### Program roles
 
@@ -158,6 +172,8 @@ Posting discipline: post only when blocked or when another team must know someth
 `program-documenter` runs after validation. It documents the **diff**, not the plan; writes for a named reader; and supports **create** and **reconcile** modes so docs stay current. Engineers can leave `DOC:` anchors; the documenter harvests them.
 
 ---
+
+
 
 ## Domain teams and just-in-time disclosure
 
@@ -196,6 +212,8 @@ To add a domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` reg
 
 ---
 
+
+
 ## Workstream tier (feature pipeline)
 
 One feature request in, a validated implementation out, with two human gates where mistakes are cheapest. Program workstreams run this internally; you can also run it standalone.
@@ -221,6 +239,8 @@ One feature request in, a validated implementation out, with two human gates whe
 
 ---
 
+
+
 ## Install details
 
 The installer copies `.claude/` and `.cursor/` into your project, creates `.claude/tmp/` and `.claude/program/`, and appends ignore rules if missing. Idempotent and safe to re-run; it never strips unrelated `.gitignore` lines or foreign Cursor rules.
@@ -240,6 +260,8 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 
 ---
 
+
+
 ## Tuning
 
 - Swap `model:` in agent frontmatter. Researcher and story-writer often fine on Sonnet; architect, engineers, and validator benefit from Opus.
@@ -249,7 +271,11 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 
 ---
 
+
+
 ## FAQ
+
+
 
 ### Is skailr-agents an agent framework?
 
@@ -280,6 +306,8 @@ Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a 
 No. The program tier is domain-agnostic. Engineering and content are built; other domains use the same frozen-contract and registry pattern.
 
 ---
+
+
 
 ## Contributing
 
