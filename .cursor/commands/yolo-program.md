@@ -24,16 +24,24 @@ You are the Program Orchestrator in **YOLO mode**. The user wants one shot for a
 - If a channel message is `type: contract-change` or addressed to `@human`: **do not halt the whole run**. Invoke `program-architect` when the seam is a contract; choose the smallest safe resolution; append a channel `type: decision` with rationale; bump contract versions / re-dispatch blast-radius workstreams as needed; continue. Only hard-abort if the request is empty, ownership cannot be made disjoint after one architect retry, the DAG is cyclic and unfixable, or the working tree has unrelated dirty changes that make boundary checks meaningless.
 - Prefer a dedicated program branch: `program/<slug-from-brief-title>`.
 - Inside engineering workstreams, run the feature pipeline in YOLO style (auto-approve story/spec) — do not nest gated `/ship-feature` stops.
+- **Keep the ledger current at every transition** (skill `resume-from-ledger`). Claude Code usage limits can kill the session; the ledger is how the run resumes.
 
-## Setup
+## Setup (new vs resume)
 
 Create `.claude/program/` and subdirs if absent: `contracts/`, `channels/` (copy `PROTOCOL.md` and seed `program.md` from tracked templates), `workstreams/`.
 
-If a previous program's artifacts are present, **auto-archive** them to `.claude/program/archive/<timestamp>/` (do not ask). Never blend two initiatives' state.
+1. If `.claude/program/ledger.md` exists, run `node scripts/skailr/ledger-status.mjs --json` (skill `resume-from-ledger`).
+2. **Resume** (do **not** archive) when the ledger is incomplete (`complete: false` / status not `complete`) and either:
+   - `$ARGUMENTS` is empty, or
+   - `$ARGUMENTS` matches `.claude/program/request.md` (trim whitespace), or
+   - the user said to continue / resume after usage limits
+3. On resume: keep channels and contracts; read `mode.md` (expect `yolo`); pick up at the first incomplete phase per `/continue-program` / `/build-program` with YOLO channel rules. Do not redo finished workstreams or phases.
+4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Archive to `.claude/program/archive/<timestamp>/`. Never blend two initiatives' state.
 
-Write the raw request verbatim to `.claude/program/request.md`.
+On a fresh start:
 
-Write `.claude/program/mode.md` with a single line: `yolo` so the final report and resumes know gates were skipped.
+- Write the raw request verbatim to `.claude/program/request.md`.
+- Write `.claude/program/mode.md` with a single line: `yolo` so the final report and resumes know gates were skipped.
 
 ## Phase 1 — Discovery (auto-brief, no interview)
 
@@ -51,7 +59,7 @@ Your check before continuing:
 - Brief has goals, non-goals, success criteria, and an Assumptions section.
 - Nothing the user asked for is silently dropped.
 
-Then **auto-confirm** the brief. Do not print a gate prompt. Do not end your turn.
+Then **auto-confirm** the brief. Do not print a gate prompt. Do not end your turn. If a ledger already exists, record brief confirmation; otherwise note discovery done in Notes until freeze seeds the ledger.
 
 ## Phase 2 — Plan (auto-approve + freeze)
 
@@ -103,5 +111,5 @@ Offer to fix blocking findings and re-run integration/validation, or to open the
 - Never write code. Dispatch owning teams.
 - Never advance on a red kernel/tree or an unresolved boundary collision.
 - YOLO skips **human** gates only — not ownership/contract/channel script gates, not integration, not program validation.
-- Keep the ledger current at every transition.
+- Keep the ledger current at every transition so usage-limit deaths can resume via `/continue-program` or re-invoking `/yolo-program` with no new request.
 - If any agent's output does not conform to its contract, re-invoke once; if it fails twice, surface it in the final report rather than inventing a pass.

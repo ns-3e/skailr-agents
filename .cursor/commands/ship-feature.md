@@ -15,11 +15,21 @@ You are the Orchestrator for the feature pipeline. You do not write application 
 
 **Feature request:** $ARGUMENTS
 
-## Setup
+## Setup (new vs resume)
 
-Create `.claude/tmp/` if it does not exist. If it contains artifacts from a previous run, archive them to `.claude/tmp/archive/<timestamp>/` before starting — never let a stale `story.md` leak into a new feature.
+Create `.claude/tmp/` if it does not exist.
 
-Write the raw request verbatim to `.claude/tmp/request.md` so later agents can check for drift from what was actually asked.
+1. If `.claude/tmp/progress.md` exists, run `node scripts/skailr/feature-status.mjs --json` (skill `resume-from-feature-progress`).
+2. **Resume** (do **not** archive) when incomplete and `$ARGUMENTS` is empty, matches `request.md`, or the user asked to continue after a session break / usage limits. Jump to `next`; keep channels.
+3. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user says start over. Archive to `.claude/tmp/archive/<timestamp>/`.
+
+On a fresh start:
+
+- Write the raw request verbatim to `.claude/tmp/request.md`.
+- Write `.claude/tmp/mode.md` with a single line: `gated`.
+- Seed `.claude/tmp/progress.md` from `.claude/program/schemas/feature-progress.template.md` (`mode: gated`, `status: researching`).
+
+**Checkpoint rule:** after each phase’s artifact + checks succeed, mark that phase `complete` in `progress.md` **before** the next step. Usage limits can kill the session; progress is how `/continue-feature` resumes.
 
 ## Phase 1 — Research
 
@@ -27,9 +37,13 @@ Invoke the `researcher` subagent via the Task tool. Pass it the feature request 
 
 When it returns, confirm `research.md` exists and contains a Prior Art section with real file paths. If it is thin or contains no concrete paths, re-invoke once with a narrower instruction to trace specific similar features. Do not proceed on a vague map.
 
+Checkpoint: `research` → complete.
+
 ## Phase 2 — Story
 
 Invoke the `story-writer` subagent. It reads `research.md` and the request, and writes `.claude/tmp/story.md`.
+
+Checkpoint: `story` → complete (story written; awaiting human approval — leave frontmatter `status: story`).
 
 ## GATE 1 — Human approval of the story
 
@@ -44,12 +58,14 @@ If the user comes back with changes, re-invoke `story-writer` with their feedbac
 
 ## Phase 3 — Spec (only after the user approves the story)
 
-Invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
+Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
 
 When it returns, verify three things yourself before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — no path matches both. If they overlap, send it back to the architect to resolve ownership.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
+
+Checkpoint: `spec` → complete after those checks pass.
 
 ## GATE 2 — Human approval of the spec
 
