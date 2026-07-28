@@ -180,10 +180,7 @@ append_gitignore() {
     "!.claude/program/channels/program.md"
     "!.claude/program/channels/feature.md"
     "!.claude/program/schemas/"
-    ".skailr/"
     "node_modules/"
-    "packages/*/dist/"
-    "apps/web/dist/"
   )
   touch "$gi"
   if grep -qxF ".claude/program/" "$gi" 2>/dev/null; then

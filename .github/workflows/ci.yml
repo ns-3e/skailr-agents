@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Check agent name frontmatter matches filename
         run: |
           set -e
@@ -57,20 +61,6 @@ jobs:
           node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
           test -f /tmp/skailr-stubs/orders-api.stub.js
           echo "fixture scripts OK"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install and build control plane
-        run: |
-          npm install
-          npm run build -w @skailr/core
-          npm run build -w @skailr/server
-          npm run build -w @skailr/cli
-          npm run test -w @skailr/server
-          npm run build -w @skailr/web
 
       - name: Install smoke test
         run: |

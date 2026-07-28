@@ -202,8 +202,8 @@ if missing:
 
 manifest = {
     "name": "skailr-agents",
-    "description": "Agent org control plane for Claude Code and Cursor — teams, contracts, lineage, CLI/UI",
-    "version": "1.2.0",
+    "description": "Multi-agent operating model for Claude Code and Cursor — teams, contracts, channels, script gates",
+    "version": "1.3.0",
     "artifacts": entries,
 }
 (ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

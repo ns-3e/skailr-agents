@@ -10,8 +10,5 @@
 !.claude/program/channels/feature.md
 !.claude/program/schemas/
 !.claude/program/schemas/**
-.skailr/
 node_modules/
-packages/*/dist/
-apps/web/dist/
 examples/parallel-api/stubs/

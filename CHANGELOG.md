@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.3.0] — 2026-07-28
+
+### Removed
+
+- Control plane monorepo: `@skailr/core`, `@skailr/server`, `@skailr/cli`, `@skailr/web` (CEO inbox UI)
+- `skailr` CLI / `skailr serve`, JSON store under `.skailr/`, and demo-seed import path
+- Browser UI bootstrap / token injection and `Assets/ui.png`
+- Standalone `RELEASE_NOTES_v1.1.0.md` and `RELEASE_NOTES_v1.2.0.md` (history lives in this changelog)
+
+### Changed
+
+- Repo is pack-only again: Claude Code / Cursor agent operating model + `scripts/skailr/*.mjs`
+- Intair TypeScript stub lives at `docs/intair-client.stub.ts`
+- Installers no longer append `.skailr/` or apps/packages dist ignore lines
+
 ## [1.2.0] — 2026-07-28
 
 ### Added
@@ -11,7 +26,6 @@ All notable changes to this project are documented in this file.
 - Skills and meta-skills under `.claude/skills/`
 - `/continue-feature`, `/continue-program`, portfolio commands (`/discover-portfolio`, `/plan-portfolio`, `/status-portfolio`)
 - Legal/compliance and PM/delivery domain teams (registry `built`)
-- Canonical ledger/contract/ownership schemas; `examples/parallel-api/` fixture; Intair seam docs + stub client
 - First-run **demo seed** of `examples/parallel-api` when no real `ledger.md` / empty store; `skailr sync import --demo`
 - `RELEASE_NOTES_v1.2.0.md` and updated publish checklist
 

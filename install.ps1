@@ -169,10 +169,7 @@ function Append-Gitignore {
         "!.claude/program/channels/feature.md",
         "!.claude/program/schemas/",
         "!.claude/program/schemas/**",
-        ".skailr/",
-        "node_modules/",
-        "packages/*/dist/",
-        "apps/web/dist/"
+        "node_modules/"
     )
     $existing = @(Get-Content $gi -ErrorAction SilentlyContinue)
     if ($existing -contains ".claude/program/") {

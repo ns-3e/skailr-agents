@@ -8,53 +8,28 @@
 ![skailr-agents hero image](Assets/hero.png)
 
 
-**A multi-agent operating model and control plane for Claude Code and Cursor**, not a Ruflo-style meta-harness. skailr-agents structures AI work like a real organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, frozen contracts, mechanical enforcement scripts, and an optional local control plane (CLI + CEO exception-inbox UI) with durable lineage.
+**A multi-agent operating model for Claude Code and Cursor**, not a Ruflo-style meta-harness. skailr-agents structures AI work like a real organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, frozen contracts, and mechanical enforcement scripts.
 
-Install it into a repo. Claude Code or Cursor runs the agents. Skailr adds hierarchy, division of labor, change control, and — when you opt in — `skailr serve` for inbox, portfolio, contracts, and audit trail.
+Install it into a repo. Claude Code or Cursor runs the agents. Skailr adds hierarchy, division of labor, and change control.
 
 
 | You have…                                 | Start with…                                                    |
 | ----------------------------------------- | -------------------------------------------------------------- |
 | One feature, clear enough to ship         | Workstream tier: `/ship-feature` → `/build-feature`            |
 | A large, ambiguous, multi-part initiative | Program tier: `/discover` → `/plan-program` → `/build-program` |
-| Many initiatives / CEO cockpit            | Control plane: `npx skailr serve` (+ `/discover-portfolio`)    |
+| Many concurrent initiatives               | Portfolio: `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
 
 
 ---
 
-## Control plane (CLI + API + CEO UI)
+## Enforcement and fixtures
 
-![UI](Assets/ui.png)
-
-Optional local control plane — workers remain Claude Code / Cursor. State lives in **`.skailr/skailr.json`** (pure JSON event store; no native SQLite binding).
+Mechanical gates (plain Node, no package install required): `scripts/skailr/*.mjs`. Skills under `.claude/skills/`. See `examples/parallel-api/` and `docs/intair-seam.md`.
 
 ```bash
-npm install
-npm run build
-npx skailr init
-npx skailr serve
-# Open the printed URL (token is injected for the browser UI).
-# First run seeds examples/parallel-api so Inbox / Contracts / Lineage are non-empty.
+node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
+node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
 ```
-
-Or develop the UI separately:
-
-```bash
-npm run dev -w @skailr/web   # :5173, proxies /api → :8787 (keep skailr serve running)
-```
-
-Useful commands:
-
-```bash
-npx skailr sync import         # ingest .claude/program markdown
-npx skailr sync import --demo  # force-seed examples/parallel-api
-npx skailr inbox list
-npx skailr ownership check
-```
-
-Surfaces: exception inbox, portfolio, contract wall, lineage, approvals.
-
-Enforcement scripts (no Node packages required): `scripts/skailr/*.mjs`. Skills under `.claude/skills/`. See `examples/parallel-api/` and `docs/intair-seam.md`.
 
 ---
 
@@ -81,7 +56,6 @@ If your agents are failing on large work, the model may not be the problem. **Th
 ## What this is
 
 - An **agent operating model** expressed as markdown: agent definitions, slash commands, a team registry, channel protocol, skills, and install scripts
-- An optional **control plane** (`skailr` CLI + API + CEO UI) for exception inbox, approvals, and lineage
 - Compatible with **Claude Code** (authoritative `.claude/` tree) and **Cursor** (generated `.cursor/` mirror)
 - Tiers: **portfolio** → **program** → **workstream** (feature pipeline)
 
@@ -324,7 +298,7 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 
 ### Is skailr-agents an agent framework?
 
-No. An agent framework (LangGraph, CrewAI, AutoGen, etc.) provides a runtime and APIs that execute agents. skailr-agents is an **agent operating model** (and optional control plane): roles, hierarchy, contracts, communication rules, and an exception inbox — not a replacement for Claude Code / Cursor as the coding runtime.
+No. An agent framework (LangGraph, CrewAI, AutoGen, etc.) provides a runtime and APIs that execute agents. skailr-agents is an **agent operating model**: roles, hierarchy, contracts, communication rules, and an exception path via channels — not a replacement for Claude Code / Cursor as the coding runtime.
 
 ### How is this different from built-in Cursor or Claude Code agents?
 
@@ -340,7 +314,7 @@ They appear to, via markdown channels. Mechanism: an agent posts and ends its tu
 
 ### What happens if a frozen contract is wrong?
 
-The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve before the contract updates and affected teams re-sync. Teams never silently edit frozen interfaces. In the control plane UI, those items land in the exception inbox.
+The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve in chat (or post a channel `type: decision` / answer) before the contract updates and affected teams re-sync. Teams never silently edit frozen interfaces.
 
 ### Can I add my own domain team (design, marketing, finance)?
 

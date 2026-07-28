@@ -34,7 +34,7 @@ export interface IntairClient {
   mergeFindings(
     req: IntairMergeFindingsRequest,
   ): Promise<{ mergeId: string; requiresSkailrApproval: true }>;
-  /** Apply only after Skailr approval.decided for the matching id. */
+  /** Apply only after a human channel decision / approval for the matching id. */
   applyAfterApproval(opts: {
     changeId: string;
     skailrApprovalEventId: string;

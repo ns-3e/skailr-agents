@@ -11,6 +11,6 @@ roles in sequence (or via Background Agents for parallel engineer/workstream ste
 The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
 -->
 
-Read `.claude/portfolio/plan.md` and each program's `.claude/program/ledger.md` (or paths listed in the portfolio plan). Invoke `pm-lead` / `status-reporter` patterns and skill `compile-status-digest` at portfolio scope. Prefer control-plane `GET /portfolio` and `GET /inbox` when `skailr serve` is running.
+Read `.claude/portfolio/plan.md` and each program's `.claude/program/ledger.md` (or paths listed in the portfolio plan). Invoke `pm-lead` / `status-reporter` patterns and skill `compile-status-digest` at portfolio scope. Use channel boards and ledgers only.
 
 Present: initiative traffic lights, open exceptions only, recommended CEO actions. Do not rebuild programs here — point to `/continue-program` per blocked program.

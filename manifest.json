@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
-  "description": "Agent org control plane for Claude Code and Cursor \u2014 teams, contracts, lineage, CLI/UI",
-  "version": "1.2.0",
+  "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
+  "version": "1.3.0",
   "artifacts": [
     {
       "id": "architect",
