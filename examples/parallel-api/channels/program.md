@@ -7,3 +7,4 @@ type: blocker
 status: open
 ---
 Need confirmation that order IDs are UUIDs before wiring the list UI.
+Blast radius: orders-web, orders-api.

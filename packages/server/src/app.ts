@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { SkailrStore } from "./store.js";
-import { exportLedgerStub, importProgramDir, seedDemoProgram } from "./sync.js";
+import { exportLedgerStub, importProgramDir, seedDemoProgram, persistDecisionArtifacts, writeResumeBrief } from "./sync.js";
 
 function isPublicPath(path: string): boolean {
   if (path === "/" || path === "/health" || path === "/favicon.ico") return true;
@@ -56,9 +56,18 @@ function registerApi(api: Hono, store: SkailrStore, opts?: { token?: string; pro
     const body = await c.req.json<{ decision: "approve" | "reject" | "defer"; reason?: string }>();
     const updated = store.decideApproval(id, body.decision, body.reason);
     if (!updated) return c.json({ error: "not_found" }, 404);
-    if (opts?.programDir && updated.programId) {
-      exportLedgerStub(store, updated.programId, `${opts.programDir}/ledger.md`);
-    }
+    const programDir = opts?.programDir || ".claude/program";
+    persistDecisionArtifacts(
+      store,
+      {
+        id: updated.id,
+        programId: updated.programId,
+        channel: updated.channel,
+      },
+      body.decision,
+      body.reason,
+      programDir,
+    );
     return c.json({ approval: updated });
   });
 
@@ -88,6 +97,22 @@ function registerApi(api: Hono, store: SkailrStore, opts?: { token?: string; pro
     const out = body.out || `${opts?.programDir || ".claude/program"}/ledger.md`;
     exportLedgerStub(store, programId, out);
     return c.json({ ok: true, out });
+  });
+
+  api.get("/resume-brief", (c) => {
+    const programId = c.req.query("programId") || undefined;
+    const programDir = opts?.programDir || ".claude/program";
+    const out = `${programDir}/resume-brief.md`;
+    writeResumeBrief(store, out, programId);
+    const programs = store.listPrograms() as Array<Record<string, unknown>>;
+    const p = (programId && programs.find((x) => x.id === programId)) || programs[0];
+    return c.json({
+      path: out,
+      program: p || null,
+      openApprovals: store.listApprovals("open"),
+      decisions: store.listRecentDecisions(10),
+      openInbox: store.inbox(),
+    });
   });
 
   /** Browser bootstrap: validate token and return it for localStorage. */

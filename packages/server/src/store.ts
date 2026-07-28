@@ -187,6 +187,7 @@ export class SkailrStore {
     from: string;
     body: string;
     raw?: string;
+    file?: string;
   }) {
     const row = {
       id: m.id,
@@ -197,22 +198,141 @@ export class SkailrStore {
       from_addr: m.from,
       body: m.body,
       raw: m.raw ?? null,
+      file: m.file ?? null,
     };
     const i = this.data.channel_messages.findIndex((r) => r.id === m.id);
-    if (i >= 0) this.data.channel_messages[i] = { ...this.data.channel_messages[i], ...row };
-    else this.data.channel_messages.push(row);
+    if (i >= 0) {
+      this.data.channel_messages[i] = {
+        ...this.data.channel_messages[i],
+        ...row,
+        file: m.file ?? this.data.channel_messages[i]!.file ?? null,
+      };
+    } else this.data.channel_messages.push(row);
     this.persist();
+  }
+
+  getChannelMessage(id: string): Row | undefined {
+    return this.data.channel_messages.find((r) => r.id === id);
+  }
+
+  nextMessageId(): string {
+    let max = 0;
+    for (const m of this.data.channel_messages) {
+      const n = Number(String(m.id).replace(/^MSG-/, ""));
+      if (!Number.isNaN(n) && n > max) max = n;
+    }
+    return `MSG-${String(max + 1).padStart(4, "0")}`;
+  }
+
+  listRecentDecisions(limit = 10): Array<{
+    approvalId: string;
+    decision: string;
+    reason?: string;
+    messageId?: string;
+    ts: string;
+    programId?: string;
+    subject?: string;
+  }> {
+    return this.listEvents({ type: "approval.decided" })
+      .slice(-limit)
+      .reverse()
+      .map((e) => {
+        const payload = e.payload as Record<string, unknown>;
+        const approvalId = String(payload.approvalId || "");
+        const msgId = approvalId.startsWith("ap-") ? approvalId.slice(3) : undefined;
+        const ap = this.data.approvals.find((a) => a.id === approvalId);
+        return {
+          approvalId,
+          decision: String(payload.decision || ""),
+          reason: payload.reason ? String(payload.reason) : undefined,
+          messageId: msgId,
+          ts: e.ts,
+          programId: e.programId,
+          subject: ap ? String(ap.subject) : undefined,
+        };
+      });
+  }
+
+  /**
+   * Resolve the channel thread linked to an approval (ap-MSG-xxxx) and append a decision reply.
+   */
+  resolveApprovalChannel(
+    approvalId: string,
+    decision: "approve" | "reject" | "defer",
+    reason?: string,
+  ): { parentId?: string; replyId?: string; file?: string } {
+    if (!approvalId.startsWith("ap-")) return {};
+    const parentId = approvalId.slice(3);
+    const parent = this.getChannelMessage(parentId);
+    if (!parent) return {};
+
+    const parentStatus =
+      decision === "defer" ? "blocked-on-human" : "resolved";
+    this.upsertChannelMessage({
+      id: parentId,
+      programId: (parent.program_id as string) || undefined,
+      type: String(parent.type),
+      status: parentStatus,
+      to: String(parent.to_addr),
+      from: String(parent.from_addr),
+      body: String(parent.body),
+      file: (parent.file as string) || undefined,
+    });
+
+    const replyId = this.nextMessageId();
+    const body =
+      `Human decision: **${decision}**` +
+      (reason ? `\nReason: ${reason}` : "") +
+      `\n(Resolves ${parentId} via control-plane approval ${approvalId})`;
+    this.upsertChannelMessage({
+      id: replyId,
+      programId: (parent.program_id as string) || undefined,
+      type: "decision",
+      status: "resolved",
+      to: String(parent.from_addr),
+      from: "human (control-plane)",
+      body,
+      file: (parent.file as string) || undefined,
+      raw: `re:${parentId}`,
+    });
+    const replyRow = this.getChannelMessage(replyId);
+    if (replyRow) {
+      replyRow.re = parentId;
+      this.persist();
+    }
+
+    this.appendEvent({
+      type: "channel.posted",
+      actor: "human",
+      programId: (parent.program_id as string) || undefined,
+      payload: {
+        messageId: replyId,
+        type: "decision",
+        re: parentId,
+        decision,
+        approvalId,
+      },
+    });
+
+    return {
+      parentId,
+      replyId,
+      file: (parent.file as string) || undefined,
+    };
   }
 
   inbox() {
     return this.data.channel_messages
-      .filter(
-        (m) =>
-          m.status === "open" ||
-          m.status === "blocked-on-human" ||
+      .filter((m) => {
+        const status = String(m.status || "");
+        if (status === "resolved" || status === "answered") return false;
+        return (
+          status === "open" ||
+          status === "blocked-on-human" ||
           m.type === "contract-change" ||
-          String(m.to_addr || "").includes("@human"),
-      )
+          String(m.to_addr || "").includes("@human")
+        );
+      })
       .sort((a, b) => String(a.id).localeCompare(String(b.id)));
   }
 
@@ -220,6 +340,11 @@ export class SkailrStore {
     const id = a.id ?? randomUUID();
     const existing = this.data.approvals.find((r) => r.id === id);
     if (existing) {
+      const currentBlast = JSON.parse(String(existing.blast_radius || "[]")) as string[];
+      if ((!currentBlast || currentBlast.length === 0) && a.blastRadius?.length) {
+        existing.blast_radius = JSON.stringify(a.blastRadius);
+        this.persist();
+      }
       return {
         id: String(existing.id),
         kind: existing.kind as Approval["kind"],
@@ -266,7 +391,7 @@ export class SkailrStore {
     id: string,
     decision: "approve" | "reject" | "defer",
     reason?: string,
-  ): Approval | null {
+  ): (Approval & { channel?: { parentId?: string; replyId?: string; file?: string } }) | null {
     const row = this.data.approvals.find((r) => r.id === id);
     if (!row) return null;
     const status =
@@ -282,6 +407,7 @@ export class SkailrStore {
       programId: (row.program_id as string) || undefined,
       payload: { approvalId: id, decision, reason },
     });
+    const channel = this.resolveApprovalChannel(id, decision, reason);
     return {
       id: String(row.id),
       kind: row.kind as Approval["kind"],
@@ -292,6 +418,7 @@ export class SkailrStore {
       reason: reason ?? (row.reason as string) ?? undefined,
       createdAt: String(row.created_at),
       decidedAt,
+      channel,
     };
   }
 

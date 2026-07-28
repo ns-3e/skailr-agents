@@ -13,6 +13,7 @@ import {
   exportLedgerStub,
   injectUiBootstrap,
   seedDemoProgram,
+  writeResumeBrief,
 } from "@skailr/server";
 
 // Tolerate pasted prose like `skailr serve,` or `skailr serve.`
@@ -79,9 +80,51 @@ const main = defineCommand({
       },
     }),
     continue: defineCommand({
-      meta: { description: "Print resume guidance from ledger" },
+      meta: { description: "Print resume brief for /continue-program" },
       async run() {
-        runScript("ledger-status.mjs", ["--json"]);
+        mkdirSync(".claude/program", { recursive: true });
+        const remote = await api("/resume-brief");
+        if (remote.status < 400 && remote.body && typeof remote.body === "object") {
+          const body = remote.body as {
+            path?: string;
+            program?: Record<string, unknown> | null;
+            openApprovals?: unknown[];
+            decisions?: Array<{
+              decision: string;
+              approvalId: string;
+              reason?: string;
+              messageId?: string;
+              subject?: string;
+            }>;
+          };
+          const p = body.program;
+          console.log("# Skailr continue — resume brief\n");
+          console.log(
+            `Program: ${p?.id ?? "(none)"}  status=${p?.status ?? "?"}  next=${p?.next_phase ?? "?"}`,
+          );
+          console.log(`Open inbox: ${(body.openApprovals || []).length}`);
+          const decisions = body.decisions || [];
+          if (decisions.length) {
+            console.log("\nHuman decisions to apply:");
+            for (const d of decisions) {
+              console.log(
+                `  - ${d.decision} ${d.approvalId}` +
+                  (d.messageId ? ` / ${d.messageId}` : "") +
+                  (d.reason ? ` — ${d.reason}` : ""),
+              );
+            }
+          } else {
+            console.log("\nNo human decisions recorded yet.");
+          }
+          console.log(`\nWrote ${body.path || ".claude/program/resume-brief.md"}`);
+          console.log("Next: run /continue-program in Claude Code or Cursor (read the resume brief).");
+          return;
+        }
+        const store = new SkailrStore({ path: resolve(".skailr/skailr.json") });
+        writeResumeBrief(store, resolve(".claude/program/resume-brief.md"));
+        console.log(readFileSync(resolve(".claude/program/resume-brief.md"), "utf8"));
+        console.log("\n(API offline — brief from local .skailr/skailr.json)");
+        console.log("Next: run /continue-program in Claude Code or Cursor.");
       },
     }),
     serve: defineCommand({

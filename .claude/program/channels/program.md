@@ -41,7 +41,7 @@ from: program-architect (program)
 to: @human
 type: contract-change
 re: MSG-002
-status: blocked-on-human
+status: resolved
 ---
 Proposed change to frozen contract `invoice-reminder`: `amount` integer → decimal(12,2).
 Blast radius: WS-1 (producer) and WS-2 (consumes the amount to render it in the
@@ -61,3 +61,13 @@ status: resolved
 Human approved. Contract `invoice-reminder` updated: `amount` is now `decimal(12,2)`,
 version bumped v1 → v2. WS-1 and WS-2 must re-read the contract before continuing. Ledger
 updated. Resuming the concurrency group.
+
+### MSG-0005
+from: human (control-plane)
+to: program-architect (program)
+type: decision
+re: MSG-003
+status: resolved
+---
+Human decision: **approve**
+(Resolves MSG-003 via control-plane approval ap-MSG-003)

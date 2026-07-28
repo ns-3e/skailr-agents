@@ -5,4 +5,7 @@ export {
   exportLedgerStub,
   storeNeedsDemoSeed,
   seedDemoProgram,
+  parseBlastRadius,
+  persistDecisionArtifacts,
+  writeResumeBrief,
 } from "./sync.js";

@@ -45,4 +45,52 @@ describe("demo seed", () => {
     const ids = opens.map((r) => (r as { id: string }).id);
     assert.equal(ids.length, new Set(ids).size);
   });
+
+  it("fills blast_radius from channel body on demo seed", () => {
+    const store = new SkailrStore({ path: ":memory:" });
+    seedDemoProgram(store, demoDir);
+    const ap = store.listApprovals("open").find((a) => (a as { id: string }).id === "ap-MSG-0001") as
+      | { blast_radius: string }
+      | undefined;
+    assert.ok(ap);
+    const blast = JSON.parse(String(ap.blast_radius || "[]")) as string[];
+    assert.deepEqual(blast, ["orders-web", "orders-api"]);
+  });
+});
+
+describe("decision loop", () => {
+  it("resolves channel MSG and records channel.posted on approve", () => {
+    const store = new SkailrStore({ path: ":memory:" });
+    store.upsertProgram({ id: "parallel-api", name: "parallel-api", status: "building", nextPhase: "B_workstreams" });
+    store.upsertChannelMessage({
+      id: "MSG-0001",
+      programId: "parallel-api",
+      type: "blocker",
+      status: "open",
+      to: "@human",
+      from: "orders-web",
+      body: "Need confirmation.\nBlast radius: orders-web, orders-api.",
+      file: join(demoDir, "channels/program.md"),
+    });
+    store.createApproval({
+      id: "ap-MSG-0001",
+      kind: "human",
+      programId: "parallel-api",
+      subject: "blocker MSG-0001",
+      blastRadius: ["orders-web", "orders-api"],
+    });
+    const decided = store.decideApproval("ap-MSG-0001", "approve", "UUIDs confirmed");
+    assert.equal(decided?.status, "approved");
+    assert.equal(decided?.channel?.parentId, "MSG-0001");
+    assert.ok(decided?.channel?.replyId);
+
+    const parent = store.getChannelMessage("MSG-0001");
+    assert.equal(parent?.status, "resolved");
+    const events = store.listEvents({ programId: "parallel-api" });
+    assert.ok(events.some((e) => e.type === "approval.decided"));
+    assert.ok(events.some((e) => e.type === "channel.posted"));
+    const decisions = store.listRecentDecisions(5);
+    assert.equal(decisions[0]?.decision, "approve");
+    assert.equal(decisions[0]?.messageId, "MSG-0001");
+  });
 });
