@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "artifacts": [
     {
       "id": "architect",
@@ -305,6 +305,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-resume-from-feature-progress",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/resume-from-feature-progress/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-resume-from-ledger",
       "tier": "skill",
       "type": "skill",
@@ -316,6 +323,13 @@
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/route-channels/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-route-models",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/route-models/SKILL.md",
       "cursor_path": null
     },
     {
@@ -333,11 +347,25 @@
       "cursor_path": null
     },
     {
+      "id": "skill-write-handoff-and-yield",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/write-handoff-and-yield/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "registry",
       "tier": "program",
       "type": "registry",
       "claude_path": ".claude/teams/registry.md",
       "cursor_path": ".cursor/rules/registry.mdc"
+    },
+    {
+      "id": "model-routing",
+      "tier": "config",
+      "type": "config",
+      "claude_path": ".claude/model-routing.json",
+      "cursor_path": ".cursor/model-routing.md"
     },
     {
       "id": "channels-PROTOCOL",

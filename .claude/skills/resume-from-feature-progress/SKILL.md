@@ -28,6 +28,15 @@ Map `next` to the feature pipeline phase:
 | `docs` | Phase 7 — program-documenter |
 | `null` (complete) | Report status; do not rebuild |
 
+## Mid-slice handoffs
+
+If JSON includes `handoffs` (files under `.claude/tmp/handoff/<slice>.md`):
+
+- Treat as a **context yield**, not a failure. Keep build / that slice `in_progress`.
+- When re-dispatching that engineer, pass the handoff path as **primary** context plus `spec.md` / `story.md` / `research.md`. Instruct: continue from handoff; skip **Done**; do not redo finished work.
+- Follow skill `write-handoff-and-yield` for yield/resume discipline. Cap consecutive yields per slice at **5**, then surface to the human.
+- Before marking a slice `complete`, confirm its handoff file is deleted.
+
 ## Rules
 
 - Do **not** archive `.claude/tmp/` when resuming an incomplete run.

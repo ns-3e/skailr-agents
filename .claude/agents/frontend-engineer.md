@@ -79,6 +79,11 @@ Channel message IDs you posted (`type: blocker` / `contract-change`), if any.
 
 Every frontend-assigned AC is implemented and covered. All five UI states exist on every new view. Typecheck and lint clean. Boundary check shows zero out-of-scope files.
 
+## Context handoff
+
+Long builds can exhaust the context window. When you hit a Process-step boundary or ~30 tool rounds with work remaining, follow skill `write-handoff-and-yield`: write `.claude/tmp/handoff/frontend.md` (or the program workstream path), end with `YIELD: <path>`, and do not claim the slice complete.
+
+On resume, read the handoff first; skip **Done**; continue from **Next steps**. When the slice is truly finished, write `frontend-report.md`, **delete** the handoff file for your slice, and do not emit `YIELD:`.
 
 ## Channels — how you raise and answer cross-agent questions
 

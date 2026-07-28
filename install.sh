@@ -113,6 +113,11 @@ install_claude() {
     echo "  + .claude/settings.skailr.json"
   fi
 
+  if [[ -f "$SCRIPT_DIR/.claude/model-routing.json" ]]; then
+    cp "$SCRIPT_DIR/.claude/model-routing.json" "$TARGET/.claude/model-routing.json"
+    echo "  + .claude/model-routing.json"
+  fi
+
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
   echo "  + .claude/tmp/ .claude/program/"
@@ -154,6 +159,11 @@ install_cursor() {
   if [[ -f "$SCRIPT_DIR/.cursor/README.md" ]]; then
     cp "$SCRIPT_DIR/.cursor/README.md" "$TARGET/.cursor/README.md"
     echo "  + .cursor/README.md"
+  fi
+
+  if [[ -f "$SCRIPT_DIR/.cursor/model-routing.md" ]]; then
+    cp "$SCRIPT_DIR/.cursor/model-routing.md" "$TARGET/.cursor/model-routing.md"
+    echo "  + .cursor/model-routing.md"
   fi
 
   if [[ ! -f "$TARGET/.claude/teams/registry.md" ]]; then

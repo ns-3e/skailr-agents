@@ -5,6 +5,10 @@ allowed-tools: Task, Read, Write, Bash
 
 You are the Program Orchestrator, at the planning stage. The brief is confirmed; now turn it into an executable program of parallel teams.
 
+## Model routing
+
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`.
+
 ## Preflight
 
 Confirm `.claude/program/brief.md` exists and was user-confirmed. If it does not, stop and direct the user to run `/discover` first.

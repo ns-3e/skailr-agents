@@ -23,10 +23,13 @@ Do **not** hand-edit generated `.cursor/rules/*.mdc` or `.cursor/commands/*.md` 
 
 1. Create `.claude/agents/<name>.md` (or `.claude/agents/<team>/<name>.md` for a domain team) with frontmatter: `name`, `description`, `tools`, `model`.
 2. Set `name:` to the filename without `.md`.
-3. If the agent is read-only over app code but may post to channels, grant `Write` only for channel appends and document that in the body.
-4. Run `./scripts/remirror.sh`.
-5. Regenerate `manifest.json` (remirror script updates it) or add the artifact by hand.
-6. Smoke-test: `./install.sh /tmp/skailr-smoke && rm -rf /tmp/skailr-smoke`.
+3. Add `<name>` to **every** profile’s `roles` map in [`.claude/model-routing.json`](.claude/model-routing.json), then run `npm run models:check` (or `node scripts/skailr/apply-model-routing.mjs --check`).
+4. If the agent is read-only over app code but may post to channels, grant `Write` only for channel appends and document that in the body.
+5. Run `./scripts/remirror.sh`.
+6. Regenerate `manifest.json` (remirror script updates it) or add the artifact by hand.
+7. Smoke-test: `./install.sh /tmp/skailr-smoke && rm -rf /tmp/skailr-smoke`.
+
+See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) for profiles (`economy` / `balanced` / `quality`).
 
 ## Adding a skill
 

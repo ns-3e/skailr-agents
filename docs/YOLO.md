@@ -17,6 +17,8 @@ Same as the [README Quick start](../README.md#quick-start): Claude Code installe
 
 Prefer a clean working tree (or commit WIP first). Feature YOLO uses `feature/<slug>`; program YOLO uses `program/<slug>`.
 
+YOLO still respects the active **model routing** profile (`.claude/model-routing.json`) and escalate-on-retry via skill `route-models` — see [MODEL_ROUTING.md](MODEL_ROUTING.md).
+
 ---
 
 ## Feature YOLO — `/yolo`
@@ -37,7 +39,7 @@ That is the entire interaction until the final report.
 | Validate | `validator` | No |
 | Docs | `program-documenter` | No |
 
-Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `mode.md` = `yolo`, reports, channels).
+Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `mode.md` = `yolo`, `progress.md`, reports, channels).
 
 Gated alternative: `/ship-feature` → `/continue-feature` → `/build-feature`.
 
@@ -62,11 +64,34 @@ customer portal to pay, admin dashboard. Prefer TypeScript.
 | Validate | `program-validator` | No |
 | Docs | `program-documenter` | No |
 
-Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md`, `mode.md` = `yolo`, `contracts/`, `ledger.md`, `ownership.json`, channels, workstream reports). Previous program state is auto-archived.
+Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md`, `mode.md` = `yolo`, `contracts/`, `ledger.md`, `ownership.json`, channels, workstream reports). A **new** initiative archives prior program state; an incomplete run is never archived on resume.
 
 Gated alternative: `/discover` → `/plan-program` → `/build-program`.
 
 **Important:** `/yolo` will not decompose a whole product into workstreams. Use `/yolo-program` (or gated Path A) for that.
+
+---
+
+## Resume after usage limits (or any mid-session death)
+
+Claude Code can stop mid-run when usage resets. Skailr survives that via **disk checkpoints** — not chat memory.
+
+| Scope | Cursor on disk | Resume with |
+| ----- | -------------- | ----------- |
+| Feature | `.claude/tmp/progress.md` (+ artifacts) | `/continue-feature`, or re-run `/yolo` with **no new prompt** (or the same request text) |
+| Program | `.claude/program/ledger.md` (+ contracts/channels) | `/continue-program`, or re-run `/yolo-program` with **no new prompt** (or the same request text) |
+
+Rules:
+
+- Orchestrators mark each phase complete in progress/ledger **before** starting the next agent.
+- Resume picks the first incomplete phase and does **not** redo finished work or reset channels.
+- Do **not** change the request text or say “start over” unless you want a fresh archive.
+- After limits reset: same project directory, then one of the resume commands above.
+- When the run eventually finishes, the final report still lists **Assumptions made** and the validator verdict.
+
+### Mid-slice context handoff
+
+Build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may also yield **inside** a build Task when a process-step or tool-round budget hits. They write `.claude/tmp/handoff/<slice>.md` (or `.claude/program/workstreams/<ws>/handoff/<slice>.md`), end with `YIELD: <path>`, and the orchestrator immediately re-dispatches the same role in a **fresh Task** with that handoff — or `/continue-feature` / `/continue-program` picks it up after a session death. Skill: `write-handoff-and-yield`. Consecutive yields per slice are capped at 5.
 
 ---
 
@@ -103,3 +128,5 @@ If the verdict is SHIP WITH FIXES or DO NOT SHIP, ask Claude to fix blocking fin
 | One feature, one-shot | `/yolo` |
 | Whole app, gated | `/discover` → `/plan-program` → `/build-program` |
 | Whole app, one-shot | `/yolo-program` |
+| Resume after usage limits (feature) | `/continue-feature` or `/yolo` with no new prompt |
+| Resume after usage limits (program) | `/continue-program` or `/yolo-program` with no new prompt |

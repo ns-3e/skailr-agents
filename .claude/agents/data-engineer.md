@@ -124,6 +124,11 @@ The pipeline is idempotent and re-runnable, proven by running it twice and showi
 
 Never trade correctness for speed. Never widen access to move faster. If a request would require either, stop and surface the trade to the human instead of making it silently.
 
+## Context handoff
+
+Long builds can exhaust the context window. When you hit a Process-step boundary or ~30 tool rounds with work remaining, follow skill `write-handoff-and-yield`: write `.claude/tmp/handoff/data.md` (or `.claude/program/workstreams/<ws>/handoff/data.md` in a program), end with `YIELD: <path>`, and do not claim the slice complete.
+
+On resume, read the handoff first; skip **Done**; continue from **Next steps**. When the slice is truly finished, write `data-report.md`, **delete** the handoff file for your slice, and do not emit `YIELD:`.
 
 ## Channels — how you raise and answer cross-agent questions
 

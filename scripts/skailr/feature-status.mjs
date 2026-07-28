@@ -4,7 +4,7 @@
  * Usage: node scripts/skailr/feature-status.mjs [--progress .claude/tmp/progress.md] [--json]
  */
 import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 function parseFrontmatter(text) {
   if (!text.startsWith("---")) return {};
@@ -31,19 +31,18 @@ function extractTable(body, heading) {
     if (inSection && line.startsWith("## ")) break;
     if (!inSection || !line.startsWith("|")) continue;
     if (line.includes("---") || /Phase|Slice/i.test(line)) continue;
-    const cols = line
-      .split("|")
-      .map((c) => c.trim())
-      .filter(Boolean);
-    if (cols.length >= 2) {
-      rows.push({
-        name: cols[0],
-        status: cols[1],
-        // Phases: Phase|Status|Completed|Notes — Build: Slice|Status|Report
-        extra: cols.length >= 4 ? cols[3] : cols[2] || "",
-        completed: cols.length >= 3 ? cols[2] : "",
-      });
-    }
+    const raw = line.split("|").map((c) => c.trim());
+    // Drop leading/trailing empties from markdown row fences; keep interior blanks
+    if (raw.length && raw[0] === "") raw.shift();
+    if (raw.length && raw[raw.length - 1] === "") raw.pop();
+    if (raw.length < 2) continue;
+    rows.push({
+      name: raw[0],
+      status: raw[1],
+      // Phases: Phase|Status|Completed|Notes — Build: Slice|Status|Report
+      completed: raw[2] || "",
+      extra: raw.length >= 4 ? raw[3] : raw[2] || "",
+    });
   }
   return rows;
 }
@@ -111,6 +110,17 @@ function main() {
       ? buildSlices.filter((s) => s.status !== "complete").map((s) => s.slice)
       : [];
 
+  const HANDOFF_SLICES = ["backend", "frontend", "data"];
+  const handoffs = [];
+  if (next === "build") {
+    for (const slice of HANDOFF_SLICES) {
+      const rel = join(".claude/tmp/handoff", `${slice}.md`);
+      if (existsSync(resolve(rel))) {
+        handoffs.push({ slice, path: rel.replace(/\\/g, "/") });
+      }
+    }
+  }
+
   const payload = {
     ok: true,
     feature: fm.feature || null,
@@ -122,6 +132,7 @@ function main() {
     buildSlices,
     next,
     partialBuild: partialBuild.length ? partialBuild : null,
+    handoffs: handoffs.length ? handoffs : null,
     complete: next === null,
   };
   if (json) console.log(JSON.stringify(payload, null, 2));
@@ -132,6 +143,11 @@ function main() {
     console.log(`Next:    ${payload.next || "(all phases complete)"}`);
     if (payload.partialBuild) {
       console.log(`Build pending slices: ${payload.partialBuild.join(", ")}`);
+    }
+    if (payload.handoffs) {
+      console.log(
+        `Handoffs: ${payload.handoffs.map((h) => `${h.slice}=${h.path}`).join(", ")}`,
+      );
     }
     for (const p of phases) console.log(`  - ${p.phase}: ${p.status}`);
   }

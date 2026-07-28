@@ -6,6 +6,10 @@ allowed-tools: Task, Read, Write, Bash
 
 You are the Program Orchestrator in **YOLO mode**. The user wants one shot for a whole app or multi-part initiative: describe it once, then discover → plan → freeze → build → integrate → validate → docs **without stopping for human approval**.
 
+## Model routing
+
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry.
+
 **Initiative request:** $ARGUMENTS
 
 ## YOLO rules (non-negotiable)
@@ -77,6 +81,7 @@ Follow `/build-program` Phases A–E exactly (foundation → parallel workstream
 - Engineering workstreams: use YOLO feature orchestration (auto-approve story/spec) rather than stopping for `/continue-feature` / `/build-feature` gates.
 - Script gates and ledger updates remain mandatory before advancing phases.
 - Emit stubs as needed: `node scripts/skailr/emit-stubs.mjs`.
+- Context handoff: honor `YIELD:` and `.claude/program/workstreams/<ws>/handoff/*.md` (and nested `.claude/tmp/handoff/`) per `/build-program` and skill `write-handoff-and-yield`.
 
 ## Final report to the user
 
@@ -105,4 +110,5 @@ Offer to fix blocking findings and re-run integration/validation, or to open the
 - Never advance on a red kernel/tree or an unresolved boundary collision.
 - YOLO skips **human** gates only — not ownership/contract/channel script gates, not integration, not program validation.
 - Keep the ledger current at every transition so usage-limit deaths can resume via `/continue-program` or re-invoking `/yolo-program` with no new request.
+- Honor mid-slice `YIELD:` handoffs: fresh Task re-dispatch; never treat a yield as slice completion.
 - If any agent's output does not conform to its contract, re-invoke once; if it fails twice, surface it in the final report rather than inventing a pass.

@@ -13,6 +13,10 @@ The phase order, gates, and contracts below are unchanged — only the dispatch 
 
 You are the Program Orchestrator, at the discovery stage. Your job here is narrow: get from a long, ambiguous request to a brief the user has explicitly confirmed. You do not plan or build yet.
 
+## Model routing
+
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`.
+
 **Initiative request:** $ARGUMENTS
 
 ## Setup

@@ -131,7 +131,7 @@ Typical flow:
 
 State lives under `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`, channels) so you can resume across sessions. Prefer a clean working tree before build.
 
-**Resume later:** `/continue-program` when a session stopped mid-program.
+**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. Engineering mid-slice handoffs live under `.claude/program/workstreams/<ws>/handoff/` and are continued automatically.
 
 #### Path A2 — YOLO (one shot, no approval gates)
 
@@ -167,9 +167,11 @@ What happens:
 
 Backend + frontend engineers run in parallel → E2E verification → adversarial validation → docs.
 
-Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, reports). Runtime state is gitignored.
+Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `progress.md`, reports). Runtime state is gitignored.
 
-**Next single features:** run `/ship-feature …` again. Stale tmp files are archived automatically.
+**Resume later:** `/continue-feature` when a session stopped mid-feature (including Claude Code usage limits). Incomplete runs are not archived. Mid-build, engineers may also write a handoff under `.claude/tmp/handoff/` and yield a fresh Task; resume continues from that file automatically.
+
+**Next single features:** run `/ship-feature …` with a **new** request (different from `request.md`). Only then are stale tmp files archived.
 
 ---
 
@@ -179,7 +181,7 @@ Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, r
 /yolo Users should get an email reminder 3 days before an invoice is due
 ```
 
-Same pipeline as Path B, but story/spec approvals are skipped. Read the final **Assumptions made** section carefully. For a **whole app** one-shot, use Path A2 (`/yolo-program`) instead — `/yolo` will not decompose into workstreams. Full notes: [docs/YOLO.md](docs/YOLO.md).
+Same pipeline as Path B, but story/spec approvals are skipped. Read the final **Assumptions made** section carefully. If usage limits stop the run mid-way, `/continue-feature` (or `/yolo` with no new prompt) picks up from `.claude/tmp/progress.md`. For a **whole app** one-shot, use Path A2 (`/yolo-program`) instead — `/yolo` will not decompose into workstreams. Full notes: [docs/YOLO.md](docs/YOLO.md).
 
 ---
 
@@ -352,6 +354,7 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 ```bash
 node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
 node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
+node scripts/skailr/feature-status.mjs --json
 ```
 
 See `examples/parallel-api/` and [docs/intair-seam.md](docs/intair-seam.md).
@@ -360,7 +363,16 @@ See `examples/parallel-api/` and [docs/intair-seam.md](docs/intair-seam.md).
 
 ## Tuning
 
-- Swap `model:` in agent frontmatter. Researcher/story-writer often fine on Sonnet; architect, engineers, and validator benefit from Opus.
+- **Model routing** — switch profiles to trade cost vs quality. See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md).
+
+```bash
+node scripts/skailr/apply-model-routing.mjs --profile economy   # haiku digests, sonnet drafts, opus judgment
+node scripts/skailr/apply-model-routing.mjs --profile balanced # default (committed frontmatter)
+node scripts/skailr/apply-model-routing.mjs --profile quality  # prefer opus
+npm run models:check
+```
+
+- Or hand-edit `model:` in agent frontmatter (then keep `model-routing.json` in sync). Researcher/story-writer often fine on Sonnet; architect, engineers, and validator benefit from Opus.
 - Add repo-specific conventions to each agent's Standards section.
 - If your repo does not split backend/frontend, redefine engineers along your real seam. The pattern is **disjoint ownership**, not the names.
 - Back boundaries with CI that fails PRs whose backend commits touch frontend paths. Prompt scoping is a convention, not a hard sandbox.

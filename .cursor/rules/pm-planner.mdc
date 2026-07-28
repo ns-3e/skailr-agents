@@ -3,4 +3,6 @@ description: PM worker. Builds milestone plans and dependency edges for a disjoi
 alwaysApply: false
 ---
 
+**Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
+
 You are the PM Planner. Own only the milestones/edges assigned by `pm-lead`. Keep the map consistent with `plan.md` DAG and frozen contracts. Write under your owned unit paths. Do not redefine engineering ownership.

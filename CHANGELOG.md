@@ -2,13 +2,27 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.4.0] — 2026-07-28
+
+### Added
+
+- Mid-slice **context handoff**: schema `handoff.template.md`, skill `write-handoff-and-yield`, and orchestrator re-dispatch so build workers (`backend` / `frontend` / `data`) can yield a fresh Task before context quality collapses
+- `feature-status.mjs` reports `handoffs` when `.claude/tmp/handoff/<slice>.md` exists; resume skills and build/continue/yolo commands continue-from-handoff
+
+### Changed
+
+- Feature progress template documents the `## Handoffs` convention
+- Engineer agents and feature/program orchestrator commands honor `YIELD:` with a 5-yield cap per slice
+
 ## [1.3.0] — 2026-07-28
 
 ### Added
 
 - `/yolo` — one-shot workstream pipeline (skip story/spec human gates); see [docs/YOLO.md](docs/YOLO.md)
 - `/yolo-program` — one-shot program pipeline (skip discover/plan freezes; auto-decide mid-build escalations); see [docs/YOLO.md](docs/YOLO.md)
+- Feature phase cursor: `.claude/tmp/progress.md` + `scripts/skailr/feature-status.mjs` + skill `resume-from-feature-progress` (survive Claude Code usage-limit / session death)
 - README quick start for Claude Code CLI (greenfield → feature or whole-app paths)
+- **Model routing** — `.claude/model-routing.json` profiles (`economy` / `balanced` / `quality`), `scripts/skailr/apply-model-routing.mjs`, skill `route-models`, Cursor mirror `.cursor/model-routing.md`; see [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md)
 
 ### Removed
 
@@ -22,6 +36,7 @@ All notable changes to this project are documented in this file.
 - Repo is pack-only again: Claude Code / Cursor agent operating model + `scripts/skailr/*.mjs`
 - Intair TypeScript stub lives at `docs/intair-client.stub.ts`
 - Installers no longer append `.skailr/` or apps/packages dist ignore lines
+- `/yolo` / `/yolo-program` / `/ship-feature` resume incomplete runs instead of auto-archiving; `/continue-feature` and `/continue-program` are mode-aware (YOLO vs gated)
 
 ## [1.2.0] — 2026-07-28
 

@@ -28,6 +28,18 @@ request: .claude/tmp/request.md
 | backend | pending | .claude/tmp/backend-report.md |
 | frontend | pending | .claude/tmp/frontend-report.md |
 
+## Handoffs
+
+Present only while a build slice has yielded mid-Task (context reset). Convention paths — `feature-status.mjs` detects these files:
+
+| Slice | Path (when present) |
+|-------|---------------------|
+| backend | `.claude/tmp/handoff/backend.md` |
+| frontend | `.claude/tmp/handoff/frontend.md` |
+| data | `.claude/tmp/handoff/data.md` |
+
+Delete the handoff file when that slice completes. Schema: `.claude/program/schemas/handoff.template.md`. Skill: `write-handoff-and-yield`.
+
 ## Notes
 
-Append-only operational notes (resume hints, partial failures). Do not reset on resume.
+Append-only operational notes (resume hints, partial failures, `handoff: <path> (yield N)`). Do not reset on resume.

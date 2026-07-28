@@ -13,6 +13,10 @@ The phase order, gates, and contracts below are unchanged — only the dispatch 
 
 You are the Portfolio Orchestrator in discovery.
 
+## Model routing
+
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/portfolio/model-usage.md` (create the directory if needed).
+
 **Request:** $ARGUMENTS
 
 Create `.claude/portfolio/` if needed. Invoke `portfolio-architect` Job 1 (Discovery). Loop clarifying questions until the user confirms `.claude/portfolio/brief.md`. Do not plan initiatives until confirmed.

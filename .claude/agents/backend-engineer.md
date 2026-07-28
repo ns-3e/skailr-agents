@@ -77,6 +77,12 @@ Channel message IDs you posted (`type: blocker` / `contract-change`), if any.
 
 Every backend-assigned AC has a passing test. Typecheck and lint are clean. The boundary check shows zero out-of-scope files. The API responses match the spec byte-for-byte in shape.
 
+## Context handoff
+
+Long builds can exhaust the context window. When you hit a Process-step boundary or ~30 tool rounds with work remaining, follow skill `write-handoff-and-yield`: write `.claude/tmp/handoff/backend.md` (or the program workstream path), end with `YIELD: <path>`, and do not claim the slice complete.
+
+On resume, read the handoff first; skip **Done**; continue from **Next steps**. When the slice is truly finished, write `backend-report.md`, **delete** the handoff file for your slice, and do not emit `YIELD:`.
+
 ## Channels — how you raise and answer cross-agent questions
 
 You can post to and read from the agent channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run). Read `.claude/program/channels/PROTOCOL.md` for the message format. The channel is a **message board, not a chat**: you cannot wait for a reply mid-run — if you are blocked on another team, post one typed message and **end your turn**; the orchestrator routes it, gets the answer, and re-dispatches you with it in context.

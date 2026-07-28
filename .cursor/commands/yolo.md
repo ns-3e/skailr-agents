@@ -13,6 +13,10 @@ The phase order, gates, and contracts below are unchanged — only the dispatch 
 
 You are the Orchestrator in **YOLO mode**. The user wants one shot: describe the feature, then the agent team runs end-to-end without stopping for story or spec approval.
 
+## Model routing
+
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry.
+
 **Feature request:** $ARGUMENTS
 
 ## YOLO rules (non-negotiable)
@@ -34,7 +38,7 @@ Create `.claude/tmp/` if it does not exist.
    - `$ARGUMENTS` is empty, or
    - `$ARGUMENTS` matches the text in `.claude/tmp/request.md` (trim whitespace), or
    - the user said to continue / resume after usage limits
-3. On resume: keep channels; read `mode.md` (expect `yolo`); jump to the phase named by `next` (and only missing build slices if `partialBuild` is set). Skip finished phases.
+3. On resume: keep channels; read `mode.md` (expect `yolo`); jump to the phase named by `next` (and only missing build slices if `partialBuild` is set; pass any `handoffs` into those engineer Tasks). Skip finished phases.
 4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Archive to `.claude/tmp/archive/<timestamp>/`.
 
 On a fresh start:
@@ -47,6 +51,14 @@ On a fresh start:
 ## Checkpoint rule
 
 After each phase’s artifact exists and your checks pass, mark that phase `complete` in `progress.md` (and update frontmatter `status` / `updated`) **before** dispatching the next agent. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark backend/frontend slices complete as each report lands; mark `build` complete only after both reports + ownership/channel gates pass. If only one side finished, leave `build` `in_progress` so resume re-dispatches only the missing engineer.
+
+## Context handoff (build workers)
+
+Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`). Paths: `.claude/tmp/handoff/<slice>.md`. Status JSON may include `handoffs`.
+
+- **Before** dispatching an engineer: if a handoff exists for that slice, pass it as primary context plus spec/story/research; instruct continue-from-handoff.
+- **After** `YIELD: <path>`: keep slice `in_progress`; immediately re-dispatch the same role in a fresh Task with handoff + spec (+ story/research). Cap consecutive yields per slice at **5**, then surface in the final report / to the human.
+- **On slice complete:** delete/confirm absent handoff file before marking the slice complete.
 
 ## Phase 1 — Research
 
@@ -85,10 +97,10 @@ Then **auto-approve** the spec. Checkpoint: `spec` → complete. Continue immedi
 
 Create the feature branch if one does not exist: `feature/<slug-from-story-title>`.
 
-Set `build` to `in_progress` in progress.md. Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only invoke slices listed in `partialBuild`).
+Set `build` to `in_progress` in progress.md. Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only invoke slices listed in `partialBuild`; include handoff paths from `handoffs` when present).
 
-When both return:
-- Read both reports; mark each slice complete in the Build slice table.
+When both return (after draining yield re-dispatch loops):
+- Read both reports; mark each slice complete in the Build slice table only when the report exists and no handoff remains for that slice.
 - Run `git diff --name-only` and verify no file was touched by both. Merge hazard → stop and report (this is a hard abort, not a human gate).
 - **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json`). Non-zero → halt.
 - **Channel router** (skill `route-channels`). Run `node scripts/skailr/validate-channels.mjs --tmp`. For open messages, route and re-dispatch as usual. Apply YOLO rules above for `@human` / `contract-change`.
@@ -141,3 +153,4 @@ Offer to fix blocking findings and re-run verify/validate, or to open the PR.
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it in the final report rather than inventing a pass.
 - YOLO skips **human** gates only. Script gates, ownership disjointness, and honest validation stay on.
 - Keep `progress.md` current at every transition so usage-limit deaths can resume via `/continue-feature` or re-invoking `/yolo` with no new request.
+- Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as slice completion.

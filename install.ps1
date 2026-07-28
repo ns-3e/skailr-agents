@@ -96,6 +96,12 @@ function Install-Claude {
         Write-Host "  + .claude/settings.skailr.json"
     }
 
+    $routing = Join-Path $ScriptDir ".claude\model-routing.json"
+    if (Test-Path $routing) {
+        Copy-Item $routing "$Target\.claude\model-routing.json" -Force
+        Write-Host "  + .claude/model-routing.json"
+    }
+
     foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
     }
@@ -138,6 +144,12 @@ function Install-Cursor {
     if (Test-Path $readme) {
         Copy-Item $readme "$Target\.cursor\README.md" -Force
         Write-Host "  + .cursor/README.md"
+    }
+
+    $modelRouting = Join-Path $ScriptDir ".cursor\model-routing.md"
+    if (Test-Path $modelRouting) {
+        Copy-Item $modelRouting "$Target\.cursor\model-routing.md" -Force
+        Write-Host "  + .cursor/model-routing.md"
     }
 
     $reg = "$Target\.claude\teams\registry.md"

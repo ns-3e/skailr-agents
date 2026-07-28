@@ -1,13 +1,15 @@
 {
   "name": "skailr-agents",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Multi-agent operating model for Claude Code and Cursor — roles, contracts, channels, and script gates",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
     "check:contracts": "node scripts/skailr/check-contracts.mjs",
     "check:channels": "node scripts/skailr/validate-channels.mjs",
-    "ledger:status": "node scripts/skailr/ledger-status.mjs"
+    "ledger:status": "node scripts/skailr/ledger-status.mjs",
+    "models:apply": "node scripts/skailr/apply-model-routing.mjs",
+    "models:check": "node scripts/skailr/apply-model-routing.mjs --check"
   },
   "engines": {
     "node": ">=18"

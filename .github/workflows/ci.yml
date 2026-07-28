@@ -30,6 +30,9 @@ jobs:
           done
           exit $fail
 
+      - name: Check model routing matches active profile
+        run: node scripts/skailr/apply-model-routing.mjs --check
+
       - name: Check manifest paths resolve
         run: |
           python3 - <<'PY'
@@ -73,7 +76,10 @@ jobs:
           test -f "$TMP/.claude/agents/legal/legal-lead.md"
           test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
           test -f "$TMP/scripts/skailr/check-ownership.mjs"
+          test -f "$TMP/.claude/model-routing.json"
+          test -f "$TMP/scripts/skailr/apply-model-routing.mjs"
           test -f "$TMP/.cursor/commands/build-feature.md"
+          test -f "$TMP/.cursor/model-routing.md"
           ./install.sh "$TMP" | grep -q 'already has'
           rm -rf "$TMP"
           echo "install OK"
