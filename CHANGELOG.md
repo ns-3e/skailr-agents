@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [1.3.0] — 2026-07-28
 
+### Added
+
+- `/yolo` — one-shot workstream pipeline (skip story/spec human gates); see [docs/YOLO.md](docs/YOLO.md)
+- `/yolo-program` — one-shot program pipeline (skip discover/plan freezes; auto-decide mid-build escalations); see [docs/YOLO.md](docs/YOLO.md)
+- README quick start for Claude Code CLI (greenfield → feature or whole-app paths)
+
 ### Removed
 
 - Control plane monorepo: `@skailr/core`, `@skailr/server`, `@skailr/cli`, `@skailr/web` (CEO inbox UI)

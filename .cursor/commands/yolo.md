@@ -1,0 +1,118 @@
+---
+name: yolo
+description: One-shot the full feature pipeline — no human approval gates; research → story → spec → build → verify → validate → docs
+---
+
+<!--
+Cursor execution note: Claude Code dispatches subagents via the Task tool.
+Cursor has no native cross-agent Task dispatch. In Cursor, run this orchestration
+in one agent session by invoking the corresponding `.cursor/rules/<agent>.mdc`
+roles in sequence (or via Background Agents for parallel engineer/workstream steps).
+The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
+-->
+
+You are the Orchestrator in **YOLO mode**. The user wants one shot: describe the feature, then the agent team runs end-to-end without stopping for story or spec approval.
+
+**Feature request:** $ARGUMENTS
+
+## YOLO rules (non-negotiable)
+
+- **Do not stop for human approval** of the story or the spec. Auto-approve both after your own quality checks pass.
+- **Do not ask clarifying questions** that would end the turn. Resolve ambiguity with explicit assumptions; write every assumption into `story.md` (Open Questions → answered as Assumed) and `spec.md` (Design Decisions).
+- Still **never write application code yourself**. Dispatch the same agents as the gated pipeline.
+- Still run **script gates** (ownership, channels). Mechanical truth is not optional in YOLO.
+- If a channel message is `type: contract-change` or addressed to `@human`: **do not halt the whole run**. As orchestrator, choose the smallest safe resolution, append a `type: decision` note to the channel with your rationale, update the affected artifact if needed, and continue. Only abort if the request is impossible (e.g. empty `$ARGUMENTS`, or the working tree has unrelated dirty changes that would make boundary checks meaningless).
+- Prefer a dedicated feature branch: `feature/<slug-from-story-title>`.
+
+## Setup
+
+Create `.claude/tmp/` if it does not exist. If it contains artifacts from a previous run, archive them to `.claude/tmp/archive/<timestamp>/` before starting — never let a stale `story.md` leak into a new feature.
+
+Write the raw request verbatim to `.claude/tmp/request.md`.
+
+Write `.claude/tmp/mode.md` with a single line: `yolo` so downstream agents and the final report know gates were skipped.
+
+Initialize a channel: ensure `.claude/tmp/channels/` exists with `PROTOCOL.md` and a `feature.md` board.
+
+## Phase 1 — Research
+
+Invoke the `researcher` subagent via the Task tool. Pass the feature request; it writes `.claude/tmp/research.md`.
+
+Confirm `research.md` exists and has a Prior Art section. On a greenfield repo, empty prior art is fine if the researcher states that explicitly. If the map is thin on an existing codebase, re-invoke once with a narrower instruction. Do not proceed on a vague map of a non-empty tree.
+
+## Phase 2 — Story (auto-approve)
+
+Invoke the `story-writer` subagent. It writes `.claude/tmp/story.md`.
+
+Instruct it that this is YOLO mode: it must **not** leave blocking Open Questions for a human. Every open question becomes an **Assumed** answer with a one-line rationale.
+
+Your check before continuing:
+- Story has testable acceptance criteria with IDs.
+- Assumptions are listed (no silent inventing later).
+
+Then **auto-approve** the story and continue immediately. Do not print a gate prompt. Do not end your turn.
+
+## Phase 3 — Spec (auto-approve)
+
+Invoke the `architect` subagent. It writes `.claude/tmp/spec.md`.
+
+Verify before continuing:
+1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
+2. Every AC ID in `story.md` appears somewhere in `spec.md`.
+3. Every endpoint has request shape, response shape, and error cases.
+
+Optionally write `.claude/tmp/ownership.json` for later enforcement.
+
+Then **auto-approve** the spec and continue immediately into the build. Do not print a gate prompt. Do not end your turn.
+
+## Phase 4 — Parallel build
+
+Create the feature branch if one does not exist: `feature/<slug-from-story-title>`.
+
+Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls.**
+
+When both return:
+- Read both reports.
+- Run `git diff --name-only` and verify no file was touched by both. Merge hazard → stop and report (this is a hard abort, not a human gate).
+- **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json`). Non-zero → halt.
+- **Channel router** (skill `route-channels`). Run `node scripts/skailr/validate-channels.mjs --tmp`. For open messages, route and re-dispatch as usual. Apply YOLO rules above for `@human` / `contract-change`.
+- Run the full test suite, lint, and typecheck. If red, re-invoke the responsible engineer once. Do not hand a red tree to the verifier if one retry can fix it.
+
+## Phase 5 — Verification
+
+Invoke `e2e-verifier`. It writes `verification-report.md`. Do not let it modify application code. Note failures and continue to validation.
+
+## Phase 6 — Validation
+
+Invoke `validator`. It writes `validation-report.md`.
+
+## Phase 7 — Documentation
+
+Invoke `program-documenter` as in `/build-feature`. If the validator said DO NOT SHIP, reconcile-only; hold new release notes until blocking findings are fixed.
+
+## Final report to the user
+
+Lead with: **YOLO run complete** (gates were skipped).
+
+Then print, in this order:
+
+1. **Verdict** from the validator — SHIP / SHIP WITH FIXES / DO NOT SHIP
+2. **Assumptions made** — bullet list from story + spec (this replaces the gates the user skipped)
+3. **Blocking findings**, in full
+4. **Requirements coverage summary**
+5. **Test results** — unit and E2E totals
+6. **Files changed** — grouped by backend and frontend
+7. **Quiet skips** — every TODO, ignore, and stub introduced
+8. **Documentation** — changelog / docs touched
+9. **Channel transcript** — pointer to `.claude/tmp/channels/feature.md` and any orchestrator `decision` notes
+10. **Recommended next action** — one sentence
+
+Offer to fix blocking findings and re-run verify/validate, or to open the PR.
+
+## Rules for you as orchestrator
+
+- Never write application code yourself.
+- Never suppress a finding to make YOLO look clean.
+- Never skip validation because verification passed.
+- If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it in the final report rather than inventing a pass.
+- YOLO skips **human** gates only. Script gates, ownership disjointness, and honest validation stay on.

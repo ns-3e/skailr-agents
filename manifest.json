@@ -256,6 +256,20 @@
       "cursor_path": ".cursor/commands/status-portfolio.md"
     },
     {
+      "id": "yolo",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/yolo.md",
+      "cursor_path": ".cursor/commands/yolo.md"
+    },
+    {
+      "id": "yolo-program",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/yolo-program.md",
+      "cursor_path": ".cursor/commands/yolo-program.md"
+    },
+    {
       "id": "skill-check-ownership",
       "tier": "skill",
       "type": "skill",
