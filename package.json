@@ -1,0 +1,25 @@
+{
+  "name": "skailr-agents",
+  "private": true,
+  "version": "1.2.0",
+  "description": "Skailr agent org control plane — pack, CLI, API, and CEO UI",
+  "workspaces": [
+    "packages/core",
+    "packages/server",
+    "packages/cli",
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "npm run build -w @skailr/core && npm run build -w @skailr/server && npm run build -w @skailr/cli && npm run build -w @skailr/web",
+    "test": "npm run test -w @skailr/core && npm run test -w @skailr/server",
+    "skailr": "node packages/cli/dist/index.js",
+    "check:ownership": "node scripts/skailr/check-ownership.mjs",
+    "check:contracts": "node scripts/skailr/check-contracts.mjs",
+    "check:channels": "node scripts/skailr/validate-channels.mjs",
+    "ledger:status": "node scripts/skailr/ledger-status.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

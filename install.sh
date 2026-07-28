@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install skailr-agents (.claude + .cursor trees) into a target project.
+# Install skailr-agents (.claude + .cursor trees + scripts/skills) into a target project.
 # Usage: ./install.sh /path/to/target/project [--claude-only|--cursor-only]
 
 set -euo pipefail
@@ -9,14 +9,16 @@ usage() {
 Usage: ./install.sh <target-project-path> [--claude-only|--cursor-only]
 
 Copies the packaged agent library into a project:
-  .claude/agents/  .claude/commands/  .claude/teams/
-  .cursor/rules/   .cursor/commands/  (packaged roles/commands only)
+  .claude/agents/  .claude/commands/  .claude/teams/  .claude/skills/
+  .claude/program/schemas/  .claude/settings.skailr.json
+  scripts/skailr/  scripts/hooks/
+  .cursor/rules/   .cursor/commands/
   Creates .claude/tmp/ and .claude/program/
   Appends ignore rules if missing
 
 Flags:
-  --claude-only   Install only the .claude/ tree
-  --cursor-only   Install only the .cursor/ mirror (still creates .claude/tmp + program + registry path expectations via .claude/teams if missing — prefer full install)
+  --claude-only   Install only the .claude/ tree (+ scripts)
+  --cursor-only   Install only the .cursor/ mirror
 EOF
   exit 1
 }
@@ -49,51 +51,86 @@ TARGET="$(cd "$TARGET" 2>/dev/null && pwd)" || {
 
 echo "Installing skailr-agents → $TARGET (mode: $MODE)"
 
+install_scripts() {
+  mkdir -p "$TARGET/scripts/skailr" "$TARGET/scripts/hooks"
+  for f in "$SCRIPT_DIR"/scripts/skailr/*.mjs; do
+    cp "$f" "$TARGET/scripts/skailr/"
+    echo "  + scripts/skailr/$(basename "$f")"
+  done
+  if [[ -f "$SCRIPT_DIR/scripts/hooks/pre-commit.sample" ]]; then
+    cp "$SCRIPT_DIR/scripts/hooks/pre-commit.sample" "$TARGET/scripts/hooks/"
+    echo "  + scripts/hooks/pre-commit.sample"
+  fi
+}
+
 install_claude() {
   mkdir -p "$TARGET/.claude/agents/content" \
+           "$TARGET/.claude/agents/legal" \
+           "$TARGET/.claude/agents/pm" \
            "$TARGET/.claude/commands" \
            "$TARGET/.claude/teams" \
+           "$TARGET/.claude/skills" \
            "$TARGET/.claude/tmp" \
-           "$TARGET/.claude/program/channels"
+           "$TARGET/.claude/program/channels" \
+           "$TARGET/.claude/program/schemas"
 
-  # Agents
   for f in "$SCRIPT_DIR"/.claude/agents/*.md; do
     cp "$f" "$TARGET/.claude/agents/"
     echo "  + .claude/agents/$(basename "$f")"
   done
-  for f in "$SCRIPT_DIR"/.claude/agents/content/*.md; do
-    cp "$f" "$TARGET/.claude/agents/content/"
-    echo "  + .claude/agents/content/$(basename "$f")"
+  for team in content legal pm; do
+    for f in "$SCRIPT_DIR"/.claude/agents/"$team"/*.md; do
+      [[ -f "$f" ]] || continue
+      cp "$f" "$TARGET/.claude/agents/$team/"
+      echo "  + .claude/agents/$team/$(basename "$f")"
+    done
   done
-  # Commands
   for f in "$SCRIPT_DIR"/.claude/commands/*.md; do
     cp "$f" "$TARGET/.claude/commands/"
     echo "  + .claude/commands/$(basename "$f")"
   done
-  # Registry
   cp "$SCRIPT_DIR/.claude/teams/registry.md" "$TARGET/.claude/teams/registry.md"
   echo "  + .claude/teams/registry.md"
 
-  # Channel templates (tracked protocol + seeds)
+  if [[ -d "$SCRIPT_DIR/.claude/skills" ]]; then
+    cp -R "$SCRIPT_DIR/.claude/skills/." "$TARGET/.claude/skills/"
+    echo "  + .claude/skills/"
+  fi
+
   for f in PROTOCOL.md program.md feature.md; do
     cp "$SCRIPT_DIR/.claude/program/channels/$f" "$TARGET/.claude/program/channels/$f"
     echo "  + .claude/program/channels/$f"
   done
 
-  # Working dirs
+  for f in "$SCRIPT_DIR"/.claude/program/schemas/*; do
+    [[ -f "$f" ]] || continue
+    cp "$f" "$TARGET/.claude/program/schemas/"
+    echo "  + .claude/program/schemas/$(basename "$f")"
+  done
+
+  if [[ -f "$SCRIPT_DIR/.claude/settings.skailr.json" ]]; then
+    cp "$SCRIPT_DIR/.claude/settings.skailr.json" "$TARGET/.claude/settings.skailr.json"
+    echo "  + .claude/settings.skailr.json"
+  fi
+
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
   echo "  + .claude/tmp/ .claude/program/"
 }
 
-# Packaged Cursor artifacts only (do not wipe unrelated project rules)
 PACKAGED_RULES=(
   architect backend-engineer content-editor content-lead content-strategist
   content-writer data-engineer e2e-verifier frontend-engineer integration-verifier
   program-architect program-documenter program-validator researcher story-writer
-  validator registry
+  validator registry portfolio-architect initiative-lead
+  legal-lead legal-analyst compliance-reviewer legal-validator
+  pm-lead pm-planner risk-analyst status-reporter
 )
-PACKAGED_COMMANDS=(ship-feature build-feature discover plan-program build-program)
+PACKAGED_COMMANDS=(
+  ship-feature build-feature continue-feature
+  discover plan-program build-program continue-program
+  discover-portfolio plan-portfolio status-portfolio
+)
 
 install_cursor() {
   mkdir -p "$TARGET/.cursor/rules" "$TARGET/.cursor/commands"
@@ -119,7 +156,6 @@ install_cursor() {
     echo "  + .cursor/README.md"
   fi
 
-  # Cursor registry pointer expects .claude/teams/registry.md — ensure it exists on cursor-only
   if [[ ! -f "$TARGET/.claude/teams/registry.md" ]]; then
     mkdir -p "$TARGET/.claude/teams"
     cp "$SCRIPT_DIR/.claude/teams/registry.md" "$TARGET/.claude/teams/registry.md"
@@ -143,11 +179,14 @@ append_gitignore() {
     "!.claude/program/channels/PROTOCOL.md"
     "!.claude/program/channels/program.md"
     "!.claude/program/channels/feature.md"
+    "!.claude/program/schemas/"
+    ".skailr/"
+    "node_modules/"
+    "packages/*/dist/"
+    "apps/web/dist/"
   )
   touch "$gi"
-  # Migrate away from the old blanket ignore if present
   if grep -qxF ".claude/program/" "$gi" 2>/dev/null; then
-    # portable delete of exact line
     local tmp
     tmp="$(mktemp)"
     grep -vxF ".claude/program/" "$gi" > "$tmp" || true
@@ -168,8 +207,12 @@ case "$MODE" in
   both)
     install_claude
     install_cursor
+    install_scripts
     ;;
-  claude) install_claude ;;
+  claude)
+    install_claude
+    install_scripts
+    ;;
   cursor) install_cursor ;;
 esac
 

@@ -25,6 +25,8 @@ same way it does for engineering files.
 |---|---|
 | engineering | files / directories |
 | content | content pieces / documents / sections |
+| legal | requirements / clauses / control statements |
+| pm | milestones / dependency edges / risk items / status digests |
 | design | assets / artboards / components |
 | marketing | channels / campaigns / audience segments |
 | finance | worksheets / models / line-item schedules |
@@ -48,6 +50,24 @@ same way it does for engineering files.
 - **owns:** content pieces, document sections, scripts
 - **produces contracts of type:** message/positioning briefs, approved copy blocks, content that downstream teams (design, marketing) consume
 - **consumes:** brand guidelines; factual source material; positioning from marketing
+- **status:** built
+
+### legal
+- **capability:** Legal and compliance analysis — requirements, control statements, evidence maps, residual risk — with traceability as the correctness gate. Prime directive: never ship an unsourced obligation or unsigned control.
+- **route-when:** The workstream's deliverable is *obligations, controls, or compliance evidence* — policy clauses, regulatory mapping, security/privacy control checklists, audit traceability matrices, residual-risk registers.
+- **lead:** `legal-lead`
+- **owns:** requirements, clauses, control statements
+- **produces contracts of type:** approved requirement sets, compliance checklists, residual-risk registers
+- **consumes:** product briefs, engineering specs/ACs that create obligations, PM delivery commitments
+- **status:** built
+
+### pm
+- **capability:** Project/delivery management — milestones, dependency health, risk register, and exception digests for the CEO inbox. Escalates blockers, not green status noise.
+- **route-when:** The workstream's deliverable is *delivery coordination* — roadmap slices, dependency maps, risk registers, status digests, cross-team schedule health — not the underlying eng/content/legal artifacts themselves.
+- **lead:** `pm-lead`
+- **owns:** milestones, dependency edges, risk items, status digests
+- **produces contracts of type:** delivery commitments, milestone definitions, exception digests
+- **consumes:** eng/content/legal contracts for “blocked on”; ledger and channel inbox
 - **status:** built
 
 ### design

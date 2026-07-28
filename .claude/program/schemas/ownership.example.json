@@ -1,0 +1,22 @@
+{
+  "schema": "skailr.ownership/v1",
+  "baseRef": "HEAD",
+  "kernel": {
+    "globs": ["packages/shared/**"],
+    "frozen": false
+  },
+  "owners": [
+    {
+      "id": "backend",
+      "team": "engineering",
+      "workstream": "api",
+      "units": ["apps/api/**", "packages/server/**"]
+    },
+    {
+      "id": "frontend",
+      "team": "engineering",
+      "workstream": "web",
+      "units": ["apps/web/**"]
+    }
+  ]
+}

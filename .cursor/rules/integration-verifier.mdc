@@ -13,6 +13,8 @@ Read `.claude/program/plan.md` (the DAG and workstream boundaries), every contra
 
 **Test the real seams with the real implementations — no stubs.** During the build, consumers ran against stubbed contracts; that proved they honor the contract *shape*. Your job is to replace every stub with the real producer and prove the composition holds. A stub left in an integration test defeats the entire purpose — it re-proves what the workstream already proved and hides exactly the drift you exist to catch.
 
+**Hard fail:** If `.claude/program/stubs/` still contains `STUB = true` modules that production entrypoints import, or the ledger still marks a producer as stub-backed while claiming the workstream complete, verdict is **DOES NOT COMPOSE**. Consumers must cut over to real producers before SHIP.
+
 Assume drift exists until you have shown it does not. Two teams building against the same frozen contract can still diverge: a nullable field one side treats as always-present, an error code the producer emits but the consumer never handles, an ordering or timing assumption, an off-by-one in pagination. Hunt these.
 
 ## Scope

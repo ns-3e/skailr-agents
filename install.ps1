@@ -1,4 +1,4 @@
-# Install skailr-agents (.claude + .cursor trees) into a target project.
+# Install skailr-agents (.claude + .cursor trees + scripts/skills) into a target project.
 # Usage: .\install.ps1 -TargetPath C:\path\to\project [-ClaudeOnly] [-CursorOnly]
 
 param(
@@ -23,13 +23,31 @@ $Target = (Resolve-Path $TargetPath).Path
 $Mode = if ($ClaudeOnly) { "claude" } elseif ($CursorOnly) { "cursor" } else { "both" }
 Write-Host "Installing skailr-agents → $Target (mode: $Mode)"
 
+function Install-Scripts {
+    New-Item -ItemType Directory -Path "$Target\scripts\skailr" -Force | Out-Null
+    New-Item -ItemType Directory -Path "$Target\scripts\hooks" -Force | Out-Null
+    Get-ChildItem "$ScriptDir\scripts\skailr\*.mjs" | ForEach-Object {
+        Copy-Item $_.FullName "$Target\scripts\skailr\" -Force
+        Write-Host "  + scripts/skailr/$($_.Name)"
+    }
+    $hook = Join-Path $ScriptDir "scripts\hooks\pre-commit.sample"
+    if (Test-Path $hook) {
+        Copy-Item $hook "$Target\scripts\hooks\" -Force
+        Write-Host "  + scripts/hooks/pre-commit.sample"
+    }
+}
+
 function Install-Claude {
     $dirs = @(
         "$Target\.claude\agents\content",
+        "$Target\.claude\agents\legal",
+        "$Target\.claude\agents\pm",
         "$Target\.claude\commands",
         "$Target\.claude\teams",
+        "$Target\.claude\skills",
         "$Target\.claude\tmp",
-        "$Target\.claude\program\channels"
+        "$Target\.claude\program\channels",
+        "$Target\.claude\program\schemas"
     )
     foreach ($d in $dirs) {
         New-Item -ItemType Directory -Path $d -Force | Out-Null
@@ -39,9 +57,14 @@ function Install-Claude {
         Copy-Item $_.FullName "$Target\.claude\agents\" -Force
         Write-Host "  + .claude/agents/$($_.Name)"
     }
-    Get-ChildItem "$ScriptDir\.claude\agents\content\*.md" | ForEach-Object {
-        Copy-Item $_.FullName "$Target\.claude\agents\content\" -Force
-        Write-Host "  + .claude/agents/content/$($_.Name)"
+    foreach ($team in @("content", "legal", "pm")) {
+        $teamDir = Join-Path $ScriptDir ".claude\agents\$team"
+        if (Test-Path $teamDir) {
+            Get-ChildItem "$teamDir\*.md" | ForEach-Object {
+                Copy-Item $_.FullName "$Target\.claude\agents\$team\" -Force
+                Write-Host "  + .claude/agents/$team/$($_.Name)"
+            }
+        }
     }
     Get-ChildItem "$ScriptDir\.claude\commands\*.md" | ForEach-Object {
         Copy-Item $_.FullName "$Target\.claude\commands\" -Force
@@ -50,9 +73,27 @@ function Install-Claude {
     Copy-Item "$ScriptDir\.claude\teams\registry.md" "$Target\.claude\teams\registry.md" -Force
     Write-Host "  + .claude/teams/registry.md"
 
+    if (Test-Path "$ScriptDir\.claude\skills") {
+        Copy-Item "$ScriptDir\.claude\skills\*" "$Target\.claude\skills\" -Recurse -Force
+        Write-Host "  + .claude/skills/"
+    }
+
     foreach ($f in @("PROTOCOL.md", "program.md", "feature.md")) {
         Copy-Item "$ScriptDir\.claude\program\channels\$f" "$Target\.claude\program\channels\$f" -Force
         Write-Host "  + .claude/program/channels/$f"
+    }
+
+    if (Test-Path "$ScriptDir\.claude\program\schemas") {
+        Get-ChildItem "$ScriptDir\.claude\program\schemas\*" | ForEach-Object {
+            Copy-Item $_.FullName "$Target\.claude\program\schemas\" -Force
+            Write-Host "  + .claude/program/schemas/$($_.Name)"
+        }
+    }
+
+    $settings = Join-Path $ScriptDir ".claude\settings.skailr.json"
+    if (Test-Path $settings) {
+        Copy-Item $settings "$Target\.claude\settings.skailr.json" -Force
+        Write-Host "  + .claude/settings.skailr.json"
     }
 
     foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep")) {
@@ -65,9 +106,15 @@ $PackagedRules = @(
     "architect", "backend-engineer", "content-editor", "content-lead", "content-strategist",
     "content-writer", "data-engineer", "e2e-verifier", "frontend-engineer", "integration-verifier",
     "program-architect", "program-documenter", "program-validator", "researcher", "story-writer",
-    "validator", "registry"
+    "validator", "registry", "portfolio-architect", "initiative-lead",
+    "legal-lead", "legal-analyst", "compliance-reviewer", "legal-validator",
+    "pm-lead", "pm-planner", "risk-analyst", "status-reporter"
 )
-$PackagedCommands = @("ship-feature", "build-feature", "discover", "plan-program", "build-program")
+$PackagedCommands = @(
+    "ship-feature", "build-feature", "continue-feature",
+    "discover", "plan-program", "build-program", "continue-program",
+    "discover-portfolio", "plan-portfolio", "status-portfolio"
+)
 
 function Install-Cursor {
     New-Item -ItemType Directory -Path "$Target\.cursor\rules" -Force | Out-Null
@@ -119,7 +166,13 @@ function Append-Gitignore {
         ".claude/program/channels/*",
         "!.claude/program/channels/PROTOCOL.md",
         "!.claude/program/channels/program.md",
-        "!.claude/program/channels/feature.md"
+        "!.claude/program/channels/feature.md",
+        "!.claude/program/schemas/",
+        "!.claude/program/schemas/**",
+        ".skailr/",
+        "node_modules/",
+        "packages/*/dist/",
+        "apps/web/dist/"
     )
     $existing = @(Get-Content $gi -ErrorAction SilentlyContinue)
     if ($existing -contains ".claude/program/") {
@@ -139,8 +192,8 @@ function Append-Gitignore {
 }
 
 switch ($Mode) {
-    "both" { Install-Claude; Install-Cursor }
-    "claude" { Install-Claude }
+    "both" { Install-Claude; Install-Cursor; Install-Scripts }
+    "claude" { Install-Claude; Install-Scripts }
     "cursor" { Install-Cursor }
 }
 

@@ -7,16 +7,54 @@
 
 ![skailr-agents hero image](Assets/hero.png)
 
-**A multi-agent operating model for Claude Code and Cursor**, not an agent framework or a hosted runtime. skailr-agents is an open-source prompt pack that structures AI coding agents like a real project organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, and frozen contracts so parallel workstreams can ship without colliding.
 
-Install it into a repo. Claude Code or Cursor runs the agents. You get hierarchy, division of labor, and change control that out-of-the-box single-agent chat does not provide.
+**A multi-agent operating model and control plane for Claude Code and Cursor**, not a Ruflo-style meta-harness. skailr-agents structures AI work like a real organization: planning before build, role-separated teams, progressive context disclosure, a visible markdown message board, frozen contracts, mechanical enforcement scripts, and an optional local control plane (CLI + CEO exception-inbox UI) with durable lineage.
+
+Install it into a repo. Claude Code or Cursor runs the agents. Skailr adds hierarchy, division of labor, change control, and — when you opt in — `skailr serve` for inbox, portfolio, contracts, and audit trail.
 
 
 | You have…                                 | Start with…                                                    |
 | ----------------------------------------- | -------------------------------------------------------------- |
 | One feature, clear enough to ship         | Workstream tier: `/ship-feature` → `/build-feature`            |
 | A large, ambiguous, multi-part initiative | Program tier: `/discover` → `/plan-program` → `/build-program` |
+| Many initiatives / CEO cockpit            | Control plane: `npx skailr serve` (+ `/discover-portfolio`)    |
 
+
+---
+
+## Control plane (CLI + API + CEO UI)
+
+![UI](Assets/ui.png)
+
+Optional local control plane — workers remain Claude Code / Cursor. State lives in **`.skailr/skailr.json`** (pure JSON event store; no native SQLite binding).
+
+```bash
+npm install
+npm run build
+npx skailr init
+npx skailr serve
+# Open the printed URL (token is injected for the browser UI).
+# First run seeds examples/parallel-api so Inbox / Contracts / Lineage are non-empty.
+```
+
+Or develop the UI separately:
+
+```bash
+npm run dev -w @skailr/web   # :5173, proxies /api → :8787 (keep skailr serve running)
+```
+
+Useful commands:
+
+```bash
+npx skailr sync import         # ingest .claude/program markdown
+npx skailr sync import --demo  # force-seed examples/parallel-api
+npx skailr inbox list
+npx skailr ownership check
+```
+
+Surfaces: exception inbox, portfolio, contract wall, lineage, approvals.
+
+Enforcement scripts (no Node packages required): `scripts/skailr/*.mjs`. Skills under `.claude/skills/`. See `examples/parallel-api/` and `docs/intair-seam.md`.
 
 ---
 
@@ -40,19 +78,14 @@ If your agents are failing on large work, the model may not be the problem. **Th
 
 
 
-## What this is (and is not)
+## What this is
 
-**What this is**
-
-- An **agent operating model** expressed as markdown: agent definitions, slash commands, a team registry, channel protocol, and install scripts
+- An **agent operating model** expressed as markdown: agent definitions, slash commands, a team registry, channel protocol, skills, and install scripts
+- An optional **control plane** (`skailr` CLI + API + CEO UI) for exception inbox, approvals, and lineage
 - Compatible with **Claude Code** (authoritative `.claude/` tree) and **Cursor** (generated `.cursor/` mirror)
-- A two-tier system: **program** (VP-level discovery + decomposition + parallel teams) and **workstream** (feature pipeline)
+- Tiers: **portfolio** → **program** → **workstream** (feature pipeline)
 
-**What this is not**
 
-- Not a hosted SaaS, model API, or orchestration runtime. Claude Code or Cursor executes the prompts.
-- Not LangGraph / CrewAI / AutoGen. Those are frameworks with code APIs; this is org design as prompts and conventions.
-- Not a replacement for human judgment. Discovery, plan approval, and contract changes still gate on you.
 
 **Claude Code vs Cursor.** `.claude/` is the source of truth (agents under `.claude/agents/`, commands under `.claude/commands/`, registry at `.claude/teams/registry.md`). `.cursor/` mirrors agents as requestable rules and commands as `.cursor/commands/`. Edit `.claude/` first, then run `./scripts/remirror.sh`.
 
@@ -177,9 +210,9 @@ Posting discipline: post only when blocked or when another team must know someth
 
 ## Domain teams and just-in-time disclosure
 
-The program tier is domain-agnostic. Engineering is one team; content, design, marketing, and finance plug in as siblings under the same program-architect.
+The program tier is domain-agnostic. Engineering is one team; content, legal, PM, design, marketing, and finance plug in as siblings under the same program-architect.
 
-**Built today:** engineering (`/ship-feature` / `/build-feature`) and **content**. Design, marketing, and finance are listed in the [registry](.claude/teams/registry.md) as stubs (`status: not built`).
+**Built today:** engineering, **content**, **legal/compliance**, **PM/delivery**, plus portfolio agents (`portfolio-architect`, `initiative-lead`). Design, marketing, and finance remain registry stubs (`status: not built`).
 
 Disclosure happens in three tiers so unused teams cost almost nothing:
 
@@ -188,13 +221,15 @@ Disclosure happens in three tiers so unused teams cost almost nothing:
 3. **Tier 3: workers + domain reference**, loaded only as the lead dispatches them.
 
 
-| Team        | Owns (boundary unit)      | Verifier means                            |
-| ----------- | ------------------------- | ----------------------------------------- |
-| engineering | files / directories       | behavior proven by tests                  |
-| content     | content pieces / sections | facts sourced + brand voice + human prose |
-| design      | assets / artboards        | accessibility + design-system conformance |
-| marketing   | channels / segments       | message + measurement alignment           |
-| finance     | worksheets / models       | numbers reconcile + assumptions traced    |
+| Team        | Owns (boundary unit)                         | Verifier means                            |
+| ----------- | -------------------------------------------- | ----------------------------------------- |
+| engineering | files / directories                          | behavior proven by tests                  |
+| content     | content pieces / sections                    | facts sourced + brand voice + human prose |
+| legal       | requirements / clauses / controls            | every claim traced; unsigned controls fail |
+| pm          | milestones / edges / risks / status digests  | exceptions escalate; green noise does not |
+| design      | assets / artboards                           | accessibility + design-system conformance |
+| marketing   | channels / segments                          | message + measurement alignment           |
+| finance     | worksheets / models                          | numbers reconcile + assumptions traced    |
 
 
 Cross-domain handoffs use the same frozen-contract mechanism as code seams (e.g. engineering delivers feature X → content announces it → design lays it out → marketing distributes it).
@@ -207,6 +242,16 @@ Cross-domain handoffs use the same frozen-contract mechanism as code seams (e.g.
 - `content-editor`: fact audit + brand + AI-tell sweep
 
 Prime directive: **never ship a false claim, never ship generic AI prose.**
+
+### Legal / compliance
+
+- `legal-lead` → `legal-analyst` → `compliance-reviewer` → `legal-validator`
+- Skill: `trace-requirement`. Ship gate blocks unsourced obligations.
+
+### PM / delivery
+
+- `pm-lead` → `pm-planner` → `risk-analyst` → `status-reporter`
+- Skill: `compile-status-digest`. Feeds the CEO exception inbox.
 
 To add a domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` registry entry, flip `status` to built. The program tier does not need to change.
 
@@ -279,15 +324,15 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 
 ### Is skailr-agents an agent framework?
 
-No. An agent framework (LangGraph, CrewAI, AutoGen, etc.) provides a runtime and APIs that execute agents. skailr-agents is an **agent operating model**: roles, hierarchy, contracts, and communication rules delivered as markdown for Claude Code and Cursor to run.
+No. An agent framework (LangGraph, CrewAI, AutoGen, etc.) provides a runtime and APIs that execute agents. skailr-agents is an **agent operating model** (and optional control plane): roles, hierarchy, contracts, communication rules, and an exception inbox — not a replacement for Claude Code / Cursor as the coding runtime.
 
 ### How is this different from built-in Cursor or Claude Code agents?
 
-Those tools give you powerful agents and chat. This pack adds **org structure on top**: planning before build, single-job roles, just-in-time context, a shared message board, and frozen cross-team contracts with human change control.
+Those tools give you powerful agents and chat. This pack adds **org structure on top**: planning before build, single-job roles, just-in-time context, a shared message board, frozen cross-team contracts with human change control, and mechanical script gates.
 
 ### When should I use `/ship-feature` vs `/discover`?
 
-Use `/ship-feature` for one cohesive feature. Use `/discover` when the ask is large, ambiguous, or spans multiple teams/domains that must not collide.
+Use `/ship-feature` for one cohesive feature. Use `/discover` when the ask is large, ambiguous, or spans multiple teams/domains that must not collide. Use `/discover-portfolio` when you have multiple concurrent initiatives.
 
 ### Do agents talk to each other directly?
 
@@ -295,7 +340,7 @@ They appear to, via markdown channels. Mechanism: an agent posts and ends its tu
 
 ### What happens if a frozen contract is wrong?
 
-The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve before the contract updates and affected teams re-sync. Teams never silently edit frozen interfaces.
+The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve before the contract updates and affected teams re-sync. Teams never silently edit frozen interfaces. In the control plane UI, those items land in the exception inbox.
 
 ### Can I add my own domain team (design, marketing, finance)?
 
@@ -303,7 +348,7 @@ Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a 
 
 ### Does this work only for software engineering?
 
-No. The program tier is domain-agnostic. Engineering and content are built; other domains use the same frozen-contract and registry pattern.
+No. The program tier is domain-agnostic. Engineering, content, legal, and PM are built; design/marketing/finance use the same frozen-contract and registry pattern when you flip them to `built`.
 
 ---
 

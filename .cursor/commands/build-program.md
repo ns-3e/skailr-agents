@@ -15,9 +15,11 @@ You are the Program Orchestrator, executing an approved program. You run the dep
 
 ## Preflight and resume
 
-Read `.claude/program/ledger.md` first. It is the source of truth for where the program stands. If this is a resume, pick up at the first phase not marked complete — do not redo finished work. Confirm `plan.md` is approved and contracts are frozen. Confirm a clean working tree or a dedicated program branch `program/<slug>`; if there are unrelated uncommitted changes, stop and say so, because boundary checks and the aggregate diff review depend on a clean base.
+Run `node scripts/skailr/ledger-status.mjs` (skill `resume-from-ledger`) and read `.claude/program/ledger.md`. The ledger is the source of truth for where the program stands. If this is a resume, pick up at the first phase not marked complete — do not redo finished work. Confirm `plan.md` is approved and contracts are frozen. Confirm a clean working tree or a dedicated program branch `program/<slug>`; if there are unrelated uncommitted changes, stop and say so, because boundary checks and the aggregate diff review depend on a clean base.
 
 Initialize channels: ensure `.claude/program/channels/` exists with `PROTOCOL.md` and a `program.md`, and create an empty `ws-<name>.md` for each workstream in the plan (header + a pointer to PROTOCOL.md). On resume, do not reset existing channels — they are the append-only transcript.
+
+**Script gates (mandatory before advancing any phase):** follow meta-skill `run-gated-pipeline` — `check-ownership.mjs`, `validate-channels.mjs`, `check-contracts.mjs` must exit 0 (or documented skip only when artifacts do not yet exist).
 
 ## Phase A — Foundation (build and freeze the kernel)
 
@@ -42,8 +44,9 @@ Each team, whatever its domain, runs the same shape internally: plan → paralle
 Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the kernel; deliver only its owned units; produce its owned contracts to spec; respect its boundary.
 
 As each concurrency group completes, before advancing:
-- **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units (for engineering, via `git diff --name-only`; for other domains, by checking the owned-unit map). A collision is a stop-and-report event, not something to merge through.
-- **Run the channel router** (see below) to drain any open questions, blockers, and contract-change requests the teams posted. Nothing advances while resolvable open messages remain.
+- **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units. Run `node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json` (and `git diff --name-only` for engineering). A collision is a stop-and-report event, not something to merge through.
+- **Run the channel router** (skill `route-channels`; see below) and `node scripts/skailr/validate-channels.mjs` to drain any open questions, blockers, and contract-change requests the teams posted. Nothing advances while resolvable open messages remain.
+- Ensure consumer stubs exist when producers are not yet real: `node scripts/skailr/emit-stubs.mjs` (skill `emit-stubs`) after contracts freeze / as needed before a consumer group.
 - Then unblock and dispatch the next concurrency group whose dependencies are now satisfied.
 - Update the ledger at every transition.
 

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/schemas/ownership.schema.json",
+  "title": "SkailrOwnershipMap",
+  "type": "object",
+  "required": ["schema", "owners"],
+  "properties": {
+    "schema": { "const": "skailr.ownership/v1" },
+    "baseRef": { "type": "string", "description": "Git ref to diff against (e.g. main or program start SHA)" },
+    "kernel": {
+      "type": "object",
+      "properties": {
+        "globs": { "type": "array", "items": { "type": "string" } },
+        "frozen": { "type": "boolean" }
+      }
+    },
+    "owners": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "team", "units"],
+        "properties": {
+          "id": { "type": "string" },
+          "team": { "type": "string" },
+          "workstream": { "type": "string" },
+          "units": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Globs for engineering, or named owned units for other domains"
+          }
+        }
+      }
+    }
+  }
+}

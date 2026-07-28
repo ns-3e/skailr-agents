@@ -28,6 +28,12 @@ Do **not** hand-edit generated `.cursor/rules/*.mdc` or `.cursor/commands/*.md` 
 5. Regenerate `manifest.json` (remirror script updates it) or add the artifact by hand.
 6. Smoke-test: `./install.sh /tmp/skailr-smoke && rm -rf /tmp/skailr-smoke`.
 
+## Adding a skill
+
+1. Create `.claude/skills/<name>/SKILL.md` with frontmatter `name` + `description`.
+2. Prefer calling `scripts/skailr/*.mjs` for anything that must be mechanically true.
+3. Run `./scripts/remirror.sh` (skills are listed in `manifest.json`).
+
 ## Adding a command
 
 1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed).

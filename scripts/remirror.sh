@@ -21,6 +21,7 @@ CHANNEL_WRITE_ONLY = {
     "validator": "Read, Grep, Glob, Bash, Write — Write solely to append channel messages; never edit application code.",
     "program-validator": "Read, Grep, Glob, Bash, Write — Write solely to append channel messages; never edit application code.",
     "content-editor": "Write is for the audit report and channel appends; do not rewrite draft content as an author.",
+    "legal-validator": "Read, Grep, Glob, Bash, Write — Write solely to validation report and channel appends.",
 }
 
 def parse_frontmatter(text):
@@ -38,10 +39,13 @@ def parse_frontmatter(text):
             fm[k.strip()] = v.strip()
     return fm, body
 
-# Preserve non-generated rules (none expected in product tree)
-preserve = set()
+agent_files = []
+agent_files += list(CLAUDE_AGENTS.glob("*.md"))
+for sub in ("content", "legal", "pm"):
+    d = CLAUDE_AGENTS / sub
+    if d.exists():
+        agent_files += list(d.glob("*.md"))
 
-agent_files = list(CLAUDE_AGENTS.glob("*.md")) + list((CLAUDE_AGENTS / "content").glob("*.md"))
 for src in sorted(agent_files):
     text = src.read_text()
     fm, body = parse_frontmatter(text)
@@ -66,7 +70,6 @@ for src in sorted(agent_files):
     (CURSOR_RULES / f"{name}.mdc").write_text(out)
     print(f"rule: {name}")
 
-# Keep thin registry pointer if present; rewrite it
 registry_mdc = """---
 description: Team routing registry for the program tier. Always loaded so the architect can route workstreams without loading full team definitions.
 alwaysApply: true
@@ -113,14 +116,24 @@ WORKSTREAM = {
 }
 PROGRAM = {
     "program-architect", "integration-verifier", "program-validator",
-    "program-documenter",
+    "program-documenter", "portfolio-architect", "initiative-lead",
 }
 COMMANDS = {
     "ship-feature": "workstream",
     "build-feature": "workstream",
+    "continue-feature": "workstream",
     "discover": "program",
     "plan-program": "program",
     "build-program": "program",
+    "continue-program": "program",
+    "discover-portfolio": "portfolio",
+    "plan-portfolio": "portfolio",
+    "status-portfolio": "portfolio",
+}
+TEAM_DIRS = {
+    "content": "content",
+    "legal": "legal",
+    "pm": "pm",
 }
 entries = []
 for p in sorted((ROOT / ".claude" / "agents").glob("*.md")):
@@ -131,19 +144,36 @@ for p in sorted((ROOT / ".claude" / "agents").glob("*.md")):
         "claude_path": f".claude/agents/{name}.md",
         "cursor_path": f".cursor/rules/{name}.mdc",
     })
-for p in sorted((ROOT / ".claude" / "agents" / "content").glob("*.md")):
-    name = p.stem
-    entries.append({
-        "id": name, "tier": "content", "type": "agent",
-        "claude_path": f".claude/agents/content/{name}.md",
-        "cursor_path": f".cursor/rules/{name}.mdc",
-    })
+for team, tier in TEAM_DIRS.items():
+    d = ROOT / ".claude" / "agents" / team
+    if not d.exists():
+        continue
+    for p in sorted(d.glob("*.md")):
+        name = p.stem
+        entries.append({
+            "id": name, "tier": tier, "type": "agent",
+            "claude_path": f".claude/agents/{team}/{name}.md",
+            "cursor_path": f".cursor/rules/{name}.mdc",
+        })
 for name, tier in sorted(COMMANDS.items()):
     entries.append({
         "id": name, "tier": tier, "type": "command",
         "claude_path": f".claude/commands/{name}.md",
         "cursor_path": f".cursor/commands/{name}.md",
     })
+# skills
+skills_root = ROOT / ".claude" / "skills"
+if skills_root.exists():
+    for skill_dir in sorted(skills_root.iterdir()):
+        skill_md = skill_dir / "SKILL.md"
+        if skill_md.exists():
+            entries.append({
+                "id": f"skill-{skill_dir.name}",
+                "tier": "skill",
+                "type": "skill",
+                "claude_path": str(skill_md.relative_to(ROOT)),
+                "cursor_path": None,
+            })
 entries.append({
     "id": "registry", "tier": "program", "type": "registry",
     "claude_path": ".claude/teams/registry.md",
@@ -157,6 +187,14 @@ for fname in ("PROTOCOL.md", "program.md", "feature.md"):
         "claude_path": f".claude/program/channels/{fname}",
         "cursor_path": None,
     })
+for schema in ("ledger.template.md", "contract.template.md", "ownership.schema.json", "ownership.example.json"):
+    entries.append({
+        "id": f"schema-{Path(schema).stem}",
+        "tier": "program",
+        "type": "schema",
+        "claude_path": f".claude/program/schemas/{schema}",
+        "cursor_path": None,
+    })
 
 missing = [e[k] for e in entries for k in ("claude_path", "cursor_path") if e.get(k) and not (ROOT / e[k]).exists()]
 if missing:
@@ -164,8 +202,8 @@ if missing:
 
 manifest = {
     "name": "skailr-agents",
-    "description": "Two-tier multi-agent software-and-content build system for Claude Code and Cursor",
-    "version": "1.1.0",
+    "description": "Agent org control plane for Claude Code and Cursor — teams, contracts, lineage, CLI/UI",
+    "version": "1.2.0",
     "artifacts": entries,
 }
 (ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

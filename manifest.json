@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
-  "description": "Two-tier multi-agent software-and-content build system for Claude Code and Cursor",
-  "version": "1.1.0",
+  "description": "Agent org control plane for Claude Code and Cursor \u2014 teams, contracts, lineage, CLI/UI",
+  "version": "1.2.0",
   "artifacts": [
     {
       "id": "architect",
@@ -39,11 +39,25 @@
       "cursor_path": ".cursor/rules/frontend-engineer.mdc"
     },
     {
+      "id": "initiative-lead",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/initiative-lead.md",
+      "cursor_path": ".cursor/rules/initiative-lead.mdc"
+    },
+    {
       "id": "integration-verifier",
       "tier": "program",
       "type": "agent",
       "claude_path": ".claude/agents/integration-verifier.md",
       "cursor_path": ".cursor/rules/integration-verifier.mdc"
+    },
+    {
+      "id": "portfolio-architect",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/portfolio-architect.md",
+      "cursor_path": ".cursor/rules/portfolio-architect.mdc"
     },
     {
       "id": "program-architect",
@@ -116,6 +130,62 @@
       "cursor_path": ".cursor/rules/content-writer.mdc"
     },
     {
+      "id": "compliance-reviewer",
+      "tier": "legal",
+      "type": "agent",
+      "claude_path": ".claude/agents/legal/compliance-reviewer.md",
+      "cursor_path": ".cursor/rules/compliance-reviewer.mdc"
+    },
+    {
+      "id": "legal-analyst",
+      "tier": "legal",
+      "type": "agent",
+      "claude_path": ".claude/agents/legal/legal-analyst.md",
+      "cursor_path": ".cursor/rules/legal-analyst.mdc"
+    },
+    {
+      "id": "legal-lead",
+      "tier": "legal",
+      "type": "agent",
+      "claude_path": ".claude/agents/legal/legal-lead.md",
+      "cursor_path": ".cursor/rules/legal-lead.mdc"
+    },
+    {
+      "id": "legal-validator",
+      "tier": "legal",
+      "type": "agent",
+      "claude_path": ".claude/agents/legal/legal-validator.md",
+      "cursor_path": ".cursor/rules/legal-validator.mdc"
+    },
+    {
+      "id": "pm-lead",
+      "tier": "pm",
+      "type": "agent",
+      "claude_path": ".claude/agents/pm/pm-lead.md",
+      "cursor_path": ".cursor/rules/pm-lead.mdc"
+    },
+    {
+      "id": "pm-planner",
+      "tier": "pm",
+      "type": "agent",
+      "claude_path": ".claude/agents/pm/pm-planner.md",
+      "cursor_path": ".cursor/rules/pm-planner.mdc"
+    },
+    {
+      "id": "risk-analyst",
+      "tier": "pm",
+      "type": "agent",
+      "claude_path": ".claude/agents/pm/risk-analyst.md",
+      "cursor_path": ".cursor/rules/risk-analyst.mdc"
+    },
+    {
+      "id": "status-reporter",
+      "tier": "pm",
+      "type": "agent",
+      "claude_path": ".claude/agents/pm/status-reporter.md",
+      "cursor_path": ".cursor/rules/status-reporter.mdc"
+    },
+    {
       "id": "build-feature",
       "tier": "workstream",
       "type": "command",
@@ -130,11 +200,39 @@
       "cursor_path": ".cursor/commands/build-program.md"
     },
     {
+      "id": "continue-feature",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/continue-feature.md",
+      "cursor_path": ".cursor/commands/continue-feature.md"
+    },
+    {
+      "id": "continue-program",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/continue-program.md",
+      "cursor_path": ".cursor/commands/continue-program.md"
+    },
+    {
       "id": "discover",
       "tier": "program",
       "type": "command",
       "claude_path": ".claude/commands/discover.md",
       "cursor_path": ".cursor/commands/discover.md"
+    },
+    {
+      "id": "discover-portfolio",
+      "tier": "portfolio",
+      "type": "command",
+      "claude_path": ".claude/commands/discover-portfolio.md",
+      "cursor_path": ".cursor/commands/discover-portfolio.md"
+    },
+    {
+      "id": "plan-portfolio",
+      "tier": "portfolio",
+      "type": "command",
+      "claude_path": ".claude/commands/plan-portfolio.md",
+      "cursor_path": ".cursor/commands/plan-portfolio.md"
     },
     {
       "id": "plan-program",
@@ -149,6 +247,76 @@
       "type": "command",
       "claude_path": ".claude/commands/ship-feature.md",
       "cursor_path": ".cursor/commands/ship-feature.md"
+    },
+    {
+      "id": "status-portfolio",
+      "tier": "portfolio",
+      "type": "command",
+      "claude_path": ".claude/commands/status-portfolio.md",
+      "cursor_path": ".cursor/commands/status-portfolio.md"
+    },
+    {
+      "id": "skill-check-ownership",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/check-ownership/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-compile-status-digest",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/compile-status-digest/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-drain-exception-inbox",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/drain-exception-inbox/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-emit-stubs",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/emit-stubs/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-freeze-contract",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/freeze-contract/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-resume-from-ledger",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/resume-from-ledger/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-route-channels",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/route-channels/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-run-gated-pipeline",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/run-gated-pipeline/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-trace-requirement",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/trace-requirement/SKILL.md",
+      "cursor_path": null
     },
     {
       "id": "registry",
@@ -176,6 +344,34 @@
       "tier": "program",
       "type": "template",
       "claude_path": ".claude/program/channels/feature.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-ledger.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/ledger.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-contract.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/contract.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-ownership.schema",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/ownership.schema.json",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-ownership.example",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/ownership.example.json",
       "cursor_path": null
     }
   ]

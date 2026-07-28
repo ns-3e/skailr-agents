@@ -15,7 +15,8 @@ jobs:
         run: |
           set -e
           fail=0
-          for f in .claude/agents/*.md .claude/agents/content/*.md; do
+          for f in .claude/agents/*.md .claude/agents/content/*.md .claude/agents/legal/*.md .claude/agents/pm/*.md; do
+            [ -f "$f" ] || continue
             stem=$(basename "$f" .md)
             name=$(grep -m1 '^name:' "$f" | sed 's/^name:[[:space:]]*//')
             if [ "$name" != "$stem" ]; then
@@ -46,6 +47,31 @@ jobs:
           print(f"OK: {len(manifest['artifacts'])} artifacts")
           PY
 
+      - name: Fixture script gates
+        run: |
+          set -e
+          node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
+          node scripts/skailr/check-contracts.mjs --dir examples/parallel-api/contracts --ledger examples/parallel-api/ledger.md
+          node scripts/skailr/validate-channels.mjs --dir examples/parallel-api/channels
+          node scripts/skailr/emit-stubs.mjs --dir examples/parallel-api/contracts --out /tmp/skailr-stubs
+          node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
+          test -f /tmp/skailr-stubs/orders-api.stub.js
+          echo "fixture scripts OK"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install and build control plane
+        run: |
+          npm install
+          npm run build -w @skailr/core
+          npm run build -w @skailr/server
+          npm run build -w @skailr/cli
+          npm run test -w @skailr/server
+          npm run build -w @skailr/web
+
       - name: Install smoke test
         run: |
           set -e
@@ -53,6 +79,10 @@ jobs:
           ./install.sh "$TMP"
           test -f "$TMP/.claude/program/channels/PROTOCOL.md"
           test -f "$TMP/.claude/agents/validator.md"
+          test -f "$TMP/.claude/commands/continue-feature.md"
+          test -f "$TMP/.claude/agents/legal/legal-lead.md"
+          test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
+          test -f "$TMP/scripts/skailr/check-ownership.mjs"
           test -f "$TMP/.cursor/commands/build-feature.md"
           ./install.sh "$TMP" | grep -q 'already has'
           rm -rf "$TMP"

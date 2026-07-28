@@ -1,0 +1,22 @@
+{
+  "schema": "skailr.ownership/v1",
+  "baseRef": "HEAD",
+  "kernel": {
+    "globs": ["examples/parallel-api/shared/**"],
+    "frozen": true
+  },
+  "owners": [
+    {
+      "id": "orders-api",
+      "team": "engineering",
+      "workstream": "orders-api",
+      "units": ["examples/parallel-api/services/orders/**"]
+    },
+    {
+      "id": "orders-web",
+      "team": "engineering",
+      "workstream": "orders-web",
+      "units": ["examples/parallel-api/apps/orders-web/**"]
+    }
+  ]
+}

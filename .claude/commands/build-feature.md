@@ -22,7 +22,8 @@ Give each the same context: read `spec.md`, `story.md`, `research.md`, implement
 When both return:
 - Read both reports.
 - Run `git diff --name-only` yourself and verify no file was touched by both. If one was, that is a merge hazard — stop and report it rather than proceeding.
-- **Run the channel router.** Scan `.claude/tmp/channels/feature.md` for `status: open` messages. Route each to its addressee, collect the answer, and re-dispatch any engineer that ended its turn waiting. If a message is `type: contract-change` or addressed to `@human` — here that means the spec's contract looks wrong, or an AC cannot be satisfied — **halt and surface it to the user** rather than letting the verifier discover it downstream. Do not auto-change the spec's contract.
+- **Script gate — ownership:** run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json` if present). Non-zero exit → halt.
+- **Run the channel router** (skill `route-channels`). Also run `node scripts/skailr/validate-channels.mjs --tmp`. Scan `.claude/tmp/channels/feature.md` for `status: open` messages. Route each to its addressee, collect the answer, and re-dispatch any engineer that ended its turn waiting. If a message is `type: contract-change` or addressed to `@human` — here that means the spec's contract looks wrong, or an AC cannot be satisfied — **halt and surface it to the user** rather than letting the verifier discover it downstream. Do not auto-change the spec's contract.
 - Run the full test suite, lint, and typecheck. If the tree is red, re-invoke the responsible engineer once with the failures. Do not hand a red tree to the verifier.
 
 ## Phase 5 — Verification
