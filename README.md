@@ -5,7 +5,7 @@
 [![Cursor](https://img.shields.io/badge/Cursor-docs-6e7781)](https://cursor.com/docs)
 [![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-GitHub-181717)](https://github.com/cursoragent)
 
-![skailr-agents hero image](./assets/skailr.png)
+![skailr-agents hero image](./assets/skailr-hero.png)
 
 **A multi-agent operating model for Claude Code and Cursor.** Install it into a repo; Claude Code (or Cursor) runs the agents. Skailr adds org structure: plan before build, single-job roles, a visible message board, frozen contracts, and mechanical script gates.
 
