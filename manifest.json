@@ -312,6 +312,13 @@
       "cursor_path": ".cursor/commands/discover-portfolio.md"
     },
     {
+      "id": "map-repo",
+      "tier": "program",
+      "type": "command",
+      "claude_path": ".claude/commands/map-repo.md",
+      "cursor_path": ".cursor/commands/map-repo.md"
+    },
+    {
       "id": "patch",
       "tier": "workstream",
       "type": "command",
@@ -568,6 +575,34 @@
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/handoff.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-orientation.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/orientation.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-backlog.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/backlog.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-map-repo-progress.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/map-repo-progress.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-map-report.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/map-report.template.md",
       "cursor_path": null
     }
   ]

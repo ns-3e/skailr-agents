@@ -49,7 +49,7 @@ On a fresh start:
 
 ## Phase 1 — Discovery (auto-brief, no interview)
 
-Optional light research: if the initiative clearly touches an existing codebase, invoke `researcher` for a fast orientation pass into `.claude/tmp/research.md` (or `.claude/program/orientation.md`). Keep it lightweight.
+Prefer existing brownfield baseline: if `.claude/repo/orientation.md` exists, pass it to the architect (skip inventing orientation). Else if the initiative clearly touches an existing codebase, invoke `researcher` for a fast orientation pass into `.claude/tmp/research.md` (do not rely on ignored `.claude/program/orientation.md`). Keep light research lightweight. If `.claude/repo/ownership.json` exists, treat it as a draft hint for Job 2 kernel/workstream cuts (not a freeze substitute).
 
 Invoke `program-architect` for **Job 1 (Discovery) only**, with YOLO instructions:
 

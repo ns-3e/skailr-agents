@@ -82,6 +82,26 @@ whether a clean sign-off was earned.
 
 Every AC and EC in the original story is accounted for with a real code and test location or an explicit "missing." Security and quiet-skip checks have stated, evidenced results. Your verdict is defensible line by line against the story and spec the user approved. Report problems; do not fix them; do not soften them.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "validator", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Validator-specific Intair writes
+
+**After sign-off (pass or fail)**, record the validation outcome:
+```json
+{
+  "layer": "operational", "type": "Outcome",
+  "properties": {"outcome_id": "<feature-slug>-validation-outcome", "kind": "success", "summary": "<sign-off verdict in one sentence>", "measured_at": "<now>"},
+  "attribution": {"actor": "validator", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+A `"kind": "failure"` outcome is as important as success — it is how future agents know this feature had issues.
 
 ## Channels — how you raise and answer cross-agent questions
 

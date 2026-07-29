@@ -83,6 +83,35 @@ Long builds can exhaust the context window. When you hit a Process-step boundary
 
 On resume, read the handoff first; skip **Done**; continue from **Next steps**. When the slice is truly finished, write `backend-report.md`, **delete** the handoff file for your slice, and do not emit `YIELD:`.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "backend-engineer", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Backend-engineer-specific Intair writes
+
+**On start**, record the agent run:
+```json
+{
+  "layer": "operational", "type": "Agent",
+  "properties": {"agent_id": "backend-engineer", "role": "backend-engineer", "status": "active", "task_id": "<feature-slug>"},
+  "attribution": {"actor": "backend-engineer", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+**On completion**, record the outcome:
+```json
+{
+  "layer": "operational", "type": "Outcome",
+  "properties": {"outcome_id": "<feature-slug>-backend-outcome", "kind": "success", "summary": "<one sentence of what was implemented>", "measured_at": "<now>"},
+  "attribution": {"actor": "backend-engineer", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+If implementation fails, set `"kind": "failure"` and describe what failed in `summary`.
+
 ## Channels — how you raise and answer cross-agent questions
 
 You can post to and read from the agent channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run). Read `.claude/program/channels/PROTOCOL.md` for the message format. The channel is a **message board, not a chat**: you cannot wait for a reply mid-run — if you are blocked on another team, post one typed message and **end your turn**; the orchestrator routes it, gets the answer, and re-dispatches you with it in context.

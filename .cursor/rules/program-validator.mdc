@@ -82,6 +82,25 @@ a reader judges whether a clean sign-off was earned.
 
 Every item in the original brief is accounted for with a real code and test location or an explicit "missing." Every cross-cutting property has a stated, evidenced result. Contract change-control was honored. Your verdict is defensible line by line against the brief the user approved. Report problems; do not fix them; do not soften them.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "program-validator", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Program-validator-specific Intair writes
+
+**After program-level sign-off**, record the final outcome:
+```json
+{
+  "layer": "operational", "type": "Outcome",
+  "properties": {"outcome_id": "<program-slug>-program-validation", "kind": "success", "summary": "<brief fulfillment verdict in one sentence>", "measured_at": "<now>"},
+  "attribution": {"actor": "program-validator", "actor_kind": "agent", "at": "<now>", "basis": "task:<program-slug>"}
+}
+```
 
 ## Channels — how you raise and answer cross-agent questions
 

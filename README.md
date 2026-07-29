@@ -16,6 +16,7 @@ You do not need prior knowledge of skailr. Install once. **Plain chat is auto-ro
 | You want to… | Use | Commands |
 | ------------ | --- | -------- |
 | **Ask a question** (no code change) | Intake → researcher | Plain chat, or Task `researcher` ask mode |
+| **Map an existing repo** (brownfield baseline, backlog) | Map-repo | `/map-repo` — [docs/MAP_REPO.md](docs/MAP_REPO.md) — or plain chat |
 | **Small fix / tweak** (keep lineage/docs true) | Patch (YOLO-style) | `/patch` — or plain chat |
 | **Build a whole app / MVP / many parts / unclear scope** (gated) | Program tier | `/discover` → `/plan-program` → `/build-program` |
 | **Build a whole app** as fast as possible (no gates) | Program YOLO | `/yolo-program` — [docs/YOLO.md](docs/YOLO.md) |
@@ -24,7 +25,7 @@ You do not need prior knowledge of skailr. Install once. **Plain chat is auto-ro
 | Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
 | **Write to or read from Intair** (a graph an agent or operator calls on purpose, in a given step) | Intair client seam | Reference guide: [docs/intair-seam.md](docs/intair-seam.md) |
 
-**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. Plain chat follows the same rule via intake ([docs/INTAKE.md](docs/INTAKE.md)).
+**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. On an unfamiliar existing codebase, run **`/map-repo`** first ([docs/MAP_REPO.md](docs/MAP_REPO.md)). Plain chat follows the same rules via intake ([docs/INTAKE.md](docs/INTAKE.md)).
 
 ---
 
@@ -80,6 +81,8 @@ git add .claude CLAUDE.md scripts/skailr .gitignore
 git commit -m "Add skailr-agents operating model"
 ```
 
+After `/map-repo` confirms a baseline, also commit `.claude/repo/` (orientation, ownership draft, backlog) so the map is shared.
+
 Omit `--claude-only` to also install the Cursor mirror; use `--cursor-only` for Cursor alone. More: [Install details](#install-details).
 
 ### 4. Start Claude Code in the project
@@ -89,7 +92,25 @@ cd /path/to/my-app
 claude
 ```
 
-Slash commands from the pack are available (`/discover`, `/yolo-program`, `/ship-feature`, `/yolo`, `/patch`, …). Plain chat is routed by `CLAUDE.md` ([docs/INTAKE.md](docs/INTAKE.md)).
+Slash commands from the pack are available (`/map-repo`, `/discover`, `/yolo-program`, `/ship-feature`, `/yolo`, `/patch`, …). Plain chat is routed by `CLAUDE.md` ([docs/INTAKE.md](docs/INTAKE.md)).
+
+---
+
+### Path: Existing repo (brownfield)
+
+Install into a non-empty project, then baseline before shipping:
+
+```
+/map-repo
+```
+
+Optional focus: `/map-repo auth and public UI`.
+
+Claude maps the tree, drafts ownership, assesses gaps, and presents a backlog. **Confirm** the baseline (human gate). Then pick a backlog item → `/patch` / `/yolo`, or charter a larger initiative → `/discover` / `/yolo-program`. Full notes: [docs/MAP_REPO.md](docs/MAP_REPO.md).
+
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/map-repo` | Orientation, draft ownership, findings, backlog; confirm before build | **Brownfield onboarding / tech lead repo audit** |
 
 ---
 
@@ -255,7 +276,7 @@ After `/plan-portfolio`, run **per-initiative** program commands (`/discover` �
 | Program (gated or YOLO) | Brief, plan, contracts, validator verdict, assumptions (YOLO), channel board under `.claude/program/` |
 | Feature (gated or YOLO) | Validator verdict, `.claude/tmp/` reports, assumptions (YOLO) |
 
-Then commit your app code as usual. Do **not** commit `.claude/tmp/` or most of `.claude/program/` runtime state (installer gitignore covers this).
+Then commit your app code as usual. Do **not** commit `.claude/tmp/` or most of `.claude/program/` runtime state (installer gitignore covers this). **Do** commit `.claude/repo/` after a confirmed `/map-repo` baseline.
 
 ---
 
@@ -285,6 +306,7 @@ Every slash command mapped to a business role. Paths above tell the story; this 
 | `/plan-portfolio` | Initiatives, programs, conflict surfaces; open portfolio ledger | **Portfolio / PMO planning** — roadmap and collision surfaces |
 | `/status-portfolio` | Traffic lights + exception inbox rollup | **CEO / exec status review** — exceptions only |
 | `/discover` | Confirm program brief (`.claude/program/brief.md`) | **VP kickoff / discovery** — sign the charter |
+| `/map-repo` | Confirm brownfield baseline (`.claude/repo/`) | **Brownfield onboarding / tech lead repo audit** |
 | `/plan-program` | Workstreams, frozen contracts, execution DAG | **Program planning + interface freeze** |
 | `/build-program` | Execute approved program DAG | **Program delivery** |
 | `/continue-program` | Resume from program ledger | **Resume mid-initiative** |
@@ -310,7 +332,7 @@ If agents fail on large work, the model may not be the problem. **The operating 
 
 | Capability | What it means |
 | ---------- | ------------- |
-| **Hierarchy** | Plan layer first; then teams execute. Program: `/discover` → `/plan-program` → `/build-program` (or `/yolo-program`). Feature: `/ship-feature` → `/build-feature` (or `/yolo`). |
+| **Hierarchy** | Plan layer first; then teams execute. Brownfield: `/map-repo` before build. Program: `/discover` → `/plan-program` → `/build-program` (or `/yolo-program`). Feature: `/ship-feature` → `/build-feature` (or `/yolo`). |
 | **Division of labor** | Single-job agents (research, story, architecture, engineers, verify, validate, document) plus domain teams (content, legal, PM, design, marketing, finance). |
 | **Progressive disclosure** | Thin registry → team lead → workers. Unused domains cost almost nothing. |
 | **Message board** | Append-only channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a feature). |
@@ -412,7 +434,7 @@ One feature in → validated implementation out. Program workstreams may run thi
 
 ## Install details
 
-The installer copies `.claude/` and `.cursor/` into your project, creates `.claude/tmp/` and `.claude/program/`, and appends ignore rules if missing. Idempotent; safe to re-run.
+The installer copies `.claude/` and `.cursor/` into your project, creates `.claude/tmp/`, `.claude/program/`, and `.claude/repo/`, and appends ignore rules if missing. Idempotent; safe to re-run.
 
 ```bash
 ./install.sh /path/to/your-project
@@ -425,7 +447,7 @@ cp -r .claude /path/to/your-repo/
 mkdir -p /path/to/your-repo/.claude/tmp /path/to/your-repo/.claude/program
 ```
 
-Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, `.claude/intake.md`, root `CLAUDE.md`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
+Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, `.claude/intake.md`, root `CLAUDE.md`, and tracked channel templates under `.claude/program/channels/`. After `/map-repo`, also commit `.claude/repo/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
 
 ### Enforcement fixtures (optional)
 
@@ -641,19 +663,21 @@ No. Frameworks (LangGraph, CrewAI, AutoGen, …) provide a runtime. skailr is an
 
 No. `/ship-feature` and `/yolo` produce **one** story and **one** build. They do not create a multi-story backlog or loop features. Use **Path A1** (`/discover` → `/plan-program` → `/build-program`) or **Path A2** (`/yolo-program`) for a whole app or multi-part initiative.
 
-### When should I use `/ship-feature` vs `/yolo` vs `/patch` vs `/discover` vs `/yolo-program`?
+### When should I use `/ship-feature` vs `/yolo` vs `/patch` vs `/map-repo` vs `/discover` vs `/yolo-program`?
 
 See the [Command reference](#command-reference) for every command’s business equivalent. Quick chooser:
 
+- **Existing unfamiliar repo** → `/map-repo` ([docs/MAP_REPO.md](docs/MAP_REPO.md))
 - **Hotfix / small tweak** → `/patch` ([docs/INTAKE.md](docs/INTAKE.md))
 - **One feature, keep approvals** → `/ship-feature` → `/continue-feature` → `/build-feature`
 - **One feature, no gates** → `/yolo` ([docs/YOLO.md](docs/YOLO.md)); resume with `/continue-feature`
 - **Whole app / many parts, keep approvals** → `/discover` → `/plan-program` → `/build-program`; resume with `/continue-program`
 - **Whole app, no gates** → `/yolo-program` ([docs/YOLO.md](docs/YOLO.md))
 - **Many concurrent initiatives** → `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` (CEO/PMO layer)
+
 ### What happens if I just chat (no slash command)?
 
-Intake routes the ask: questions → researcher ask mode; small changes → `/patch`; one feature → `/yolo`; whole app → `/yolo-program`. Slash commands still win. Details: [docs/INTAKE.md](docs/INTAKE.md).
+Intake routes the ask: questions → researcher ask mode; brownfield baseline → `/map-repo`; small changes → `/patch`; one feature → `/yolo`; whole app → `/yolo-program`. Slash commands still win. Details: [docs/INTAKE.md](docs/INTAKE.md).
 
 ### Do agents talk to each other directly?
 

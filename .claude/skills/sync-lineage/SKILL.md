@@ -42,6 +42,12 @@ node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md
 
 4. **No program / no feature artifacts:** still write `.claude/tmp/patch-report.md` from the template; skip ownership/contract scripts if maps do not exist.
 
+   If `.claude/program/ownership.json` is absent but `.claude/repo/ownership.json` exists (brownfield draft from `/map-repo`) and the patch moved or added paths outside those globs: surgically update the repo draft (or note in the patch report that **repo ownership may be stale**), then optionally:
+
+```bash
+node scripts/skailr/check-ownership.mjs --map .claude/repo/ownership.json --map-only
+```
+
 5. **Channels validate** when boards exist:
 
 ```bash

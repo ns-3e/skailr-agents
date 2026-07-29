@@ -203,6 +203,7 @@ COMMANDS = {
     "build-program": "program",
     "continue-program": "program",
     "yolo-program": "program",
+    "map-repo": "program",
     "discover-portfolio": "portfolio",
     "plan-portfolio": "portfolio",
     "status-portfolio": "portfolio",
@@ -285,6 +286,10 @@ for schema in (
     "patch-report.template.md",
     "feature-progress.template.md",
     "handoff.template.md",
+    "orientation.template.md",
+    "backlog.template.md",
+    "map-repo-progress.template.md",
+    "map-report.template.md",
 ):
     p = ROOT / ".claude" / "program" / "schemas" / schema
     if not p.exists():

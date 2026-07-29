@@ -37,7 +37,7 @@ On a fresh start:
 
 ## Phase 1 — Research
 
-Invoke the `researcher` subagent via the Task tool. Pass it the feature request and instruct it to follow its output contract, writing to `.claude/tmp/research.md`.
+Invoke the `researcher` subagent via the Task tool. Pass it the feature request and instruct it to follow its output contract, writing to `.claude/tmp/research.md`. If `.claude/repo/orientation.md` exists, instruct it to read that first and deepen Prior Art for this feature.
 
 When it returns, confirm `research.md` exists and contains a Prior Art section with real file paths. If it is thin or contains no concrete paths, re-invoke once with a narrower instruction to trace specific similar features. Do not proceed on a vague map.
 

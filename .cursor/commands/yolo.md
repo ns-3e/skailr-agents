@@ -64,6 +64,8 @@ Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`)
 
 Invoke the `researcher` subagent via the Task tool. Pass the feature request; it writes `.claude/tmp/research.md`.
 
+If `.claude/repo/orientation.md` exists, instruct the researcher to read it first (Stack / Directory Boundaries / House Conventions) and deepen **Prior Art** for this feature rather than re-mapping the whole tree.
+
 Confirm `research.md` exists and has a Prior Art section. On a greenfield repo, empty prior art is fine if the researcher states that explicitly. If the map is thin on an existing codebase, re-invoke once with a narrower instruction. Do not proceed on a vague map of a non-empty tree.
 
 Checkpoint: `research` → complete.

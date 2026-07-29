@@ -27,7 +27,7 @@ Write the raw request verbatim to `.claude/program/request.md`.
 
 ## Optional light research first
 
-If the initiative clearly touches an existing codebase, invoke the `researcher` subagent for a fast orientation pass so the architect's questions are grounded in what exists. Keep this lightweight — it informs the questions, it is not the full per-feature research (that happens inside each workstream later).
+Prefer `.claude/repo/orientation.md` when present (from `/map-repo`) so the architect's questions are grounded in a confirmed baseline. Else if the initiative clearly touches an existing codebase, invoke the `researcher` subagent for a fast orientation pass into `.claude/tmp/research.md`. Keep this lightweight — it informs the questions, it is not the full per-feature research (that happens inside each workstream later). If `.claude/repo/ownership.json` exists, mention it to the architect as a draft path-ownership hint only.
 
 ## Discovery
 

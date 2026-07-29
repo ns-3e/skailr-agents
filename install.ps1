@@ -44,6 +44,7 @@ function Install-Claude {
         "$Target\.claude\teams",
         "$Target\.claude\skills",
         "$Target\.claude\tmp",
+        "$Target\.claude\repo",
         "$Target\.claude\program\channels",
         "$Target\.claude\program\schemas"
     )
@@ -109,10 +110,10 @@ function Install-Claude {
         Write-Host "  + CLAUDE.md"
     }
 
-    foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep")) {
+    foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep", "$Target\.claude\repo\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
     }
-    Write-Host "  + .claude/tmp/ .claude/program/"
+    Write-Host "  + .claude/tmp/ .claude/program/ .claude/repo/"
 }
 
 $PackagedRules = @(
@@ -128,7 +129,7 @@ $PackagedRules = @(
 )
 $PackagedCommands = @(
     "ship-feature", "build-feature", "continue-feature", "yolo", "patch",
-    "discover", "plan-program", "build-program", "continue-program", "yolo-program",
+    "discover", "plan-program", "build-program", "continue-program", "yolo-program", "map-repo",
     "discover-portfolio", "plan-portfolio", "status-portfolio"
 )
 
@@ -178,7 +179,8 @@ function Install-Cursor {
     }
     New-Item -ItemType Directory -Path "$Target\.claude\tmp" -Force | Out-Null
     New-Item -ItemType Directory -Path "$Target\.claude\program" -Force | Out-Null
-    foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep")) {
+    New-Item -ItemType Directory -Path "$Target\.claude\repo" -Force | Out-Null
+    foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep", "$Target\.claude\repo\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
     }
 }

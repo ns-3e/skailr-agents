@@ -4,11 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`/map-repo`** brownfield bootstrap — durable orientation, draft ownership, assessment findings, ranked backlog, human confirm, optional Intair Phase 5. Artifacts under `.claude/repo/` (tracked). Guide: [docs/MAP_REPO.md](docs/MAP_REPO.md). Researcher **repo mode**; schemas `orientation`, `backlog`, `map-repo-progress`, `map-report`. Intake routes onboard/brownfield/map signals to `/map-repo`. YOLO / discover / patch / program-architect prefer `.claude/repo/` when present.
+
 ### Changed
 
 - README credits [Smith | Advanced Systems](https://advsys.io) as the research and development lab skailr-agents came out of
 - README attribution paragraph cites the product website [skailr.io](https://skailr.io) for more info
 - README header links for License, Claude Code, Cursor, and Cursor Agent render as shields.io badges instead of plain text links; destinations unchanged
+- Installers create `.claude/repo/`; CONTRIBUTING documents remirror `COMMANDS` + Cursor allowlists when adding commands
 
 ## [1.6.0] — 2026-07-29
 

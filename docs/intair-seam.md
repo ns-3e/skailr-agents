@@ -222,12 +222,12 @@ Explicitly **not** part of this seam:
 
 ## Deliberate invocation
 
-Every Intair call is a deliberate step taken by an agent or operator. No existing skailr command, skill, or hook calls Intair as part of its own flow, and installing this pack changes nothing about when Intair is contacted.
+Every Intair call is a deliberate step taken by an agent or operator. No existing skailr command, skill, or hook calls Intair as part of its own flow **except** when that command’s playbook explicitly says to (today: optional Phase 5 of [`/map-repo`](MAP_REPO.md) after human confirm). Installing this pack changes nothing about when Intair is contacted unless you run that phase.
 
 Two consequences worth stating plainly:
 
-- **Nothing is backfilled.** skailr records that already exist locally (ledger entries, channel messages, contracts, decisions, progress notes) stay local. They reach Intair only if an agent or operator deliberately issues a write for them, one at a time.
-- **Intair is never a dependency.** Every other pack capability (YOLO, patch, and program flows, plus the ownership, contract, and channel gates) works unmodified when Intair is absent or unconfigured. This seam is additive reference documentation.
+- **Nothing is backfilled.** skailr records that already exist locally (ledger entries, channel messages, contracts, decisions, progress notes, map-repo artifacts) stay local. They reach Intair only if an agent or operator deliberately issues a write for them, one at a time.
+- **Intair is never a dependency.** Every other pack capability (YOLO, patch, map-repo, and program flows, plus the ownership, contract, and channel gates) works unmodified when Intair is absent or unconfigured. This seam is additive reference documentation. `/map-repo` Phase 5 writes a skip note to `.claude/repo/intair-sync.md` when Intair is unreachable.
 
 The companion skill `call-intair` carries an abbreviated version of this guidance for consumer projects, and it is likewise invoked only when someone has decided to call Intair.
 
@@ -243,5 +243,6 @@ If a shape here looks wrong, do not fix it locally and do not negotiate a new sh
 | -------- | --- |
 | [README install details](../README.md#install-details) | How the pack lands in a consumer project, plus the optional gate scripts |
 | [YOLO.md](YOLO.md) | One-shot feature and program delivery |
+| [MAP_REPO.md](MAP_REPO.md) | Brownfield bootstrap (`/map-repo`) |
 | [INTAKE.md](INTAKE.md) | How plain chat is routed to a command |
 | [MODEL_ROUTING.md](MODEL_ROUTING.md) | Role to model profile mapping |

@@ -14,24 +14,26 @@ Authoritative source: [`.claude/intake.md`](../.claude/intake.md). Detailed heur
 | Ask looks like… | Route |
 | --------------- | ----- |
 | Question / explain / where / how (**no** code change) | Task `researcher` **ask mode** → `.claude/tmp/ask.md` + answer in chat |
+| Map / onboard / brownfield baseline / audit this repo | [`/map-repo`](MAP_REPO.md) |
 | Small / localized change | [`/patch`](../.claude/commands/patch.md) |
 | One cohesive feature | [`/yolo`](YOLO.md) |
 | Whole app / MVP / many parts | [`/yolo-program`](YOLO.md) |
 
-**Slash commands always win.** Incomplete feature/program runs resume via `/continue-feature` / `/continue-program` (or re-enter YOLO with no new prompt) — not a fresh patch.
+**Slash commands always win.** Incomplete feature/program/map-repo runs resume via `/continue-feature` / `/continue-program` / `/map-repo` (or re-enter YOLO with no new prompt) — not a fresh patch.
 
-Plain-chat auto-build uses **YOLO** paths only. For human gates, invoke `/ship-feature` or `/discover` → `/plan-program` → `/build-program` explicitly.
+Plain-chat auto-build uses **YOLO** paths only (plus `/map-repo` for brownfield baseline). For human gates on product initiatives, invoke `/ship-feature` or `/discover` → `/plan-program` → `/build-program` explicitly.
 
-**Business roles (intake routes):** `/patch` = hotfix / small change request; `/yolo` = feature delivery without approval gates; `/yolo-program` = program delivery without approval gates (VP initiative, ungated). Full mapping: [README Command reference](../README.md#command-reference).
+**Business roles (intake routes):** `/map-repo` = brownfield onboarding / tech lead repo audit; `/patch` = hotfix / small change request; `/yolo` = feature delivery without approval gates; `/yolo-program` = program delivery without approval gates (VP initiative, ungated). Full mapping: [README Command reference](../README.md#command-reference).
 
-## `/patch` vs `/yolo` vs `/yolo-program`
+## `/map-repo` vs `/patch` vs `/yolo` vs `/yolo-program`
 
 | Command | Use when | Business equivalent |
 | ------- | -------- | ------------------- |
+| `/map-repo` | Existing repo: inventory, ownership draft, assessment backlog; confirm before build | **Brownfield onboarding / tech lead repo audit** |
 | `/patch` | Bug fix, typo, tweak, single-surface change — syncs lineage/docs; YOLO-style (no human gates); light verify | **Hotfix / small change request** |
 | `/yolo` | One feature, full pipeline (research → validate → docs) | **Feature delivery without approval gates** |
 | `/yolo-program` | Whole product / multi-workstream initiative | **Program delivery without approval gates** |
 
-`/patch` size-gates upward: if the ask is clearly a feature or whole app, it stops and points at `/yolo` or `/yolo-program`.
+`/patch` size-gates upward: if the ask is clearly a feature or whole app, it stops and points at `/yolo` or `/yolo-program`. One-off “where is X?” stays on ask-mode researcher; inventory/backlog/onboard goes to `/map-repo`.
 
-See also [YOLO.md](YOLO.md) and the [README](../README.md) [Command reference](../README.md#command-reference).
+See also [MAP_REPO.md](MAP_REPO.md), [YOLO.md](YOLO.md), and the [README](../README.md) [Command reference](../README.md#command-reference).

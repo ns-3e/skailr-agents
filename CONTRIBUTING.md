@@ -40,8 +40,10 @@ See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) for profiles (`economy` / `ba
 ## Adding a command
 
 1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed).
-2. Run `./scripts/remirror.sh`.
-3. Smoke-test install as above.
+2. Add `"<name>": "<tier>"` to the `COMMANDS` map in `scripts/remirror.sh` (`workstream` | `program` | `portfolio`). Without this, remirror still mirrors the Cursor file from the glob but **omits** the command from `manifest.json`.
+3. Append the stem to `PACKAGED_COMMANDS` in `install.sh` and `$PackagedCommands` in `install.ps1` (Cursor install uses an allowlist; Claude copies all `*.md`).
+4. Run `./scripts/remirror.sh`.
+5. Smoke-test: `./install.sh /tmp/skailr-smoke` and confirm Claude + Cursor command paths exist.
 
 ## Pull requests
 

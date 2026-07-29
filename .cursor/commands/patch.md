@@ -53,8 +53,9 @@ Record the size-gate result in the patch report.
 Resolve owners:
 
 1. If `.claude/program/ownership.json` exists, map touched/intended paths to workstreams/roles.
-2. Else if `.claude/tmp/spec.md` (or `.claude/tmp/ownership.json`) exists, use those globs.
-3. Else infer from the ask + quick repo orientation which of backend / frontend / data apply.
+2. Else if `.claude/repo/ownership.json` exists (brownfield draft from `/map-repo`), use those globs.
+3. Else if `.claude/tmp/spec.md` (or `.claude/tmp/ownership.json`) exists, use those globs.
+4. Else infer from the ask + `.claude/repo/orientation.md` if present, else quick repo orientation which of backend / frontend / data apply.
 
 Dispatch the owning engineer Task(s). Pass: the patch request, relevant spec/contract excerpts if any, and instructions to implement **only** the bounded change, write a short report under `.claude/tmp/` (e.g. `patch-backend-report.md`), or yield per `write-handoff-and-yield`.
 

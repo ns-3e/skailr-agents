@@ -14,7 +14,7 @@ Copies the packaged agent library into a project:
   CLAUDE.md (plain-chat intake for Claude Code)
   scripts/skailr/  scripts/hooks/
   .cursor/rules/   .cursor/commands/
-  Creates .claude/tmp/ and .claude/program/
+  Creates .claude/tmp/, .claude/program/, and .claude/repo/
   Appends ignore rules if missing
 
 Flags:
@@ -70,6 +70,7 @@ install_claude() {
            "$TARGET/.claude/teams" \
            "$TARGET/.claude/skills" \
            "$TARGET/.claude/tmp" \
+           "$TARGET/.claude/repo" \
            "$TARGET/.claude/program/channels" \
            "$TARGET/.claude/program/schemas"
 
@@ -128,7 +129,8 @@ install_claude() {
 
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
-  echo "  + .claude/tmp/ .claude/program/"
+  [[ -f "$TARGET/.claude/repo/.gitkeep" ]] || touch "$TARGET/.claude/repo/.gitkeep"
+  echo "  + .claude/tmp/ .claude/program/ .claude/repo/"
 }
 
 PACKAGED_RULES=(
@@ -144,7 +146,7 @@ PACKAGED_RULES=(
 )
 PACKAGED_COMMANDS=(
   ship-feature build-feature continue-feature yolo patch
-  discover plan-program build-program continue-program yolo-program
+  discover plan-program build-program continue-program yolo-program map-repo
   discover-portfolio plan-portfolio status-portfolio
 )
 
@@ -186,9 +188,10 @@ install_cursor() {
     cp "$SCRIPT_DIR/.claude/intake.md" "$TARGET/.claude/intake.md"
     echo "  + .claude/intake.md (needed by Cursor intake rule)"
   fi
-  mkdir -p "$TARGET/.claude/tmp" "$TARGET/.claude/program"
+  mkdir -p "$TARGET/.claude/tmp" "$TARGET/.claude/program" "$TARGET/.claude/repo"
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
+  [[ -f "$TARGET/.claude/repo/.gitkeep" ]] || touch "$TARGET/.claude/repo/.gitkeep"
 }
 
 append_gitignore() {

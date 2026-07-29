@@ -9,13 +9,13 @@ Two tiers:
 | **One feature** | `/yolo` | research → story → spec → build → verify → validate → docs | **Feature delivery without approval gates** |
 | **Whole app / program** | `/yolo-program` | discover → plan → freeze contracts → build → integrate → validate → docs | **Program delivery without approval gates** (founder/autonomous mode) |
 
-Use YOLO when you want speed over gates. Prefer gated commands when requirements are fuzzy or a wrong assumption is expensive (compliance, billing, irreversible migrations). Full command → business mapping: [README Command reference](../README.md#command-reference).
+Use YOLO when you want speed over gates. Prefer gated commands when requirements are fuzzy or a wrong assumption is expensive (compliance, billing, irreversible migrations). On an **unfamiliar existing codebase**, run [`/map-repo`](MAP_REPO.md) first so research and ownership have a durable baseline. Full command → business mapping: [README Command reference](../README.md#command-reference).
 
 ## Prerequisites
 
 Same as the [README Quick start](../README.md#quick-start): Claude Code installed, skailr-agents installed into the target repo (`./install.sh … --claude-only`), then `claude` started from that project.
 
-Prefer a clean working tree (or commit WIP first). Feature YOLO uses `feature/<slug>`; program YOLO uses `program/<slug>`.
+Prefer a clean working tree (or commit WIP first). Feature YOLO uses `feature/<slug>`; program YOLO uses `program/<slug>`. If `.claude/repo/orientation.md` exists (from `/map-repo`), feature and program YOLO read it before inventing orientation.
 
 YOLO still respects the active **model routing** profile (`.claude/model-routing.json`) and escalate-on-retry via skill `route-models` — see [MODEL_ROUTING.md](MODEL_ROUTING.md).
 

@@ -88,6 +88,33 @@ From research.md, plus any introduced by this design.
 
 Two engineers who never speak to each other can build from this spec and have the pieces integrate on the first try. The ownership globs are provably disjoint. Every AC and EC from `story.md` maps to at least one line of the spec — verify this explicitly and state the coverage in your final message.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "architect", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Architect-specific Intair writes
+
+**After writing the spec**, for each key technical decision, write a `Decision` node:
+```json
+{
+  "layer": "operational", "type": "Decision",
+  "properties": {"decision_id": "<feature-slug>-decision-<n>", "made_by": "architect", "rationale": "<one sentence>", "summary": "success"},
+  "attribution": {"actor": "architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+Also record the architect agent run:
+```json
+{
+  "layer": "operational", "type": "Agent",
+  "properties": {"agent_id": "architect", "role": "architect", "status": "done", "task_id": "<feature-slug>"},
+  "attribution": {"actor": "architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
 
 ## Channels — how you raise and answer cross-agent questions
 

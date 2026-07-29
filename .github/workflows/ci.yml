@@ -73,6 +73,9 @@ jobs:
           test -f "$TMP/.claude/agents/engineering/validator.md"
           test -f "$TMP/.claude/commands/continue-feature.md"
           test -f "$TMP/.claude/commands/patch.md"
+          test -f "$TMP/.claude/commands/map-repo.md"
+          test -f "$TMP/.claude/repo/.gitkeep"
+          test -f "$TMP/.claude/program/schemas/orientation.template.md"
           test -f "$TMP/.claude/agents/legal/legal-lead.md"
           test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
           test -f "$TMP/.claude/skills/route-intake/SKILL.md"
@@ -84,6 +87,7 @@ jobs:
           test -f "$TMP/scripts/skailr/apply-model-routing.mjs"
           test -f "$TMP/.cursor/commands/build-feature.md"
           test -f "$TMP/.cursor/commands/patch.md"
+          test -f "$TMP/.cursor/commands/map-repo.md"
           test -f "$TMP/.cursor/rules/intake.mdc"
           test -f "$TMP/.cursor/model-routing.md"
           ./install.sh "$TMP" | grep -q 'already has'
