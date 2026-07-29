@@ -1,106 +1,8 @@
 {
   "name": "skailr-agents",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "artifacts": [
-    {
-      "id": "architect",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/architect.md",
-      "cursor_path": ".cursor/rules/architect.mdc"
-    },
-    {
-      "id": "backend-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/backend-engineer.md",
-      "cursor_path": ".cursor/rules/backend-engineer.mdc"
-    },
-    {
-      "id": "data-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/data-engineer.md",
-      "cursor_path": ".cursor/rules/data-engineer.mdc"
-    },
-    {
-      "id": "e2e-verifier",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/e2e-verifier.md",
-      "cursor_path": ".cursor/rules/e2e-verifier.mdc"
-    },
-    {
-      "id": "frontend-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/frontend-engineer.md",
-      "cursor_path": ".cursor/rules/frontend-engineer.mdc"
-    },
-    {
-      "id": "initiative-lead",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/initiative-lead.md",
-      "cursor_path": ".cursor/rules/initiative-lead.mdc"
-    },
-    {
-      "id": "integration-verifier",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/integration-verifier.md",
-      "cursor_path": ".cursor/rules/integration-verifier.mdc"
-    },
-    {
-      "id": "portfolio-architect",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/portfolio-architect.md",
-      "cursor_path": ".cursor/rules/portfolio-architect.mdc"
-    },
-    {
-      "id": "program-architect",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program-architect.md",
-      "cursor_path": ".cursor/rules/program-architect.mdc"
-    },
-    {
-      "id": "program-documenter",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program-documenter.md",
-      "cursor_path": ".cursor/rules/program-documenter.mdc"
-    },
-    {
-      "id": "program-validator",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program-validator.md",
-      "cursor_path": ".cursor/rules/program-validator.mdc"
-    },
-    {
-      "id": "researcher",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/researcher.md",
-      "cursor_path": ".cursor/rules/researcher.mdc"
-    },
-    {
-      "id": "story-writer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/story-writer.md",
-      "cursor_path": ".cursor/rules/story-writer.mdc"
-    },
-    {
-      "id": "validator",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/validator.md",
-      "cursor_path": ".cursor/rules/validator.mdc"
-    },
     {
       "id": "content-editor",
       "tier": "content",
@@ -128,6 +30,118 @@
       "type": "agent",
       "claude_path": ".claude/agents/content/content-writer.md",
       "cursor_path": ".cursor/rules/content-writer.mdc"
+    },
+    {
+      "id": "design-lead",
+      "tier": "design",
+      "type": "agent",
+      "claude_path": ".claude/agents/design/design-lead.md",
+      "cursor_path": ".cursor/rules/design-lead.mdc"
+    },
+    {
+      "id": "design-reviewer",
+      "tier": "design",
+      "type": "agent",
+      "claude_path": ".claude/agents/design/design-reviewer.md",
+      "cursor_path": ".cursor/rules/design-reviewer.mdc"
+    },
+    {
+      "id": "design-strategist",
+      "tier": "design",
+      "type": "agent",
+      "claude_path": ".claude/agents/design/design-strategist.md",
+      "cursor_path": ".cursor/rules/design-strategist.mdc"
+    },
+    {
+      "id": "designer",
+      "tier": "design",
+      "type": "agent",
+      "claude_path": ".claude/agents/design/designer.md",
+      "cursor_path": ".cursor/rules/designer.mdc"
+    },
+    {
+      "id": "architect",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/architect.md",
+      "cursor_path": ".cursor/rules/architect.mdc"
+    },
+    {
+      "id": "backend-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/backend-engineer.md",
+      "cursor_path": ".cursor/rules/backend-engineer.mdc"
+    },
+    {
+      "id": "data-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/data-engineer.md",
+      "cursor_path": ".cursor/rules/data-engineer.mdc"
+    },
+    {
+      "id": "e2e-verifier",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/e2e-verifier.md",
+      "cursor_path": ".cursor/rules/e2e-verifier.mdc"
+    },
+    {
+      "id": "frontend-engineer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/frontend-engineer.md",
+      "cursor_path": ".cursor/rules/frontend-engineer.mdc"
+    },
+    {
+      "id": "researcher",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/researcher.md",
+      "cursor_path": ".cursor/rules/researcher.mdc"
+    },
+    {
+      "id": "story-writer",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/story-writer.md",
+      "cursor_path": ".cursor/rules/story-writer.mdc"
+    },
+    {
+      "id": "validator",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/engineering/validator.md",
+      "cursor_path": ".cursor/rules/validator.mdc"
+    },
+    {
+      "id": "fin-analyst",
+      "tier": "finance",
+      "type": "agent",
+      "claude_path": ".claude/agents/finance/fin-analyst.md",
+      "cursor_path": ".cursor/rules/fin-analyst.mdc"
+    },
+    {
+      "id": "fin-auditor",
+      "tier": "finance",
+      "type": "agent",
+      "claude_path": ".claude/agents/finance/fin-auditor.md",
+      "cursor_path": ".cursor/rules/fin-auditor.mdc"
+    },
+    {
+      "id": "fin-lead",
+      "tier": "finance",
+      "type": "agent",
+      "claude_path": ".claude/agents/finance/fin-lead.md",
+      "cursor_path": ".cursor/rules/fin-lead.mdc"
+    },
+    {
+      "id": "fin-modeler",
+      "tier": "finance",
+      "type": "agent",
+      "claude_path": ".claude/agents/finance/fin-modeler.md",
+      "cursor_path": ".cursor/rules/fin-modeler.mdc"
     },
     {
       "id": "compliance-reviewer",
@@ -158,6 +172,34 @@
       "cursor_path": ".cursor/rules/legal-validator.mdc"
     },
     {
+      "id": "channel-planner",
+      "tier": "marketing",
+      "type": "agent",
+      "claude_path": ".claude/agents/marketing/channel-planner.md",
+      "cursor_path": ".cursor/rules/channel-planner.mdc"
+    },
+    {
+      "id": "mkt-analyst",
+      "tier": "marketing",
+      "type": "agent",
+      "claude_path": ".claude/agents/marketing/mkt-analyst.md",
+      "cursor_path": ".cursor/rules/mkt-analyst.mdc"
+    },
+    {
+      "id": "mkt-lead",
+      "tier": "marketing",
+      "type": "agent",
+      "claude_path": ".claude/agents/marketing/mkt-lead.md",
+      "cursor_path": ".cursor/rules/mkt-lead.mdc"
+    },
+    {
+      "id": "mkt-strategist",
+      "tier": "marketing",
+      "type": "agent",
+      "claude_path": ".claude/agents/marketing/mkt-strategist.md",
+      "cursor_path": ".cursor/rules/mkt-strategist.mdc"
+    },
+    {
       "id": "pm-lead",
       "tier": "pm",
       "type": "agent",
@@ -184,6 +226,48 @@
       "type": "agent",
       "claude_path": ".claude/agents/pm/status-reporter.md",
       "cursor_path": ".cursor/rules/status-reporter.mdc"
+    },
+    {
+      "id": "initiative-lead",
+      "tier": "portfolio",
+      "type": "agent",
+      "claude_path": ".claude/agents/portfolio/initiative-lead.md",
+      "cursor_path": ".cursor/rules/initiative-lead.mdc"
+    },
+    {
+      "id": "portfolio-architect",
+      "tier": "portfolio",
+      "type": "agent",
+      "claude_path": ".claude/agents/portfolio/portfolio-architect.md",
+      "cursor_path": ".cursor/rules/portfolio-architect.mdc"
+    },
+    {
+      "id": "integration-verifier",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program/integration-verifier.md",
+      "cursor_path": ".cursor/rules/integration-verifier.mdc"
+    },
+    {
+      "id": "program-architect",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program/program-architect.md",
+      "cursor_path": ".cursor/rules/program-architect.mdc"
+    },
+    {
+      "id": "program-documenter",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program/program-documenter.md",
+      "cursor_path": ".cursor/rules/program-documenter.mdc"
+    },
+    {
+      "id": "program-validator",
+      "tier": "program",
+      "type": "agent",
+      "claude_path": ".claude/agents/program/program-validator.md",
+      "cursor_path": ".cursor/rules/program-validator.mdc"
     },
     {
       "id": "build-feature",
@@ -226,6 +310,13 @@
       "type": "command",
       "claude_path": ".claude/commands/discover-portfolio.md",
       "cursor_path": ".cursor/commands/discover-portfolio.md"
+    },
+    {
+      "id": "patch",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/patch.md",
+      "cursor_path": ".cursor/commands/patch.md"
     },
     {
       "id": "plan-portfolio",
@@ -305,6 +396,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-reconcile-model",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/reconcile-model/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-resume-from-feature-progress",
       "tier": "skill",
       "type": "skill",
@@ -326,6 +424,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-route-intake",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/route-intake/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-route-models",
       "tier": "skill",
       "type": "skill",
@@ -337,6 +442,13 @@
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/run-gated-pipeline/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-sync-lineage",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/sync-lineage/SKILL.md",
       "cursor_path": null
     },
     {
@@ -359,6 +471,20 @@
       "type": "registry",
       "claude_path": ".claude/teams/registry.md",
       "cursor_path": ".cursor/rules/registry.mdc"
+    },
+    {
+      "id": "intake",
+      "tier": "config",
+      "type": "intake",
+      "claude_path": ".claude/intake.md",
+      "cursor_path": ".cursor/rules/intake.mdc"
+    },
+    {
+      "id": "claude-md",
+      "tier": "config",
+      "type": "config",
+      "claude_path": "CLAUDE.md",
+      "cursor_path": null
     },
     {
       "id": "model-routing",
@@ -414,6 +540,27 @@
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/ownership.example.json",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-patch-report.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/patch-report.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-feature-progress.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/feature-progress.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-handoff.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/handoff.template.md",
       "cursor_path": null
     }
   ]

@@ -4,12 +4,12 @@ Give Claude Code what you want to build. The agent team one-shots it **without s
 
 Two tiers:
 
-| Scope | Command | What it one-shots |
-| ----- | ------- | ----------------- |
-| **One feature** | `/yolo` | research → story → spec → build → verify → validate → docs |
-| **Whole app / program** | `/yolo-program` | discover → plan → freeze contracts → build → integrate → validate → docs |
+| Scope | Command | What it one-shots | Business equivalent |
+| ----- | ------- | ----------------- | ------------------- |
+| **One feature** | `/yolo` | research → story → spec → build → verify → validate → docs | **Feature delivery without approval gates** |
+| **Whole app / program** | `/yolo-program` | discover → plan → freeze contracts → build → integrate → validate → docs | **Program delivery without approval gates** (founder/autonomous mode) |
 
-Use YOLO when you want speed over gates. Prefer gated commands when requirements are fuzzy or a wrong assumption is expensive (compliance, billing, irreversible migrations).
+Use YOLO when you want speed over gates. Prefer gated commands when requirements are fuzzy or a wrong assumption is expensive (compliance, billing, irreversible migrations). Full command → business mapping: [README Command reference](../README.md#command-reference).
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ That is the entire interaction until the final report.
 
 Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `mode.md` = `yolo`, `progress.md`, reports, channels).
 
-Gated alternative: `/ship-feature` → `/continue-feature` → `/build-feature`.
+Gated alternative: `/ship-feature` → `/continue-feature` → `/build-feature` (**gated feature intake** → **resume mid-feature** → **approved-spec delivery**).
 
 ---
 
@@ -66,7 +66,7 @@ customer portal to pay, admin dashboard. Prefer TypeScript.
 
 Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md`, `mode.md` = `yolo`, `contracts/`, `ledger.md`, `ownership.json`, channels, workstream reports). A **new** initiative archives prior program state; an incomplete run is never archived on resume.
 
-Gated alternative: `/discover` → `/plan-program` → `/build-program`.
+Gated alternative: `/discover` → `/plan-program` → `/build-program` (**VP kickoff / discovery** → **program planning + interface freeze** → **program delivery**).
 
 **Important:** `/yolo` will not decompose a whole product into workstreams. Use `/yolo-program` (or gated Path A) for that.
 
@@ -122,11 +122,15 @@ If the verdict is SHIP WITH FIXES or DO NOT SHIP, ask Claude to fix blocking fin
 
 ## Quick chooser
 
-| You want… | Command |
-| --------- | ------- |
-| One feature, gated | `/ship-feature` → `/build-feature` |
-| One feature, one-shot | `/yolo` |
-| Whole app, gated | `/discover` → `/plan-program` → `/build-program` |
-| Whole app, one-shot | `/yolo-program` |
-| Resume after usage limits (feature) | `/continue-feature` or `/yolo` with no new prompt |
-| Resume after usage limits (program) | `/continue-program` or `/yolo-program` with no new prompt |
+| You want… | Command | Business equivalent |
+| --------- | ------- | ------------------- |
+| Question only (plain chat) | Intake → researcher ask mode — [INTAKE.md](INTAKE.md) | Q&A (no delivery) |
+| Small fix, sync lineage | `/patch` | **Hotfix / small change request** |
+| One feature, gated | `/ship-feature` → `/build-feature` | **Gated feature intake** → **approved-spec delivery** |
+| One feature, one-shot | `/yolo` | **Feature delivery without approval gates** |
+| Whole app, gated | `/discover` → `/plan-program` → `/build-program` | **VP discovery** → **planning + freeze** → **program delivery** |
+| Whole app, one-shot | `/yolo-program` | **Program delivery without approval gates** |
+| Resume after usage limits (feature) | `/continue-feature` or `/yolo` with no new prompt | **Resume mid-feature** |
+| Resume after usage limits (program) | `/continue-program` or `/yolo-program` with no new prompt | **Resume mid-initiative** |
+
+See also the [README Command reference](../README.md#command-reference).

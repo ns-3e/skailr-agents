@@ -4,11 +4,10 @@
  * Usage:
  *   node scripts/skailr/apply-model-routing.mjs [--profile economy|balanced|quality] [--check] [--root .]
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, resolve, basename } from "node:path";
 
 const VALID_PROFILES = new Set(["economy", "balanced", "quality"]);
-const TEAM_DIRS = ["content", "legal", "pm"];
 
 function parseArgs(argv) {
   let root = ".";
@@ -49,13 +48,20 @@ function listAgentFiles(agentsRoot) {
   if (!existsSync(agentsRoot)) return files;
   for (const name of readdirSync(agentsRoot)) {
     const p = join(agentsRoot, name);
-    if (name.endsWith(".md")) files.push(p);
-  }
-  for (const team of TEAM_DIRS) {
-    const dir = join(agentsRoot, team);
-    if (!existsSync(dir)) continue;
-    for (const name of readdirSync(dir)) {
-      if (name.endsWith(".md")) files.push(join(dir, name));
+    let st;
+    try {
+      st = statSync(p);
+    } catch {
+      continue;
+    }
+    if (st.isFile() && name.endsWith(".md")) {
+      throw new Error(
+        `flat agent files are not allowed under .claude/agents/; move ${name} into a subdirectory`
+      );
+    }
+    if (!st.isDirectory()) continue;
+    for (const file of readdirSync(p)) {
+      if (file.endsWith(".md")) files.push(join(p, file));
     }
   }
   return files.sort();

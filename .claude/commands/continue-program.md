@@ -1,5 +1,5 @@
 ---
-description: Resume an in-flight program from the ledger — pick up at the first incomplete phase
+description: Resume mid-initiative — pick up from the program ledger at the first incomplete phase
 allowed-tools: Task, Read, Write, Bash
 ---
 

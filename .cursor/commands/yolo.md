@@ -1,6 +1,6 @@
 ---
 name: yolo
-description: One-shot the full feature pipeline — no human approval gates; research → story → spec → build → verify → validate → docs
+description: Feature delivery without approval gates — full research→build→validate→docs one-shot
 ---
 
 <!--

@@ -19,15 +19,14 @@ jobs:
         run: |
           set -e
           fail=0
-          for f in .claude/agents/*.md .claude/agents/content/*.md .claude/agents/legal/*.md .claude/agents/pm/*.md; do
-            [ -f "$f" ] || continue
+          while IFS= read -r f; do
             stem=$(basename "$f" .md)
             name=$(grep -m1 '^name:' "$f" | sed 's/^name:[[:space:]]*//')
             if [ "$name" != "$stem" ]; then
               echo "MISMATCH: $f has name=$name expected=$stem"
               fail=1
             fi
-          done
+          done < <(find .claude/agents -name '*.md' -type f | sort)
           exit $fail
 
       - name: Check model routing matches active profile
@@ -71,14 +70,21 @@ jobs:
           TMP=$(mktemp -d)
           ./install.sh "$TMP"
           test -f "$TMP/.claude/program/channels/PROTOCOL.md"
-          test -f "$TMP/.claude/agents/validator.md"
+          test -f "$TMP/.claude/agents/engineering/validator.md"
           test -f "$TMP/.claude/commands/continue-feature.md"
+          test -f "$TMP/.claude/commands/patch.md"
           test -f "$TMP/.claude/agents/legal/legal-lead.md"
           test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
+          test -f "$TMP/.claude/skills/route-intake/SKILL.md"
+          test -f "$TMP/.claude/skills/sync-lineage/SKILL.md"
+          test -f "$TMP/.claude/intake.md"
+          test -f "$TMP/CLAUDE.md"
           test -f "$TMP/scripts/skailr/check-ownership.mjs"
           test -f "$TMP/.claude/model-routing.json"
           test -f "$TMP/scripts/skailr/apply-model-routing.mjs"
           test -f "$TMP/.cursor/commands/build-feature.md"
+          test -f "$TMP/.cursor/commands/patch.md"
+          test -f "$TMP/.cursor/rules/intake.mdc"
           test -f "$TMP/.cursor/model-routing.md"
           ./install.sh "$TMP" | grep -q 'already has'
           rm -rf "$TMP"

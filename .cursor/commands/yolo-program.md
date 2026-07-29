@@ -1,6 +1,6 @@
 ---
 name: yolo-program
-description: One-shot a whole program — discover → plan → freeze contracts → build → integrate → validate → docs with no human approval gates
+description: Program delivery without approval gates — full discover→plan→build→validate→docs one-shot
 ---
 
 <!--

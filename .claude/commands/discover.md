@@ -1,5 +1,5 @@
 ---
-description: Begin a large initiative — run discovery until the intent is a confirmed, shared understanding
+description: VP kickoff / discovery — clarify a large initiative until the charter brief is confirmed
 argument-hint: <long description of what you want built>
 allowed-tools: Task, Read, Write, Bash
 ---

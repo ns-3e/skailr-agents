@@ -5,21 +5,23 @@
 [Cursor](https://cursor.com/docs)
 [Cursor Agent](https://github.com/cursoragent)
 
-![skailr-agents hero image](Assets/hero.png)
+![skailr-agents hero image](assets/hero.png)
 
 **A multi-agent operating model for Claude Code and Cursor.** Install it into a repo; Claude Code (or Cursor) runs the agents. Skailr adds org structure: plan before build, single-job roles, a visible message board, frozen contracts, and mechanical script gates.
 
-You do not need prior knowledge of skailr. Pick a path below, install once, then run the slash commands in Claude Code.
+You do not need prior knowledge of skailr. Install once. **Plain chat is auto-routed** ([docs/INTAKE.md](docs/INTAKE.md)); or run a slash command explicitly.
 
 | You want to… | Use | Commands |
 | ------------ | --- | -------- |
+| **Ask a question** (no code change) | Intake → researcher | Plain chat, or Task `researcher` ask mode |
+| **Small fix / tweak** (keep lineage/docs true) | Patch (YOLO-style) | `/patch` — or plain chat |
 | **Build a whole app / MVP / many parts / unclear scope** (gated) | Program tier | `/discover` → `/plan-program` → `/build-program` |
 | **Build a whole app** as fast as possible (no gates) | Program YOLO | `/yolo-program` — [docs/YOLO.md](docs/YOLO.md) |
 | Ship **one** cohesive feature (with approval gates) | Workstream | `/ship-feature` → `/continue-feature` → `/build-feature` |
 | Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` — [docs/YOLO.md](docs/YOLO.md) |
 | Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
 
-**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**.
+**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. Plain chat follows the same rule via intake ([docs/INTAKE.md](docs/INTAKE.md)).
 
 ---
 
@@ -71,7 +73,7 @@ git clone https://github.com/ns-3e/skailr-agents.git $env:TEMP\skailr-agents
 Commit the pack so teammates get the same agents:
 
 ```bash
-git add .claude scripts/skailr .gitignore
+git add .claude CLAUDE.md scripts/skailr .gitignore
 git commit -m "Add skailr-agents operating model"
 ```
 
@@ -84,7 +86,7 @@ cd /path/to/my-app
 claude
 ```
 
-Slash commands from the pack are available (`/discover`, `/yolo-program`, `/ship-feature`, `/yolo`, …).
+Slash commands from the pack are available (`/discover`, `/yolo-program`, `/ship-feature`, `/yolo`, `/patch`, …). Plain chat is routed by `CLAUDE.md` ([docs/INTAKE.md](docs/INTAKE.md)).
 
 ---
 
@@ -133,6 +135,13 @@ State lives under `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledg
 
 **Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. Engineering mid-slice handoffs live under `.claude/program/workstreams/<ws>/handoff/` and are continued automatically.
 
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/discover` | Clarify the initiative until you confirm `.claude/program/brief.md` | **VP kickoff / discovery** — leadership signs the charter before anyone plans workstreams |
+| `/plan-program` | Workstreams, shared kernel, frozen contracts, execution DAG | **Program planning + interface freeze** — org design and approved seams before parallel delivery |
+| `/build-program` | Run the approved DAG (foundation → teams → integrate → validate → docs) | **Program delivery** — execute the signed plan |
+| `/continue-program` | Resume from `.claude/program/ledger.md` at the first incomplete phase | **Resume mid-initiative** — pick up after a pause (no re-charter) |
+
 #### Path A2 — YOLO (one shot, no approval gates)
 
 Same end-to-end program pipeline, but brief/plan freezes and mid-build escalations are auto-decided:
@@ -143,6 +152,10 @@ customer portal to pay, admin dashboard. Prefer TypeScript.
 ```
 
 Read the final **Assumptions made** and any orchestrator decisions carefully — those replace discovery/plan gates. Full notes: [docs/YOLO.md](docs/YOLO.md).
+
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/yolo-program` | Full program pipeline with no human approval gates | **Same program delivery without approval gates** — founder/autonomous mode; assumptions replace sign-offs |
 
 ---
 
@@ -173,6 +186,12 @@ Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `
 
 **Next single features:** run `/ship-feature …` with a **new** request (different from `request.md`). Only then are stale tmp files archived.
 
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/ship-feature` | Research → story → spec with approval gates | **Gated feature intake** — stakeholder sign-off before build |
+| `/continue-feature` | Resume from `.claude/tmp/progress.md` at the first incomplete phase | **Resume mid-feature** — after story/spec approval or session interrupt |
+| `/build-feature` | Parallel build → E2E → validation → docs against the approved spec | **Approved-spec delivery** — ship what was signed off |
+
 ---
 
 ### Path C — One feature, no gates (YOLO)
@@ -183,9 +202,29 @@ Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `
 
 Same pipeline as Path B, but story/spec approvals are skipped. Read the final **Assumptions made** section carefully. If usage limits stop the run mid-way, `/continue-feature` (or `/yolo` with no new prompt) picks up from `.claude/tmp/progress.md`. For a **whole app** one-shot, use Path A2 (`/yolo-program`) instead — `/yolo` will not decompose into workstreams. Full notes: [docs/YOLO.md](docs/YOLO.md).
 
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/yolo` | Full feature pipeline with no human approval gates | **Same feature delivery without approval gates** |
+
+---
+
+### Path C2 — Small fix (patch, no gates)
+
+```
+/patch Fix the invoice due-date timezone bug on the reminder job
+```
+
+Bounded change via owning engineers; syncs ledger/ownership/contracts/docs (skill `sync-lineage`). YOLO-style — no human gates; contract seams auto-decided and logged. Plain chat with a small-fix ask routes here automatically ([docs/INTAKE.md](docs/INTAKE.md)). Too large → use `/yolo` or `/yolo-program`.
+
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/patch` | Bounded fix; sync lineage/contracts/docs; no human gates | **Hotfix / small change request** — no change board |
+
 ---
 
 ### Path D — Many concurrent initiatives (portfolio)
+
+Use when you are running **several large bets at once** (not one program). Portfolio sits above programs the way a CEO/PMO sits above VPs: clarify the mandate, decompose into initiatives, then monitor exceptions — it does **not** write product code.
 
 ```
 /discover-portfolio <portfolio description>
@@ -193,12 +232,23 @@ Same pipeline as Path B, but story/spec approvals are skipped. Read the final **
 /status-portfolio
 ```
 
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/discover-portfolio` | Clarify multi-initiative intent until you confirm `.claude/portfolio/brief.md` | **CEO / exec strategy offsite** — agree the company-level mandate before anyone plans initiatives |
+| `/plan-portfolio` | Split the brief into initiatives, programs, shared constraints, and conflict surfaces; on approval, open `.claude/portfolio/ledger.md` | **Portfolio / PMO planning** — roadmap into owned initiatives; flag where teams will collide (shared APIs, brand, compliance) |
+| `/status-portfolio` | Roll up initiative traffic lights + open exceptions only; recommend CEO actions | **CEO / exec status review** — red/yellow/green dashboard and exception inbox, not a deep dive into every project |
+
+The agent behind discovery and planning is `portfolio-architect` (CEO-counterpart). Status uses PM patterns (`pm-lead` / `status-reporter`) so routine green work stays off your plate.
+
+After `/plan-portfolio`, run **per-initiative** program commands (`/discover` → `/plan-program` → `/build-program`, or `/yolo-program`). `/status-portfolio` only monitors and points at `/continue-program` for blocked programs.
+
 ---
 
 ### After you finish
 
 | Path | What to review |
 | ---- | -------------- |
+| Portfolio | Brief, plan, ledger under `.claude/portfolio/`; exception rollup from `/status-portfolio` |
 | Program (gated or YOLO) | Brief, plan, contracts, validator verdict, assumptions (YOLO), channel board under `.claude/program/` |
 | Feature (gated or YOLO) | Validator verdict, `.claude/tmp/` reports, assumptions (YOLO) |
 
@@ -216,9 +266,31 @@ skailr is **not** an agent framework (no LangGraph-style runtime). Claude Code /
 4. **Coordinate in the open** — markdown channels, not private side chats.
 5. **Freeze interfaces** — parallel teams build against contracts; changing a frozen contract normally needs your approval (YOLO program mode auto-decides and logs it).
 
-Tiers nest: **portfolio** (many initiatives) → **program** (one large initiative) → **workstream** (one feature pipeline).
+Tiers nest: **portfolio** (many initiatives — CEO/PMO layer) → **program** (one large initiative — VP-owned) → **workstream** (one feature pipeline — delivery team). Full slash-command → business mapping: [Command reference](#command-reference).
 
 **Claude Code vs Cursor.** `.claude/` is the source of truth. `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
+
+---
+
+## Command reference
+
+Every slash command mapped to a business role. Paths above tell the story; this table is the lookup.
+
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/discover-portfolio` | Confirm portfolio brief (`.claude/portfolio/brief.md`) | **CEO / exec strategy offsite** — company-level mandate |
+| `/plan-portfolio` | Initiatives, programs, conflict surfaces; open portfolio ledger | **Portfolio / PMO planning** — roadmap and collision surfaces |
+| `/status-portfolio` | Traffic lights + exception inbox rollup | **CEO / exec status review** — exceptions only |
+| `/discover` | Confirm program brief (`.claude/program/brief.md`) | **VP kickoff / discovery** — sign the charter |
+| `/plan-program` | Workstreams, frozen contracts, execution DAG | **Program planning + interface freeze** |
+| `/build-program` | Execute approved program DAG | **Program delivery** |
+| `/continue-program` | Resume from program ledger | **Resume mid-initiative** |
+| `/yolo-program` | Full program pipeline, no approval gates | **Program delivery without approval gates** |
+| `/ship-feature` | Research → story → spec with gates | **Gated feature intake** |
+| `/continue-feature` | Resume from feature progress | **Resume mid-feature** |
+| `/build-feature` | Build → E2E → validate → docs | **Approved-spec delivery** |
+| `/yolo` | Full feature pipeline, no approval gates | **Feature delivery without approval gates** |
+| `/patch` | Bounded fix; sync lineage/docs | **Hotfix / small change request** |
 
 ---
 
@@ -236,7 +308,7 @@ If agents fail on large work, the model may not be the problem. **The operating 
 | Capability | What it means |
 | ---------- | ------------- |
 | **Hierarchy** | Plan layer first; then teams execute. Program: `/discover` → `/plan-program` → `/build-program` (or `/yolo-program`). Feature: `/ship-feature` → `/build-feature` (or `/yolo`). |
-| **Division of labor** | Single-job agents (research, story, architecture, engineers, verify, validate, document) plus domain teams (content, legal, PM, …). |
+| **Division of labor** | Single-job agents (research, story, architecture, engineers, verify, validate, document) plus domain teams (content, legal, PM, design, marketing, finance). |
 | **Progressive disclosure** | Thin registry → team lead → workers. Unused domains cost almost nothing. |
 | **Message board** | Append-only channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a feature). |
 | **Frozen contracts** | Cross-team seams freeze after plan approval; only the program-architect changes them after you approve blast radius. |
@@ -285,7 +357,7 @@ Full protocol: [PROTOCOL.md](.claude/program/channels/PROTOCOL.md). Seeded examp
 
 The program tier is domain-agnostic. Engineering is one team; content, legal, PM, design, marketing, and finance plug in as siblings.
 
-**Built today:** engineering, **content**, **legal/compliance**, **PM/delivery**, plus portfolio agents. Design, marketing, and finance remain registry stubs (`status: not built`).
+**Built today:** engineering, **content**, **legal/compliance**, **PM/delivery**, **design**, **marketing**, **finance**, plus program/portfolio agents. Agent definitions live under `.claude/agents/<team-or-tier>/` (`engineering/`, `program/`, `portfolio/`, `content/`, `legal/`, `pm/`, `design/`, `marketing/`, `finance/`).
 
 1. **Tier 1: registry** (`.claude/teams/registry.md`) — name, capability, `route-when`.
 2. **Tier 2: team lead** — loaded only when a workstream routes there.
@@ -297,17 +369,20 @@ The program tier is domain-agnostic. Engineering is one team; content, legal, PM
 | content | pieces / sections | facts sourced + brand voice |
 | legal | requirements / controls | every claim traced |
 | pm | milestones / risks / digests | exceptions escalate |
-| design | assets / artboards | a11y + design-system (stub) |
-| marketing | channels / segments | message + measurement (stub) |
-| finance | worksheets / models | numbers reconcile (stub) |
+| design | assets / artboards | a11y + design-system conformance |
+| marketing | channels / segments | message + measurement alignment |
+| finance | worksheets / models | numbers reconcile + assumptions traced |
 
-### Content / legal / PM (built)
+### Domain pipelines (built)
 
 - **Content:** `content-lead` → strategist → writer → editor. Never ship false claims or generic AI prose.
 - **Legal:** `legal-lead` → analyst → compliance-reviewer → legal-validator. Skill: `trace-requirement`.
 - **PM:** `pm-lead` → planner → risk-analyst → status-reporter. Skill: `compile-status-digest`.
+- **Design:** `design-lead` → strategist → designer → design-reviewer. Markdown specs/handoffs; no Figma required.
+- **Marketing:** `mkt-lead` → strategist → channel-planner → mkt-analyst.
+- **Finance:** `fin-lead` → analyst → modeler → fin-auditor. Skill: `reconcile-model`.
 
-To add a domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` in the registry, set `status: built`.
+Cross-domain demo: [examples/launch-kit/](examples/launch-kit/). To add another domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` in the registry, set `status: built`.
 
 ---
 
@@ -347,7 +422,7 @@ cp -r .claude /path/to/your-repo/
 mkdir -p /path/to/your-repo/.claude/tmp /path/to/your-repo/.claude/program
 ```
 
-Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
+Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, `.claude/intake.md`, root `CLAUDE.md`, and tracked channel templates under `.claude/program/channels/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
 
 ### Enforcement fixtures (optional)
 
@@ -355,9 +430,11 @@ Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, and tracked cha
 node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
 node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
 node scripts/skailr/feature-status.mjs --json
+node scripts/skailr/check-ownership.mjs --map examples/launch-kit/ownership.json --map-only
+node scripts/skailr/check-contracts.mjs --dir examples/launch-kit/contracts
 ```
 
-See `examples/parallel-api/` and [docs/intair-seam.md](docs/intair-seam.md).
+See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](docs/intair-seam.md).
 
 ---
 
@@ -389,13 +466,19 @@ No. Frameworks (LangGraph, CrewAI, AutoGen, …) provide a runtime. skailr is an
 
 No. `/ship-feature` and `/yolo` produce **one** story and **one** build. They do not create a multi-story backlog or loop features. Use **Path A1** (`/discover` → `/plan-program` → `/build-program`) or **Path A2** (`/yolo-program`) for a whole app or multi-part initiative.
 
-### When should I use `/ship-feature` vs `/yolo` vs `/discover` vs `/yolo-program`?
+### When should I use `/ship-feature` vs `/yolo` vs `/patch` vs `/discover` vs `/yolo-program`?
 
-- `/ship-feature` — one feature, keep story/spec approval gates.
-- `/yolo` — one feature, skip human gates ([docs/YOLO.md](docs/YOLO.md)).
-- `/discover` → `/plan-program` → `/build-program` — whole app, many parts, or unclear scope, with confirmation gates.
-- `/yolo-program` — same program pipeline, skip discovery/plan freezes ([docs/YOLO.md](docs/YOLO.md)).
-- `/discover-portfolio` — many concurrent initiatives.
+See the [Command reference](#command-reference) for every command’s business equivalent. Quick chooser:
+
+- **Hotfix / small tweak** → `/patch` ([docs/INTAKE.md](docs/INTAKE.md))
+- **One feature, keep approvals** → `/ship-feature` → `/continue-feature` → `/build-feature`
+- **One feature, no gates** → `/yolo` ([docs/YOLO.md](docs/YOLO.md)); resume with `/continue-feature`
+- **Whole app / many parts, keep approvals** → `/discover` → `/plan-program` → `/build-program`; resume with `/continue-program`
+- **Whole app, no gates** → `/yolo-program` ([docs/YOLO.md](docs/YOLO.md))
+- **Many concurrent initiatives** → `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` (CEO/PMO layer)
+### What happens if I just chat (no slash command)?
+
+Intake routes the ask: questions → researcher ask mode; small changes → `/patch`; one feature → `/yolo`; whole app → `/yolo-program`. Slash commands still win. Details: [docs/INTAKE.md](docs/INTAKE.md).
 
 ### Do agents talk to each other directly?
 
@@ -405,13 +488,13 @@ Via markdown channels: an agent posts and ends its turn; the **orchestrator** ro
 
 The team posts `type: contract-change` to `@architect` and stops. The program-architect assesses blast radius; **you** approve before the contract updates. Teams never silently edit frozen interfaces.
 
-### Can I add my own domain team (design, marketing, finance)?
+### Can I add my own domain team?
 
-Yes. Mirror the content-team shape under `.claude/agents/<prefix>/`, register a sharp `route-when` in [registry.md](.claude/teams/registry.md), set `status: built`.
+Yes. Mirror a built domain team under `.claude/agents/<prefix>/`, register a sharp `route-when` in [registry.md](.claude/teams/registry.md), set `status: built`. Design, marketing, and finance are already built as references alongside content.
 
 ### Does this work only for software engineering?
 
-No. Engineering, content, legal, and PM are built; design/marketing/finance use the same pattern when you flip them to `built`.
+No. Engineering, content, legal, PM, design, marketing, and finance are built; new domains use the same registry + lead → workers + gate pattern.
 
 ---
 

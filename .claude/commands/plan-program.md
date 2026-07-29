@@ -1,5 +1,5 @@
 ---
-description: Decompose a confirmed brief into parallel workstreams, a shared kernel, frozen contracts, and an execution DAG
+description: Program planning + interface freeze — workstreams, frozen contracts, execution DAG (approve to freeze)
 allowed-tools: Task, Read, Write, Bash
 ---
 

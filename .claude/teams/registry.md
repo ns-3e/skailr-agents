@@ -41,7 +41,7 @@ same way it does for engineering files.
 - **lead:** invoke the standard `/ship-feature` → `/build-feature` workstream flow (no separate `eng-lead` agent yet)
 - **owns:** source files, migrations, tests, config
 - **produces contracts of type:** API shapes, data schemas, module interfaces, events
-- **status:** built
+- **status:** built — agents under `.claude/agents/engineering/`
 
 ### content
 - **capability:** Produces written deliverables that are on-brand, factually grounded, and human-sounding — articles, posts, announcements, docs, scripts, email copy. Strategy → drafting → brand + fact verification → validation.
@@ -76,8 +76,8 @@ same way it does for engineering files.
 - **lead:** `design-lead`
 - **owns:** assets, artboards, design-system entries
 - **produces contracts of type:** design specs / handoff files that engineering implements; approved visual assets that marketing uses
-- **consumes:** brand guidelines; approved copy from content
-- **status:** not built — add agents under `.claude/agents/design/` and flip to built
+- **consumes:** brand guidelines; approved copy from content; positioning from marketing
+- **status:** built
 
 ### marketing
 - **capability:** Campaign strategy and channel execution — positioning, audience, channel plans, distribution, and performance analysis.
@@ -86,7 +86,7 @@ same way it does for engineering files.
 - **owns:** channels, campaigns, audience segments
 - **produces contracts of type:** positioning/message briefs that content and design build to; a campaign plan
 - **consumes:** approved copy (content), approved assets (design), finance's pricing/budget
-- **status:** not built
+- **status:** built
 
 ### finance
 - **capability:** Financial analysis, modeling, and accounting — models, forecasts, pricing, budgets, unit economics — with a numerical audit as the correctness gate. Prime directive is numerical correctness and auditability.
@@ -95,7 +95,7 @@ same way it does for engineering files.
 - **owns:** worksheets, models, line-item schedules
 - **produces contracts of type:** pricing/budget figures other teams depend on; a validated model
 - **consumes:** assumptions and volumes from other teams
-- **status:** not built
+- **status:** built
 
 ---
 

@@ -10,7 +10,8 @@ Usage: ./install.sh <target-project-path> [--claude-only|--cursor-only]
 
 Copies the packaged agent library into a project:
   .claude/agents/  .claude/commands/  .claude/teams/  .claude/skills/
-  .claude/program/schemas/  .claude/settings.skailr.json
+  .claude/program/schemas/  .claude/settings.skailr.json  .claude/intake.md
+  CLAUDE.md (plain-chat intake for Claude Code)
   scripts/skailr/  scripts/hooks/
   .cursor/rules/   .cursor/commands/
   Creates .claude/tmp/ and .claude/program/
@@ -64,9 +65,7 @@ install_scripts() {
 }
 
 install_claude() {
-  mkdir -p "$TARGET/.claude/agents/content" \
-           "$TARGET/.claude/agents/legal" \
-           "$TARGET/.claude/agents/pm" \
+  mkdir -p "$TARGET/.claude/agents" \
            "$TARGET/.claude/commands" \
            "$TARGET/.claude/teams" \
            "$TARGET/.claude/skills" \
@@ -74,12 +73,11 @@ install_claude() {
            "$TARGET/.claude/program/channels" \
            "$TARGET/.claude/program/schemas"
 
-  for f in "$SCRIPT_DIR"/.claude/agents/*.md; do
-    cp "$f" "$TARGET/.claude/agents/"
-    echo "  + .claude/agents/$(basename "$f")"
-  done
-  for team in content legal pm; do
-    for f in "$SCRIPT_DIR"/.claude/agents/"$team"/*.md; do
+  for team_dir in "$SCRIPT_DIR"/.claude/agents/*/; do
+    [[ -d "$team_dir" ]] || continue
+    team=$(basename "$team_dir")
+    mkdir -p "$TARGET/.claude/agents/$team"
+    for f in "$team_dir"*.md; do
       [[ -f "$f" ]] || continue
       cp "$f" "$TARGET/.claude/agents/$team/"
       echo "  + .claude/agents/$team/$(basename "$f")"
@@ -118,6 +116,16 @@ install_claude() {
     echo "  + .claude/model-routing.json"
   fi
 
+  if [[ -f "$SCRIPT_DIR/.claude/intake.md" ]]; then
+    cp "$SCRIPT_DIR/.claude/intake.md" "$TARGET/.claude/intake.md"
+    echo "  + .claude/intake.md"
+  fi
+
+  if [[ -f "$SCRIPT_DIR/CLAUDE.md" ]]; then
+    cp "$SCRIPT_DIR/CLAUDE.md" "$TARGET/CLAUDE.md"
+    echo "  + CLAUDE.md"
+  fi
+
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
   echo "  + .claude/tmp/ .claude/program/"
@@ -127,12 +135,15 @@ PACKAGED_RULES=(
   architect backend-engineer content-editor content-lead content-strategist
   content-writer data-engineer e2e-verifier frontend-engineer integration-verifier
   program-architect program-documenter program-validator researcher story-writer
-  validator registry portfolio-architect initiative-lead
+  validator registry intake portfolio-architect initiative-lead
   legal-lead legal-analyst compliance-reviewer legal-validator
   pm-lead pm-planner risk-analyst status-reporter
+  design-lead design-strategist designer design-reviewer
+  mkt-lead mkt-strategist channel-planner mkt-analyst
+  fin-lead fin-modeler fin-analyst fin-auditor
 )
 PACKAGED_COMMANDS=(
-  ship-feature build-feature continue-feature yolo
+  ship-feature build-feature continue-feature yolo patch
   discover plan-program build-program continue-program yolo-program
   discover-portfolio plan-portfolio status-portfolio
 )
@@ -170,6 +181,10 @@ install_cursor() {
     mkdir -p "$TARGET/.claude/teams"
     cp "$SCRIPT_DIR/.claude/teams/registry.md" "$TARGET/.claude/teams/registry.md"
     echo "  + .claude/teams/registry.md (needed by Cursor registry rule)"
+  fi
+  if [[ -f "$SCRIPT_DIR/.claude/intake.md" ]] && [[ ! -f "$TARGET/.claude/intake.md" ]]; then
+    cp "$SCRIPT_DIR/.claude/intake.md" "$TARGET/.claude/intake.md"
+    echo "  + .claude/intake.md (needed by Cursor intake rule)"
   fi
   mkdir -p "$TARGET/.claude/tmp" "$TARGET/.claude/program"
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"

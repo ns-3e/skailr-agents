@@ -4,14 +4,14 @@ Thanks for helping improve skailr-agents.
 
 ## Source of truth
 
-- **Edit `.claude/` first** — agents under `.claude/agents/`, commands under `.claude/commands/`, registry at `.claude/teams/registry.md`, channel templates under `.claude/program/channels/`.
+- **Edit `.claude/` first** — agents under `.claude/agents/`, commands under `.claude/commands/`, registry at `.claude/teams/registry.md`, intake at `.claude/intake.md`, channel templates under `.claude/program/channels/`.
 - **Re-mirror Cursor** after Claude changes:
 
 ```bash
 ./scripts/remirror.sh
 ```
 
-Do **not** hand-edit generated `.cursor/rules/*.mdc` or `.cursor/commands/*.md` except via the remirror script. Those files are derived from `.claude/`.
+Do **not** hand-edit generated `.cursor/rules/*.mdc`, `.cursor/commands/*.md`, or root `CLAUDE.md` except via the remirror script. Those files are derived from `.claude/`. Remirror special-cases **registry** and **intake** as `alwaysApply: true` Cursor rules (and regenerates `CLAUDE.md` from intake).
 
 ## Maintainer conventions (when changing this repo)
 
@@ -21,7 +21,7 @@ Do **not** hand-edit generated `.cursor/rules/*.mdc` or `.cursor/commands/*.md` 
 
 ## Adding an agent
 
-1. Create `.claude/agents/<name>.md` (or `.claude/agents/<team>/<name>.md` for a domain team) with frontmatter: `name`, `description`, `tools`, `model`.
+1. Create `.claude/agents/<team-or-tier>/<name>.md` (e.g. `.claude/agents/engineering/architect.md`, `.claude/agents/content/content-lead.md`, `.claude/agents/design/design-lead.md`) with frontmatter: `name`, `description`, `tools`, `model`. No flat files under `.claude/agents/` root.
 2. Set `name:` to the filename without `.md`.
 3. Add `<name>` to **every** profile’s `roles` map in [`.claude/model-routing.json`](.claude/model-routing.json), then run `npm run models:check` (or `node scripts/skailr/apply-model-routing.mjs --check`).
 4. If the agent is read-only over app code but may post to channels, grant `Write` only for channel appends and document that in the body.

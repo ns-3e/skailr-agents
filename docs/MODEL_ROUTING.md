@@ -70,7 +70,7 @@ YOLO commands still honor the active profile and escalate-on-retry.
 
 ## Adding an agent
 
-1. Add the agent under `.claude/agents/`.
+1. Add the agent under `.claude/agents/<team-or-tier>/` (e.g. `engineering/`, `content/`, `design/`, `marketing/`, `finance/`). No flat files at agents root.
 2. Add its name to **every** profile’s `roles` map in `model-routing.json`.
 3. Run `npm run models:check` (or `apply-model-routing.mjs --check`).
 4. Run `./scripts/remirror.sh`.

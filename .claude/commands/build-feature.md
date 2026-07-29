@@ -1,5 +1,5 @@
 ---
-description: Run the unattended half of the pipeline — parallel build, E2E verification, and final validation
+description: Approved-spec delivery — parallel build, E2E verification, and final validation
 allowed-tools: Task, Read, Write, Bash
 ---
 

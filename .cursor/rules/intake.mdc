@@ -1,0 +1,31 @@
+---
+description: Skailr plain-chat intake — route questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.
+alwaysApply: true
+---
+
+# Skailr intake (plain chat)
+
+This project has **skailr-agents** installed. When the user does **not** invoke a slash command, classify the ask and route — do not freestyle application work outside these paths.
+
+For detailed heuristics, follow skill `route-intake`.
+
+## Hard rules
+
+1. **Slash command wins.** If the user ran `/yolo`, `/patch`, `/discover`, `/ship-feature`, `/yolo-program`, `/continue-feature`, `/continue-program`, or any other skailr command — or is clearly continuing one — **do not re-triage**. Execute that command.
+2. **Resume incomplete runs.** If `.claude/tmp/progress.md` or `.claude/program/ledger.md` is incomplete and the user says continue/resume (or sends an empty follow-up after a killed run), route to `/continue-feature` / `/continue-program` (or re-enter `/yolo` / `/yolo-program` with no new prompt). Do not start a fresh `/patch`.
+3. **Never write application code yourself** when routing to a build path — load and execute the matching command (or Task the named agents as that command specifies).
+
+## Chooser (latest user ask)
+
+| Ask looks like… | Route |
+| --------------- | ----- |
+| Question / explain / where is / how does (**no** code change requested) | Task `researcher` in **ask mode** — write `.claude/tmp/ask.md`; answer in chat; do not start `/patch` or YOLO |
+| Small / localized change (bug fix, typo, tweak, single surface) | Execute `.claude/commands/patch.md` as `/patch <ask>` |
+| One cohesive feature (new capability, multi-file vertical slice, new ACs) | Execute `/yolo` |
+| Whole app / MVP / many subsystems / unclear large scope | Execute `/yolo-program` |
+
+Gated alternatives (`/ship-feature`, `/discover`…) exist when the user asks for gates explicitly; plain-chat auto-build uses YOLO paths only.
+
+## Ask-mode researcher (brief)
+
+Task `researcher` with: read-only; answer *this* question; write `.claude/tmp/ask.md` (Question / Findings / Answer); summarize in the parent chat; do not invent a feature story or write `research.md` unless also in a feature pipeline.

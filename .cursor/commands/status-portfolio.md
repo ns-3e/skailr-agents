@@ -1,6 +1,6 @@
 ---
 name: status-portfolio
-description: Portfolio status — traffic lights across initiatives and exception inbox rollup
+description: CEO / exec status review — initiative traffic lights and exception inbox rollup
 ---
 
 <!--

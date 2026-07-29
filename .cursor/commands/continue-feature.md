@@ -1,6 +1,6 @@
 ---
 name: continue-feature
-description: Resume an in-flight feature from progress.md — pick up at the first incomplete phase (YOLO or gated)
+description: Resume mid-feature — pick up from progress.md at the first incomplete phase (YOLO or gated)
 ---
 
 <!--

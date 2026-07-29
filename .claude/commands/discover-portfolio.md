@@ -1,5 +1,5 @@
 ---
-description: Discover portfolio-level intent across multiple initiatives until a shared brief is confirmed
+description: CEO / exec strategy — discover portfolio intent until the company-level brief is confirmed
 argument-hint: <portfolio description>
 allowed-tools: Task, Read, Write, Bash
 ---

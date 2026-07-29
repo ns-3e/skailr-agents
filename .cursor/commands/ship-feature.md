@@ -1,6 +1,6 @@
 ---
 name: ship-feature
-description: Start the automated feature pipeline — research, story, and spec, with approval gates
+description: Gated feature intake — research, story, and spec with stakeholder approval gates
 ---
 
 <!--

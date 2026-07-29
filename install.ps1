@@ -39,9 +39,7 @@ function Install-Scripts {
 
 function Install-Claude {
     $dirs = @(
-        "$Target\.claude\agents\content",
-        "$Target\.claude\agents\legal",
-        "$Target\.claude\agents\pm",
+        "$Target\.claude\agents",
         "$Target\.claude\commands",
         "$Target\.claude\teams",
         "$Target\.claude\skills",
@@ -53,17 +51,14 @@ function Install-Claude {
         New-Item -ItemType Directory -Path $d -Force | Out-Null
     }
 
-    Get-ChildItem "$ScriptDir\.claude\agents\*.md" | ForEach-Object {
-        Copy-Item $_.FullName "$Target\.claude\agents\" -Force
-        Write-Host "  + .claude/agents/$($_.Name)"
-    }
-    foreach ($team in @("content", "legal", "pm")) {
-        $teamDir = Join-Path $ScriptDir ".claude\agents\$team"
-        if (Test-Path $teamDir) {
-            Get-ChildItem "$teamDir\*.md" | ForEach-Object {
-                Copy-Item $_.FullName "$Target\.claude\agents\$team\" -Force
-                Write-Host "  + .claude/agents/$team/$($_.Name)"
-            }
+    $agentsRoot = Join-Path $ScriptDir ".claude\agents"
+    Get-ChildItem $agentsRoot -Directory | ForEach-Object {
+        $team = $_.Name
+        $dest = Join-Path $Target ".claude\agents\$team"
+        New-Item -ItemType Directory -Path $dest -Force | Out-Null
+        Get-ChildItem $_.FullName -Filter "*.md" | ForEach-Object {
+            Copy-Item $_.FullName $dest -Force
+            Write-Host "  + .claude/agents/$team/$($_.Name)"
         }
     }
     Get-ChildItem "$ScriptDir\.claude\commands\*.md" | ForEach-Object {
@@ -102,6 +97,18 @@ function Install-Claude {
         Write-Host "  + .claude/model-routing.json"
     }
 
+    $intake = Join-Path $ScriptDir ".claude\intake.md"
+    if (Test-Path $intake) {
+        Copy-Item $intake "$Target\.claude\intake.md" -Force
+        Write-Host "  + .claude/intake.md"
+    }
+
+    $claudeMd = Join-Path $ScriptDir "CLAUDE.md"
+    if (Test-Path $claudeMd) {
+        Copy-Item $claudeMd "$Target\CLAUDE.md" -Force
+        Write-Host "  + CLAUDE.md"
+    }
+
     foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
     }
@@ -112,12 +119,15 @@ $PackagedRules = @(
     "architect", "backend-engineer", "content-editor", "content-lead", "content-strategist",
     "content-writer", "data-engineer", "e2e-verifier", "frontend-engineer", "integration-verifier",
     "program-architect", "program-documenter", "program-validator", "researcher", "story-writer",
-    "validator", "registry", "portfolio-architect", "initiative-lead",
+    "validator", "registry", "intake", "portfolio-architect", "initiative-lead",
     "legal-lead", "legal-analyst", "compliance-reviewer", "legal-validator",
-    "pm-lead", "pm-planner", "risk-analyst", "status-reporter"
+    "pm-lead", "pm-planner", "risk-analyst", "status-reporter",
+    "design-lead", "design-strategist", "designer", "design-reviewer",
+    "mkt-lead", "mkt-strategist", "channel-planner", "mkt-analyst",
+    "fin-lead", "fin-modeler", "fin-analyst", "fin-auditor"
 )
 $PackagedCommands = @(
-    "ship-feature", "build-feature", "continue-feature", "yolo",
+    "ship-feature", "build-feature", "continue-feature", "yolo", "patch",
     "discover", "plan-program", "build-program", "continue-program", "yolo-program",
     "discover-portfolio", "plan-portfolio", "status-portfolio"
 )
@@ -157,6 +167,14 @@ function Install-Cursor {
         New-Item -ItemType Directory -Path "$Target\.claude\teams" -Force | Out-Null
         Copy-Item "$ScriptDir\.claude\teams\registry.md" $reg -Force
         Write-Host "  + .claude/teams/registry.md (needed by Cursor registry rule)"
+    }
+    $intakeTarget = "$Target\.claude\intake.md"
+    if (-not (Test-Path $intakeTarget)) {
+        $intakeSrc = Join-Path $ScriptDir ".claude\intake.md"
+        if (Test-Path $intakeSrc) {
+            Copy-Item $intakeSrc $intakeTarget -Force
+            Write-Host "  + .claude/intake.md (needed by Cursor intake rule)"
+        }
     }
     New-Item -ItemType Directory -Path "$Target\.claude\tmp" -Force | Out-Null
     New-Item -ItemType Directory -Path "$Target\.claude\program" -Force | Out-Null

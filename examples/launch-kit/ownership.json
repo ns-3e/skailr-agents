@@ -1,0 +1,46 @@
+{
+  "schema": "skailr.ownership/v1",
+  "baseRef": "HEAD",
+  "kernel": {
+    "globs": ["examples/launch-kit/shared/**"],
+    "frozen": true
+  },
+  "owners": [
+    {
+      "id": "pricing-model",
+      "team": "finance",
+      "workstream": "pricing-model",
+      "units": ["pricing-worksheet", "assumption-register"]
+    },
+    {
+      "id": "gtm-positioning",
+      "team": "marketing",
+      "workstream": "gtm-positioning",
+      "units": ["positioning-brief", "message-pillars"]
+    },
+    {
+      "id": "launch-copy",
+      "team": "content",
+      "workstream": "launch-copy",
+      "units": ["announcement-post", "landing-hero-copy", "pricing-section-copy"]
+    },
+    {
+      "id": "landing-design",
+      "team": "design",
+      "workstream": "landing-design",
+      "units": ["hero-artboard", "pricing-section-artboard"]
+    },
+    {
+      "id": "gtm-campaign",
+      "team": "marketing",
+      "workstream": "gtm-campaign",
+      "units": ["email-sequence", "linkedin-launch"]
+    },
+    {
+      "id": "launch-surface",
+      "team": "engineering",
+      "workstream": "launch-surface",
+      "units": ["examples/launch-kit/apps/landing/**"]
+    }
+  ]
+}

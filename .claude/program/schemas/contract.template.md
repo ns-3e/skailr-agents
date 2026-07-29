@@ -5,7 +5,7 @@ version: 1
 status: draft | frozen | superseded
 producers: [<workstream>]
 consumers: [<workstream>]
-kind: api | schema | event | content | compliance | delivery
+kind: api | schema | event | content | compliance | delivery | design | campaign | financial
 supersedes: null
 ---
 

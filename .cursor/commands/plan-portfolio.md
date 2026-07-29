@@ -1,6 +1,6 @@
 ---
 name: plan-portfolio
-description: Decompose a confirmed portfolio brief into initiatives, programs, and conflict surfaces
+description: Portfolio / PMO planning — initiatives, programs, and conflict surfaces from a confirmed brief
 ---
 
 <!--
