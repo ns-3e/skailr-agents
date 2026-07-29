@@ -442,6 +442,120 @@ See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](
 
 ---
 
+## Quickstart: Skailr + Intair
+
+Get Skailr's multi-agent pipelines running with Intair providing persistent memory and graph reasoning. From zero to your first memory-backed build in ~10 minutes.
+
+### What you need
+
+- Docker + Docker Compose (for Intair)
+- Claude Code (`claude` on your PATH) — [install guide](https://docs.anthropic.com/en/docs/claude-code)
+- An Anthropic API key — **or** set `LLM_PROVIDER=none` in Intair's `.env` to use graph tools only, with no LLM costs
+- Node.js 18+ (optional — only needed if you want Skailr's script enforcement gates)
+
+---
+
+### Step 1 — Start Intair
+
+Intair is a self-hosted knowledge graph service. It runs alongside your project and gives agents a place to write and query knowledge between sessions.
+
+```bash
+git clone https://github.com/ns-3e/intair-ontology.git
+cd intair-ontology
+cp .env.example .env
+```
+
+Edit `.env` — set at minimum:
+
+```bash
+NEO4J_PASSWORD=yourpassword      # any strong password
+ANTHROPIC_API_KEY=sk-ant-...     # or set LLM_PROVIDER=none to skip LLM costs entirely
+```
+
+Start the stack:
+
+```bash
+docker compose up -d --wait
+curl http://localhost:8000/api/v1/health
+# {"status":"ok","store":"neo4j","node_count":0,"edge_count":0}
+```
+
+Intair is now running at `http://localhost:8000`. To open the operator UI (graph visualizer + reasoning console):
+
+```bash
+cd web && cp .env.example .env && npm install && npm run dev
+# → http://localhost:5173
+```
+
+---
+
+### Step 2 — Install Skailr into your project
+
+```bash
+mkdir my-app && cd my-app
+git init
+
+# Install skailr-agents
+git clone https://github.com/ns-3e/skailr-agents.git /tmp/skailr-agents
+/tmp/skailr-agents/install.sh "$(pwd)" --claude-only
+git add .claude && git commit -m "Add skailr-agents"
+```
+
+---
+
+### Step 3 — Wire Skailr to Intair
+
+Add Intair as an MCP server in your project's `.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "intair": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp/"
+    }
+  }
+}
+```
+
+Done. Skailr agents detect Intair automatically at the start of each run via `intair_get_schema`. If Intair is not reachable, agents fall back silently — nothing breaks.
+
+---
+
+### Step 4 — Run a Skailr command
+
+```bash
+cd my-app && claude
+```
+
+```
+/yolo add a hello-world CLI command that prints the current date
+```
+
+What happens behind the scenes:
+- **Researcher** pulls prior knowledge from Intair before reading the repo
+- **Architect** records key technical decisions as `Decision` nodes
+- **Engineers** record their agent runs as `Agent` nodes and completions as `Outcome` nodes
+- **Validator** records the final sign-off
+
+---
+
+### Step 5 — Inspect the graph
+
+Open the Intair UI at `http://localhost:5173` → **Graph** page. You will see nodes written by each agent (operational layer: `Agent`, `Task`, `Decision`, `Outcome`; context layer: `Observation`).
+
+Click any node to see full attribution — who wrote it, when, and on what basis. Go to **Reasoning** and ask *"What decisions were made in the last build?"* to query across everything that was written.
+
+On subsequent runs, agents pull this accumulated knowledge before acting — each run starts smarter than the last.
+
+---
+
+### Running without an LLM key
+
+Set `LLM_PROVIDER=none` in Intair's `.env`. All graph read/write and schema tools work normally. Only the natural-language reasoning tool (`intair_ask`) is disabled. All Skailr agent memory writes function exactly as described above.
+
+---
+
 ## Intair Ontology integration (optional)
 
 [Intair](https://github.com/ns-3e/intair-ontology) is a self-hosted knowledge graph service that gives Skailr agents persistent, cross-session memory and graph reasoning. When configured, agents automatically write what they learn (discoveries, decisions, outcomes) and query prior knowledge before acting. When not configured, all agents behave exactly as today.
