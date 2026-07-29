@@ -38,6 +38,7 @@ Build workers may yield mid-slice (skill `write-handoff-and-yield`). Program pat
 
 The kernel must exist before any workstream fans out. Dispatch the appropriate engineers (via the standard team agents) to build only the shared kernel defined in `plan.md` — shared types, core data model, cross-cutting auth, base scaffolding, shared primitives. When complete:
 - Run lint, typecheck, and the kernel's tests. Do not proceed on a red kernel — everything downstream inherits its breakage.
+- **Initialize the field guide.** Copy `.claude/program/schemas/field-guide.template.md` to `.claude/program/field-guide.md`, replacing `<slug>` in the frontmatter with the program slug. If the program is a resume and `field-guide.md` already exists, do not overwrite it — the existing entries are institutional memory for this run. If no template exists, create `field-guide.md` with the header and an empty Entries section.
 - **Freeze the kernel: it is now read-only to every workstream.** Record in the ledger that the kernel is built and frozen, with its commit.
 
 ## Phase B — Parallel workstreams (just-in-time team disclosure)
@@ -54,7 +55,9 @@ Each team, whatever its domain, runs the same shape internally: plan → paralle
 2. Produces the contracts it owns — these become available to unblock downstream groups.
 3. Writes its reports under `.claude/program/workstreams/<ws>/`.
 
-Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the kernel; deliver only its owned units; produce its owned contracts to spec; respect its boundary.
+Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the kernel; deliver only its owned units; produce its owned contracts to spec; respect its boundary. Also pass `.claude/program/field-guide.md` (if it exists) to each dispatched agent as startup context — agents should read it before beginning their work and may append entries for non-obvious discoveries they make.
+
+**Expert co-author input (soft, non-blocking).** If `plan.md` recorded an expert band covering a workstream, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: <the workstream>` **concurrently with** that team's lead, and give the lead `.claude/tmp/expert-<slug>.md` as input to its brief. The expert writes only that file: it never edits a workstream-owned unit, which is what keeps the ownership invariant intact, and it is why co-authoring is scoped input the lead incorporates or explicitly rejects rather than direct authorship. Experts are not a team, are never routed a workstream, and never appear in the ownership map. No roster, no matched band, or a `no-expert` return means skip silently.
 
 As each concurrency group completes, before advancing:
 - **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units. Run `node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json` (and `git diff --name-only` for engineering). A collision is a stop-and-report event, not something to merge through.
@@ -90,7 +93,14 @@ Once all workstreams in the DAG are complete, invoke the `integration-verifier`.
 
 ## Phase D — Program validation
 
-Invoke the `program-validator`. It holds the whole delivered program against the original brief, reads the aggregate diff, and writes `program-validation-report.md`.
+**Expert gate (when a band matched).** Before the program-validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: <the workstream or the aggregate diff>`. It writes `.claude/tmp/expert-verdict-<slug>.md`.
+
+Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard` in `.claude/experts/config.json`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory` — the shipped default, so under normal configuration nothing an expert says is ever binding.
+
+- `advisory` + `fail` → record the finding, post a `heads-up`, and **continue**. A soft-gate failure is a finding, not a halt, and it does not stop unrelated workstreams.
+- `binding` + `fail` → halt in the `/map-repo`-confirm-gate shape: surface it and end your turn. No new gate mechanism.
+
+Invoke the `program-validator`. It holds the whole delivered program against the original brief, reads the aggregate diff, and writes `program-validation-report.md`. Pass it every verdict file; it cites them as evidence in its own sign-off. The expert supplies evidence, not a parallel authority — there is exactly one sign-off role per tier and adding a second would make it ambiguous who actually said no.
 
 ## Phase E — Documentation
 
@@ -109,8 +119,9 @@ Print, in order:
 6. **Cross-cutting review** — security, data integrity, operational readiness across boundaries
 7. **Quiet skips** across the aggregate diff
 8. **Documentation** — what was written or reconciled, and any contract drift the documenter surfaced
-9. **Channel transcript** — pointer to `.claude/program/channels/`, count of messages by type, and any thread that escalated to the human
-10. **Recommended next action** — one sentence
+9. **Experts** — which were consulted, and every verdict with its authority and how the program-validator treated it. Omit entirely when no expert was involved
+10. **Channel transcript** — pointer to `.claude/program/channels/`, count of messages by type, and any thread that escalated to the human
+11. **Recommended next action** — one sentence
 
 Then offer to dispatch owning teams to fix blocking findings and re-run integration and validation, or to open the PR.
 

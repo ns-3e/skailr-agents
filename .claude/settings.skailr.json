@@ -7,6 +7,10 @@
           {
             "type": "command",
             "command": "node scripts/skailr/validate-channels.mjs --dir .claude/program/channels 2>/dev/null || true; node scripts/skailr/validate-channels.mjs --tmp 2>/dev/null || true"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/skailr/check-experts.mjs 2>/dev/null || true"
           }
         ]
       }

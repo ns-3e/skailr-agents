@@ -62,7 +62,16 @@ Checkpoint: `verify` → complete.
 
 ## Phase 6 — Validation
 
-Invoke `validator`. It reads everything including the raw diff and writes `validation-report.md`.
+**Expert gate (only if an earlier phase matched a band — check `progress.md` Notes and `.claude/experts/registry.md`).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md`.
+
+Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard` in `.claude/experts/config.json`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory` — the shipped default.
+
+- `advisory` + `fail` → record the finding, post a `heads-up`, and **continue**. A soft-gate failure is a finding, not a halt.
+- `binding` + `fail` → halt in the `/map-repo`-confirm-gate shape: surface it and end your turn.
+
+No roster, no matched band, or a `no-expert` return all mean skip this step silently.
+
+Invoke `validator`. It reads everything including the raw diff and writes `validation-report.md`. Pass it every verdict file; it cites them as evidence in its own sign-off rather than deferring to them. There is exactly one sign-off role per tier.
 
 Checkpoint: `validate` → complete.
 
@@ -83,8 +92,9 @@ Print, in this order:
 5. **Files changed** — grouped by backend and frontend
 6. **Quiet skips** — every TODO, ignore, and stub introduced
 7. **Documentation** — changelog entry and any docs written or reconciled
-8. **Channel transcript** — a one-line pointer to `.claude/tmp/channels/feature.md` and a note of any question that went to the human
-9. **Recommended next action** — one sentence
+8. **Experts** — verdicts with their authority, and how the validator treated each. Omit entirely when no expert was involved
+9. **Channel transcript** — a one-line pointer to `.claude/tmp/channels/feature.md` and a note of any question that went to the human
+10. **Recommended next action** — one sentence
 
 Then offer: to dispatch the responsible engineer to fix the blocking findings and re-run verification and validation, or to open the PR.
 

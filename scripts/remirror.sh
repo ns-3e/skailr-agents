@@ -25,6 +25,7 @@ CHANNEL_WRITE_ONLY = {
     "design-reviewer": "Write is for the design-review report and channel appends; do not rewrite asset specs as an author.",
     "mkt-analyst": "Write is for the mkt-review report and channel appends; do not rewrite campaign plans as an author.",
     "fin-auditor": "Read, Grep, Glob, Bash, Write — Write solely to audit-report and channel appends; do not rewrite models as an author.",
+    "expert": "Read, Grep, Glob, Write, Edit, Bash — Write and Edit only for `.claude/tmp/ask.md`, `.claude/tmp/expert-<slug>.md`, `.claude/tmp/expert-verdict-<slug>.md`, the one loaded profile under `.claude/experts/` during a curate-expert pass, and channel appends; Bash is for read-only git staleness checks; never edit application code, `story.md`, or `spec.md`.",
 }
 
 def parse_frontmatter(text):
@@ -92,6 +93,10 @@ alwaysApply: true
 The authoritative team routing manifest lives at `.claude/teams/registry.md`.
 
 When planning or building a program (`/plan-program`, `/build-program`, or when acting as program-architect), **read that file** before routing any workstream. Do not invent teams or leads that are not listed there. Full team agent definitions load only when a workstream is routed to that team — this file is Tier-1 JIT disclosure only.
+
+## Experts are not a team
+
+Minted domain experts under `.claude/experts/` are a different axis from teams and are deliberately absent from the registry. **Never route a workstream to an expert**, and never write the live roster into `.claude/teams/registry.md`: `install.sh` copies that file fresh on every upgrade, so anything added there at runtime is destroyed. The consumer roster lives at `.claude/experts/registry.md`, which is git-tracked in the consumer project and survives upgrades. Experts advise, co-author as scoped input, and gate as evidence, inside commands and roles that were already routed. A project with no `.claude/experts/` directory behaves exactly as it did before experts existed. The full comparison table is in the "Experts are not a team" section of `.claude/teams/registry.md`.
 """
 (CURSOR_RULES / "registry.mdc").write_text(registry_mdc)
 print("rule: registry")
@@ -104,7 +109,7 @@ intake_body = intake_src.read_text().lstrip()
 intake_for_rule = intake_body
 intake_mdc = (
     "---\n"
-    "description: Skailr plain-chat intake — route questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.\n"
+    "description: Skailr plain-chat intake — route a question inside exactly one registered expert's band to that expert in advise mode, other questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.\n"
     "alwaysApply: true\n"
     "---\n\n"
     f"{intake_for_rule}"
@@ -191,6 +196,7 @@ DIR_TIER = {
     "content": "content",
     "legal": "legal",
     "pm": "pm",
+    "experts": "workstream",
 }
 COMMANDS = {
     "ship-feature": "workstream",
@@ -198,6 +204,7 @@ COMMANDS = {
     "continue-feature": "workstream",
     "yolo": "workstream",
     "patch": "workstream",
+    "mint-expert": "workstream",
     "discover": "program",
     "plan-program": "program",
     "build-program": "program",
@@ -290,6 +297,11 @@ for schema in (
     "backlog.template.md",
     "map-repo-progress.template.md",
     "map-report.template.md",
+    "expert.schema.json",
+    "expert-config.schema.json",
+    "expert-profile.template.md",
+    "expert-registry.template.md",
+    "expert-research.template.md",
 ):
     p = ROOT / ".claude" / "program" / "schemas" / schema
     if not p.exists():

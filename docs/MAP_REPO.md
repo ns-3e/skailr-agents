@@ -24,6 +24,7 @@ Plain chat with onboard / brownfield / “map this repo” signals routes here v
 4. **Backlog** — ranked items with suggested `/patch`, `/yolo`, or `/yolo-program` → `backlog.md` + draft `map-report.md`
 5. **Confirm** — human gate (like `/discover`); revise or remap if needed
 6. **Intair** (optional) — deliberate writes via skill `call-intair`; skip if unavailable → `intair-sync.md`
+7. **Expert auto-mint** (internal, post-confirm) — when `auto_mint` is on and a vertical has enough independent signals, mints **internal** experts into `.claude/experts/` using the same procedure as [`/mint-expert`](experts.md); notifies via heads-up + durable log; never a second gate
 
 Resume from incomplete `.claude/repo/progress.md` by re-entering `/map-repo` (empty args or “continue”).
 
@@ -47,7 +48,7 @@ Templates live under `.claude/program/schemas/` (`orientation.template.md`, `bac
 
 Pick a backlog item and run the suggested command. For a new multi-part initiative on this codebase, run `/discover` or `/yolo-program`. Downstream flows prefer `.claude/repo/orientation.md` (and draft ownership when program ownership is absent).
 
-`/map-repo` never auto-starts those builds.
+`/map-repo` never auto-starts those builds. Post-confirm expert auto-mint (step 7) may create internal experts; it does not start a feature or program build.
 
 ## vs `/discover`
 
@@ -66,3 +67,4 @@ Phase 5 may deliberately write orientation highlights and high/blocker findings 
 - [README Path: existing repo](../README.md#path-existing-repo-brownfield)
 - [YOLO.md](YOLO.md) — prefer `/map-repo` on unfamiliar brownfield before first `/yolo`
 - [INTAKE.md](INTAKE.md) — plain-chat routing
+- [experts.md](experts.md) — post-confirm internal auto-mint and `/mint-expert`

@@ -21,6 +21,16 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 
 Confirm `.claude/program/brief.md` exists and was user-confirmed. If it does not, stop and direct the user to run `/discover` first.
 
+## Setup — expert consult-or-mint (soft, non-blocking)
+
+Run once, before decomposition. **Never a gate.** A project with no `.claude/experts/` plans exactly as it did before experts existed.
+
+1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Note which non-`deprecated` bands cover parts of this brief and record them in `plan.md` so `/build-program` knows which domain leads get expert input.
+2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the brief. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`.
+3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/program/channels/program.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change` — either would halt the program, and minting notifies rather than asks.
+4. **Experts are not a team.** Never route a workstream to an expert, never give one an ownership glob, and never add one to `.claude/teams/registry.md`. They advise, co-author as scoped input, and gate as evidence. See the "Experts are not a team" section of the team registry.
+5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+
 ## Decomposition
 
 Invoke the `program-architect` subagent to run **Job 2 (Decomposition)**. It reads `brief.md` and produces: the shared kernel definition, the workstreams, the ownership map, the frozen contracts (written to `.claude/program/contracts/`), and the dependency DAG — all written to `.claude/program/plan.md`.

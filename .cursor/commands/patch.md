@@ -38,6 +38,17 @@ Create `.claude/tmp/` if it does not exist.
 4. Seed `.claude/tmp/patch-report.md` from `.claude/program/schemas/patch-report.template.md` (`status: draft`, `updated` ISO timestamp).
 5. If `.claude/program/channels/` or feature channels are in use, ensure boards exist (`PROTOCOL.md` + `program.md` / `.claude/tmp/channels/feature.md` as appropriate).
 
+## Setup — expert consult-or-mint (soft, non-blocking)
+
+Run once, before the size gate. **Never a gate**, and kept cheap: a patch must stay cheaper than `/yolo`.
+
+1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). If exactly one non-`deprecated` row's `route-when` covers this ask, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/patch-request.md`, and pass the resulting `.claude/tmp/expert-<slug>.md` to the owning engineer alongside the request. Two or more matches mean no expert route: note it and continue.
+2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals. A single localized fix is one signal and mints nothing, which is the expected outcome for most patches. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`.
+3. **Notify.** A mint posts one `type: heads-up` to `@all` on the run's channel board if one exists, and always appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
+4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally. Never warn the user about an absent roster.
+
+Record the outcome in one line of `patch-report.md`.
+
 ## Size gate
 
 Classify the ask (skill `route-intake` thresholds):
@@ -93,7 +104,8 @@ Then:
 5. **Lineage synced** — artifacts touched
 6. **Documentation** — reconcile summary
 7. **Verify** — what ran or why skipped
-8. **Recommended next action** — one sentence
+8. **Experts** — consulted or minted this run, if any. Omit entirely otherwise
+9. **Recommended next action** — one sentence
 
 Mark `patch-report.md` `status: complete`.
 

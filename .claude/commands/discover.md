@@ -22,6 +22,8 @@ Write the raw request verbatim to `.claude/program/request.md`.
 
 Prefer `.claude/repo/orientation.md` when present (from `/map-repo`) so the architect's questions are grounded in a confirmed baseline. Else if the initiative clearly touches an existing codebase, invoke the `researcher` subagent for a fast orientation pass into `.claude/tmp/research.md`. Keep this lightweight — it informs the questions, it is not the full per-feature research (that happens inside each workstream later). If `.claude/repo/ownership.json` exists, mention it to the architect as a draft path-ownership hint only.
 
+**Optional expert consult (advise only, non-blocking).** If `.claude/experts/registry.md` exists and exactly one non-`deprecated` row's `route-when` covers the initiative, dispatch `expert` with `mode: advise` and pass its answer to the architect so the clarifying questions are grounded in domain depth. Two or more matches mean no expert route. **Discovery never mints** — minting has exactly three triggers and this is not one of them; `/plan-program` handles the consult-or-mint step. A missing roster is the normal state and is never mentioned to the user.
+
 ## Discovery
 
 Invoke the `program-architect` subagent. Instruct it to run **Job 1 (Discovery) only** — do not decompose yet. It should read the request and any orientation research, then produce a focused, numbered, prioritized batch of clarifying questions, each paired with the assumption it would make if unanswered.

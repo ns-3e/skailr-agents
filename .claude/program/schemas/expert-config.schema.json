@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/schemas/expert-config.schema.json",
+  "title": "SkailrExpertConfig",
+  "description": "Project configuration at .claude/experts/config.json. Authoritative machine sidecar for contract expert-config-and-naming v1. Logical schema id: skailr.expert-config/v1.",
+  "$comment": "A MISSING config.json means all defaults and is the normal state of a project that has never minted. Never treat absence as an error. Consumers should read the default values below from this schema rather than hardcoding them.",
+  "type": "object",
+  "required": ["schema"],
+  "additionalProperties": true,
+  "properties": {
+    "schema": {
+      "const": "skailr.expert-config/v1",
+      "description": "Schema tag. Required so an unversioned config blob is caught rather than silently reinterpreted by a future reader."
+    },
+    "gate_mode": {
+      "enum": ["soft", "hard"],
+      "default": "soft",
+      "description": "soft: an expert fail becomes a recorded finding plus a heads-up and never halts. hard: a fail halts the orchestrator in the /map-repo-confirm-gate shape. Soft is the shipped default; hard is not exercised in v1.",
+      "$comment": "An out-of-enum gate_mode is a validation error, not a silent fallback. Getting gate behavior wrong by typo is exactly the quiet failure that makes a gate decorative."
+    },
+    "auto_mint": {
+      "type": "boolean",
+      "default": true,
+      "description": "When false, only explicit /mint-expert may mint. The /map-repo (T2) and build-consult (T3) triggers become no-ops."
+    },
+    "roster_cap": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 7,
+      "description": "Soft cap on roster size. Exceeding it does not block a mint; it posts a heads-up recommending consolidation.",
+      "$comment": "Exceeding the cap is a check-experts warning at exit 0, and an error at exit 1 only under --strict. The cap is soft by design and must not break an ordinary run."
+    },
+    "mint_threshold": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 2,
+      "description": "Independent signals required for the same vertical before an auto-mint fires. A config value, not a constant, because the number is an unvalidated guess (brief risk 4)."
+    }
+  }
+}

@@ -116,6 +116,20 @@
       "cursor_path": ".cursor/rules/validator.mdc"
     },
     {
+      "id": "expert-scout",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/experts/expert-scout.md",
+      "cursor_path": ".cursor/rules/expert-scout.mdc"
+    },
+    {
+      "id": "expert",
+      "tier": "workstream",
+      "type": "agent",
+      "claude_path": ".claude/agents/experts/expert.md",
+      "cursor_path": ".cursor/rules/expert.mdc"
+    },
+    {
       "id": "fin-analyst",
       "tier": "finance",
       "type": "agent",
@@ -319,6 +333,13 @@
       "cursor_path": ".cursor/commands/map-repo.md"
     },
     {
+      "id": "mint-expert",
+      "tier": "workstream",
+      "type": "command",
+      "claude_path": ".claude/commands/mint-expert.md",
+      "cursor_path": ".cursor/commands/mint-expert.md"
+    },
+    {
       "id": "patch",
       "tier": "workstream",
       "type": "command",
@@ -386,6 +407,13 @@
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/compile-status-digest/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-curate-expert",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/curate-expert/SKILL.md",
       "cursor_path": null
     },
     {
@@ -603,6 +631,41 @@
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/map-report.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-expert.schema",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/expert.schema.json",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-expert-config.schema",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/expert-config.schema.json",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-expert-profile.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/expert-profile.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-expert-registry.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/expert-registry.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-expert-research.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/expert-research.template.md",
       "cursor_path": null
     }
   ]
