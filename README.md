@@ -1,9 +1,9 @@
 # skailr-agents
 
-[License: MIT](LICENSE)
-[Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-[Cursor](https://cursor.com/docs)
-[Cursor Agent](https://github.com/cursoragent)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-docs-1f1f1f)](https://docs.anthropic.com/en/docs/claude-code)
+[![Cursor](https://img.shields.io/badge/Cursor-docs-6e7781)](https://cursor.com/docs)
+[![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-GitHub-181717)](https://github.com/cursoragent)
 
 ![skailr-agents hero image](./assets/skailr.png)
 

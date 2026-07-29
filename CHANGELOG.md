@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - README credits [Smith | Advanced Systems](https://advsys.io) as the research and development lab skailr-agents came out of
 - README attribution paragraph cites the product website [skailr.io](https://skailr.io) for more info
+- README header links for License, Claude Code, Cursor, and Cursor Agent render as shields.io badges instead of plain text links; destinations unchanged
 
 ## [1.6.0] — 2026-07-29
 
