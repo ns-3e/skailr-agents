@@ -440,6 +440,62 @@ See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](
 
 ---
 
+## Intair Ontology integration (optional)
+
+[Intair](https://github.com/ns-3e/intair-ontology) is a self-hosted knowledge graph service that gives Skailr agents persistent, cross-session memory and graph reasoning. When configured, agents automatically write what they learn (discoveries, decisions, outcomes) and query prior knowledge before acting. When not configured, all agents behave exactly as today.
+
+### Setup
+
+**1. Run Intair**
+
+```bash
+git clone https://github.com/ns-3e/intair-ontology.git
+cd intair-ontology
+cp .env.example .env   # set NEO4J_PASSWORD and ANTHROPIC_API_KEY (or NVIDIA_API_KEY)
+docker compose up -d
+```
+
+Intair starts at `http://localhost:8000`.
+
+**2. Configure Skailr to use Intair**
+
+Add to your project's `.claude/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "intair": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp/"
+    }
+  }
+}
+```
+
+Or set the env var for REST-only mode (used by script-based agents):
+
+```bash
+export INTAIR_BASE_URL=http://localhost:8000
+export INTAIR_API_TOKEN=   # leave empty for dev/no-auth mode
+```
+
+**3. That's it.** Skailr agents detect Intair automatically. No changes to existing commands or workflows.
+
+### What gets written
+
+| Agent | Writes to Intair |
+|-------|-----------------|
+| researcher | `Observation` nodes (findings), `Task` node (research run) |
+| story-writer | `Task` node (approved story) |
+| architect | `Decision` nodes (key tech decisions), `Agent` node |
+| backend/frontend-engineer | `Agent` node (on start), `Outcome` node (on complete) |
+| e2e-verifier / validator | `Outcome` node (pass or fail) |
+| program-architect | `Team` nodes (workstreams), `Contract` nodes (frozen contracts) |
+
+All writes are best-effort. Intair being unavailable never fails an agent run.
+
+---
+
 ## Tuning
 
 - **Model routing** — switch profiles to trade cost vs quality. See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md).
