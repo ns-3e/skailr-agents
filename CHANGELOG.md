@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- README credits [Smith | Advanced Systems](https://advsys.io) as the research and development lab skailr-agents came out of
+- README attribution paragraph cites the product website [skailr.io](https://skailr.io) for more info
+
 ## [1.6.0] — 2026-07-29
 
 ### Added
@@ -12,13 +17,11 @@ All notable changes to this project are documented in this file.
 - Registry: restored missing `### content` header; flipped design/marketing/finance to built
 - **skailr ↔ Intair client seam (v1)**: guide at [docs/intair-seam.md](docs/intair-seam.md), skill `call-intair`, gate `scripts/skailr/check-intair-seam.mjs` (`npm run check:intair`). Documentation only: no live coupling, no auto-ingest, no webhooks, no skailr-side schema approval
 
-### Removed
-
-- `docs/intair-client.stub.ts` — superseded by the Intair seam guide and `call-intair` skill
-
 ### Changed
 
 - `.gitignore` ignores local `src/` checkouts and `__pycache__/` so sibling product trees are not published with the pack
+- Release cut to `1.6.0`: `package.json`, `manifest.json`, and the manifest version constant in `scripts/remirror.sh`
+- `PUBLISH.md`: pre-release smoke runs `scripts/skailr/check-intair-seam.mjs`; release example retitled to v1.6.0; the "do not" list covers local `src/` checkouts
 
 ## [1.5.0] — 2026-07-28
 
@@ -69,7 +72,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Repo is pack-only again: Claude Code / Cursor agent operating model + `scripts/skailr/*.mjs`
-- Intair TypeScript stub lived at `docs/intair-client.stub.ts` (removed in 1.6.0; see seam guide)
+- Intair TypeScript stub lives at `docs/intair-client.stub.ts`
 - Installers no longer append `.skailr/` or apps/packages dist ignore lines
 - `/yolo` / `/yolo-program` / `/ship-feature` resume incomplete runs instead of auto-archiving; `/continue-feature` and `/continue-program` are mode-aware (YOLO vs gated)
 

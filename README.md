@@ -5,9 +5,11 @@
 [Cursor](https://cursor.com/docs)
 [Cursor Agent](https://github.com/cursoragent)
 
-![skailr-agents hero image](assets/hero.png)
+![skailr-agents hero image](./assets/skailr.png)
 
 **A multi-agent operating model for Claude Code and Cursor.** Install it into a repo; Claude Code (or Cursor) runs the agents. Skailr adds org structure: plan before build, single-job roles, a visible message board, frozen contracts, and mechanical script gates.
+
+skailr-agents comes out of [Smith | Advanced Systems](https://advsys.io) (advsys.io), the research and development lab behind the project. For more info, see [skailr.io](https://skailr.io).
 
 You do not need prior knowledge of skailr. Install once. **Plain chat is auto-routed** ([docs/INTAKE.md](docs/INTAKE.md)); or run a slash command explicitly.
 
