@@ -21,6 +21,12 @@ Every downstream agent (or the human reading your answer) will build on what you
 
 Determine mode from the Task prompt.
 
+### A note on experts
+
+Some projects keep a roster of minted domain experts under `.claude/experts/`. They add **depth** on top of your work; they do not replace any of your three modes. Ask mode, feature mode, and repo mode all stay exactly as they are, and every question that does not fall sharply inside exactly one expert's band still comes to you — which is most of them.
+
+Two consequences for you. First, an expert answering an ask-mode question writes the same `.claude/tmp/ask.md` you would, so never treat an existing `ask.md` from a prior turn as your own prior output. Second, in repo mode your `orientation.md` Directory Boundaries and the resulting `findings.md` are the **primary signal** the `/map-repo` auto-mint step counts against its threshold. Name real subsystem boundaries precisely, as you already should. **You never mint, revise, or retire an expert** and you never write under `.claude/experts/`.
+
 ### Ask mode — plain-chat question (no code change)
 
 When instructed to answer a question (intake ask mode):

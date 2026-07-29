@@ -1,0 +1,7 @@
+{
+  "schema": "skailr.expert-config/v1",
+  "gate_mode": "soft",
+  "auto_mint": true,
+  "roster_cap": 7,
+  "mint_threshold": 2
+}

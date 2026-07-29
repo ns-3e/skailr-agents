@@ -4,8 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Model routing — balanced profile worker downgrades.** In the `balanced` profile, `backend-engineer`, `frontend-engineer`, `content-writer`, `designer`, and `fin-modeler` move from `opus` to `sonnet`. These worker roles execute against a fully-specified spec produced by an upstream `opus` planner (architect / team lead), so they get comparable quality at far lower token cost. Planners, leads, verifiers, and validators stay on `opus`; `data-engineer` also stays `opus` (schema reasoning often lacks a full upstream spec). `.claude/model-routing.json` and the Cursor mirror `.cursor/model-routing.md` both updated.
+- **Model routing — economy profile Haiku expansion.** In the `economy` profile, `pm-planner`, `channel-planner`, and `legal-analyst` move from `sonnet` to `haiku` — templated, low-reasoning output (milestone calendars, channel plans, clause drafts) produced against a complete brief. Economy `backend-engineer` and `frontend-engineer` remain `opus`.
+- **Architect — megafile threshold rule.** The `architect` Work split step (Process step 6) now requires a megafile check: any file in the work split projected to exceed **400 lines** after the feature lands must be named with its projected count and a decomposition plan before it is assigned to an engineer. Mirror `.cursor/rules/architect.mdc` updated.
+- **Validator — three named passes.** The `validator` Checks section is restructured into three sequential, named passes run in order, each completed fully before the next: **Pass 1 — Requirements & Spec Conformance** (requirements coverage, spec conformance, verification honesty, expert verdicts), **Pass 2 — Security**, and **Pass 3 — Quiet Skips & Scope**. No check category was dropped; the existing lenses are regrouped under the passes. Mirror `.cursor/rules/validator.mdc` updated.
+
 ### Added
 
+- **Program field guide** — a shared, program-scoped knowledge base seeded by the researcher/architect at the start of a program run and appended to by agents as they discover non-obvious constraints, patterns, and failure modes. It is injected at the start of each agent's context by the program orchestrators. Runtime file lives at `.claude/program/field-guide.md` (100-line budget, trim-oldest by convention); the seed template ships at `.claude/program/schemas/field-guide.template.md`. Wired into `/build-program` and `/yolo-program` (Phase A init + Phase B injection), with Cursor command mirrors updated to match.
+- **Project domain experts** — mintable project-local depth profiles under `.claude/experts/` (mechanism in the pack; roster stays in the consumer project). Pack roles `expert` and `expert-scout`; command `/mint-expert`; skill `curate-expert`; validator `scripts/skailr/check-experts.mjs`; kernel schemas/templates under `.claude/program/schemas/expert*`. Advise / co-author / soft-gate wiring in intake, `/map-repo` post-confirm auto-mint, and build consult-or-mint (`/yolo`, `/yolo-program`, `/ship-feature`, `/patch`, `/plan-program`). Guide: [docs/experts.md](docs/experts.md). This repo dogfoods `skailr-pack-expert` and `intair-seam-expert` (not shipped by `install.sh`).
 - **`/map-repo`** brownfield bootstrap — durable orientation, draft ownership, assessment findings, ranked backlog, human confirm, optional Intair Phase 5. Artifacts under `.claude/repo/` (tracked). Guide: [docs/MAP_REPO.md](docs/MAP_REPO.md). Researcher **repo mode**; schemas `orientation`, `backlog`, `map-repo-progress`, `map-report`. Intake routes onboard/brownfield/map signals to `/map-repo`. YOLO / discover / patch / program-architect prefer `.claude/repo/` when present.
 
 ### Changed
@@ -14,6 +23,7 @@ All notable changes to this project are documented in this file.
 - README attribution paragraph cites the product website [skailr.io](https://skailr.io) for more info
 - README header links for License, Claude Code, Cursor, and Cursor Agent render as shields.io badges instead of plain text links; destinations unchanged
 - Installers create `.claude/repo/`; CONTRIBUTING documents remirror `COMMANDS` + Cursor allowlists when adding commands
+- Intake chooser, README command reference, and [docs/INTAKE.md](docs/INTAKE.md) / [docs/MAP_REPO.md](docs/MAP_REPO.md) / [docs/YOLO.md](docs/YOLO.md) point at experts and `/mint-expert` where commands list surfaces
 
 ## [1.6.0] — 2026-07-29
 

@@ -15,7 +15,7 @@ You do not need prior knowledge of skailr. Install once. **Plain chat is auto-ro
 
 | You want to… | Use | Commands |
 | ------------ | --- | -------- |
-| **Ask a question** (no code change) | Intake → researcher | Plain chat, or Task `researcher` ask mode |
+| **Ask a question** (no code change) | Intake → expert (exact-one band) or researcher | Plain chat; Task `expert` advise or `researcher` ask mode |
 | **Map an existing repo** (brownfield baseline, backlog) | Map-repo | `/map-repo` — [docs/MAP_REPO.md](docs/MAP_REPO.md) — or plain chat |
 | **Small fix / tweak** (keep lineage/docs true) | Patch (YOLO-style) | `/patch` — or plain chat |
 | **Build a whole app / MVP / many parts / unclear scope** (gated) | Program tier | `/discover` → `/plan-program` → `/build-program` |
@@ -23,6 +23,7 @@ You do not need prior knowledge of skailr. Install once. **Plain chat is auto-ro
 | Ship **one** cohesive feature (with approval gates) | Workstream | `/ship-feature` → `/continue-feature` → `/build-feature` |
 | Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` — [docs/YOLO.md](docs/YOLO.md) |
 | Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
+| **Give the agents depth in your domain** (a project-local expert roster) | Experts | `/mint-expert`. Guide: [docs/experts.md](docs/experts.md) |
 | **Write to or read from Intair** (a graph an agent or operator calls on purpose, in a given step) | Intair client seam | Reference guide: [docs/intair-seam.md](docs/intair-seam.md) |
 
 **Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. On an unfamiliar existing codebase, run **`/map-repo`** first ([docs/MAP_REPO.md](docs/MAP_REPO.md)). Plain chat follows the same rules via intake ([docs/INTAKE.md](docs/INTAKE.md)).
@@ -316,6 +317,7 @@ Every slash command mapped to a business role. Paths above tell the story; this 
 | `/build-feature` | Build → E2E → validate → docs | **Approved-spec delivery** |
 | `/yolo` | Full feature pipeline, no approval gates | **Feature delivery without approval gates** |
 | `/patch` | Bounded fix; sync lineage/docs | **Hotfix / small change request** |
+| `/mint-expert` | Mint or curate a project domain expert (`.claude/experts/`) | **Hiring a domain specialist** |
 
 ---
 
@@ -408,6 +410,23 @@ The program tier is domain-agnostic. Engineering is one team; content, legal, PM
 - **Finance:** `fin-lead` → analyst → modeler → fin-auditor. Skill: `reconcile-model`.
 
 Cross-domain demo: [examples/launch-kit/](examples/launch-kit/). To add another domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` in the registry, set `status: built`.
+
+---
+
+## Project domain experts (optional)
+
+Teams are process roles and stay generic on purpose. A **minted expert** is the other axis: project-local depth in one vertical, stored as a cited markdown profile under `.claude/experts/` and consulted by the roles that were already going to run.
+
+```
+/mint-expert invoice dunning and payment retries
+```
+
+- **Experts are not a team.** They are never routed a workstream and never appear in an ownership map. They advise, co-author as scoped input, and gate as evidence a sign-off role cites.
+- **Every claim cites a source.** Profiles carry both industry and repo depth, and `scripts/skailr/check-experts.mjs` validates each one; an invalid profile never reaches the roster.
+- **Soft by default.** A fresh expert is `provisional` and can never block. Promotion to `established` needs explicit human action.
+- **The mechanism ships; the roster is yours.** `install.sh` never touches `.claude/experts/`, so an upgrade leaves your roster byte-identical. A project with no roster behaves exactly as it did before experts existed.
+
+Plain chat routes a question to an expert only when **exactly one** band covers it; zero or two matches fall through to the researcher. Full guide: [docs/experts.md](docs/experts.md).
 
 ---
 
@@ -646,7 +665,7 @@ node scripts/skailr/apply-model-routing.mjs --profile quality  # prefer opus
 npm run models:check
 ```
 
-- Or hand-edit `model:` in agent frontmatter (then keep `model-routing.json` in sync). Researcher/story-writer often fine on Sonnet; architect, engineers, and validator benefit from Opus.
+- Or hand-edit `model:` in agent frontmatter (then keep `model-routing.json` in sync). In the default `balanced` profile, worker roles (researcher, story-writer, and the backend/frontend engineers) run on Sonnet against an Opus-authored spec; architect, planners, verifiers, and validators stay on Opus. Use the `quality` profile to put engineers back on Opus.
 - Add repo-specific conventions to each agent's Standards section.
 - If your repo does not split backend/frontend, redefine engineers along your real seam. The pattern is **disjoint ownership**, not the names.
 - Back boundaries with CI that fails PRs whose backend commits touch frontend paths. Prompt scoping is a convention, not a hard sandbox.

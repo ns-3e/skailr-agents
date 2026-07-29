@@ -99,6 +99,24 @@ same way it does for engineering files.
 
 ---
 
+## Experts are not a team
+
+Some projects also keep a small roster of **minted domain experts** under `.claude/experts/`. They are a different axis from teams and they are deliberately absent from the registry above.
+
+| | Teams (this file) | Experts (`.claude/experts/registry.md`) |
+|---|---|---|
+| What they are | Process roles, generic across projects | Named project-local depth in one vertical and one part of this repo |
+| Routed a workstream | Yes | **Never** |
+| Own files | Yes, along a boundary unit | No. An expert writes only its own profile and per-run input files |
+| What they do | Build the deliverable | Advise, co-author as scoped input, and gate as evidence |
+| Where the roster lives | Here | `.claude/experts/registry.md`, consumer-owned |
+
+**The live roster is never written into this file.** `install.sh` copies this registry fresh and `scripts/remirror.sh` regenerates it, so anything added here at runtime is destroyed on the next pack upgrade. The consumer roster at `.claude/experts/registry.md` is git-tracked in the consumer project and survives upgrades; this section is a static pointer to it and nothing more.
+
+The program-architect does **not** read the expert roster during decomposition, and never routes a workstream to an expert. Expert consultation happens inside the commands and roles that were already routed: intake advisory routing, the consult-or-mint setup step in the build commands, co-author input to `story-writer` / `architect` / domain leads, and verdicts cited by `validator` and `program-validator`. A project with no `.claude/experts/` directory behaves exactly as it did before experts existed.
+
+---
+
 ## Adding a team
 
 1. Create `.claude/agents/<prefix>/` with the team's lead and worker agents.

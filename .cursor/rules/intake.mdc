@@ -1,5 +1,5 @@
 ---
-description: Skailr plain-chat intake — route questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.
+description: Skailr plain-chat intake — route a question inside exactly one registered expert's band to that expert in advise mode, other questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.
 alwaysApply: true
 ---
 
@@ -19,6 +19,7 @@ For detailed heuristics, follow skill `route-intake`.
 
 | Ask looks like… | Route |
 | --------------- | ----- |
+| Question that falls in **exactly one** registered expert's band (`route-when` in `.claude/experts/registry.md`) | Task `expert` in **advise mode** — write `.claude/tmp/ask.md`; answer in chat, naming the expert. Guarded: 0 or 2+ matches fall through to the next row |
 | Question / explain / where is / how does (**no** code change requested) | Task `researcher` in **ask mode** — write `.claude/tmp/ask.md`; answer in chat; do not start `/patch` or YOLO |
 | Map / onboard / brownfield baseline / “audit this repo” (intent to baseline, not a one-off Q) | Execute `.claude/commands/map-repo.md` as `/map-repo` |
 | Small / localized change (bug fix, typo, tweak, single surface) | Execute `.claude/commands/patch.md` as `/patch <ask>` |
@@ -26,6 +27,29 @@ For detailed heuristics, follow skill `route-intake`.
 | Whole app / MVP / many subsystems / unclear large scope | Execute `/yolo-program` |
 
 Gated alternatives (`/ship-feature`, `/discover`…) exist when the user asks for gates explicitly; plain-chat auto-build uses YOLO paths only. `/map-repo` is the brownfield baseline path (confirm gate; no auto-build).
+
+## Expert advisory routing (brief)
+
+Some projects keep a small roster of minted domain experts under `.claude/experts/`. Routing reads **only** the Roster table in `.claude/experts/registry.md`; never open a profile to decide routing.
+
+The expert row is **inert unless all four hold**. Otherwise fall through to the rows below:
+
+1. No slash command is driving the turn (hard rule 1 still wins).
+2. `.claude/experts/registry.md` exists with a non-empty roster. A missing registry means an empty roster, never an error.
+3. The ask falls inside **exactly one** roster row's `route-when`. **Zero matches and two-or-more matches both mean "no expert route"** — this is the ambiguity guard, and guessing between two bands is worse than a generic answer.
+4. That row's `maturity` is not `deprecated`.
+
+When it fires, Task `expert` (the role name is always `expert`, never a slug) with:
+
+```yaml
+mode: advise
+slug: <slug from the matched roster row>
+question: <the user's ask, verbatim>
+```
+
+It loads only `.claude/experts/profiles/<slug>.md`, stays read-only, and writes `.claude/tmp/ask.md` in the same Question / Findings / Answer shape researcher ask mode uses, plus an `## Expert` block naming the slug and the sources it cited. Summarize the Answer in chat and say which expert answered.
+
+If the expert returns `no-expert` (profile missing, unparseable, or deprecated), fall through to researcher ask mode. Never surface that as an error, and never mint an expert from plain chat.
 
 ## Ask-mode researcher (brief)
 

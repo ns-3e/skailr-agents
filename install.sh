@@ -17,6 +17,9 @@ Copies the packaged agent library into a project:
   Creates .claude/tmp/, .claude/program/, and .claude/repo/
   Appends ignore rules if missing
 
+Never touches .claude/experts/. That roster is accumulated project expertise
+owned by the consumer, and an upgrade must leave it byte-identical.
+
 Flags:
   --claude-only   Install only the .claude/ tree (+ scripts)
   --cursor-only   Install only the .cursor/ mirror
@@ -143,11 +146,13 @@ PACKAGED_RULES=(
   design-lead design-strategist designer design-reviewer
   mkt-lead mkt-strategist channel-planner mkt-analyst
   fin-lead fin-modeler fin-analyst fin-auditor
+  expert expert-scout
 )
 PACKAGED_COMMANDS=(
   ship-feature build-feature continue-feature yolo patch
   discover plan-program build-program continue-program yolo-program map-repo
   discover-portfolio plan-portfolio status-portfolio
+  mint-expert
 )
 
 install_cursor() {
@@ -194,8 +199,47 @@ install_cursor() {
   [[ -f "$TARGET/.claude/repo/.gitkeep" ]] || touch "$TARGET/.claude/repo/.gitkeep"
 }
 
+# DOC: .claude/experts/ is a consumer runtime artifact, never a pack artifact. No install
+# path may create, copy, or modify it; it is created lazily on first `/mint-expert`. This
+# fingerprint is a defensive assertion only: if a future edit ever starts touching the
+# roster, the install fails loudly instead of silently destroying project expertise.
+HASH_CMD=""
+for c in shasum sha1sum md5sum cksum; do
+  if command -v "$c" >/dev/null 2>&1; then HASH_CMD="$c"; break; fi
+done
+
+roster_fingerprint() {
+  local dir="$TARGET/.claude/experts" f acc=""
+  [[ -d "$dir" ]] || { printf 'absent'; return 0; }
+  # No hasher available: skip the assertion rather than fail the install. The guarantee rests
+  # on no copy operation naming this path; the fingerprint only makes a regression loud.
+  [[ -n "$HASH_CMD" ]] || { printf 'unhashed'; return 0; }
+  while IFS= read -r f; do
+    acc+="${f#"$TARGET/"}:$("$HASH_CMD" "$f" | awk '{print $1}')"$'\n'
+  done < <(find "$dir" -type f | LC_ALL=C sort)
+  printf '%s' "$acc" | "$HASH_CMD" | awk '{print $1}'
+}
+
+assert_roster_untouched() {
+  local before="$1" after
+  after="$(roster_fingerprint)"
+  if [[ "$before" != "$after" ]]; then
+    echo "FATAL: install modified .claude/experts/ (roster fingerprint changed)." >&2
+    echo "       The consumer roster must survive an upgrade byte-identical." >&2
+    exit 1
+  fi
+  case "$before" in
+    absent)   echo "  = .claude/experts/ not created (consumer roster, minted on demand)" ;;
+    unhashed) echo "  = .claude/experts/ not copied (no hasher; roster left alone)" ;;
+    *)        echo "  = .claude/experts/ untouched (roster preserved across upgrade)" ;;
+  esac
+}
+
 append_gitignore() {
   local gi="$TARGET/.gitignore"
+  # Deliberately absent: .claude/experts/. The roster is git-tracked in consumer projects,
+  # so it must never be ignored, despite the .claude/program/* and .claude/tmp/* entries
+  # below suggesting that ".claude working directories get ignored".
   local lines=(
     ".DS_Store"
     ".claude/tmp/*"
@@ -228,6 +272,8 @@ append_gitignore() {
   done
 }
 
+ROSTER_BEFORE="$(roster_fingerprint)"
+
 case "$MODE" in
   both)
     install_claude
@@ -242,4 +288,5 @@ case "$MODE" in
 esac
 
 append_gitignore
+assert_roster_untouched "$ROSTER_BEFORE"
 echo "Done."

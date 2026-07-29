@@ -13,17 +13,18 @@ Authoritative source: [`.claude/intake.md`](../.claude/intake.md). Detailed heur
 
 | Ask looks like… | Route |
 | --------------- | ----- |
+| Question in **exactly one** registered expert's band (`.claude/experts/registry.md`) | Task `expert` **advise mode** → `.claude/tmp/ask.md` + answer in chat (names the expert). Zero or two-or-more matches fall through |
 | Question / explain / where / how (**no** code change) | Task `researcher` **ask mode** → `.claude/tmp/ask.md` + answer in chat |
 | Map / onboard / brownfield baseline / audit this repo | [`/map-repo`](MAP_REPO.md) |
 | Small / localized change | [`/patch`](../.claude/commands/patch.md) |
 | One cohesive feature | [`/yolo`](YOLO.md) |
 | Whole app / MVP / many parts | [`/yolo-program`](YOLO.md) |
 
-**Slash commands always win.** Incomplete feature/program/map-repo runs resume via `/continue-feature` / `/continue-program` / `/map-repo` (or re-enter YOLO with no new prompt) — not a fresh patch.
+**Slash commands always win.** Incomplete feature/program/map-repo runs resume via `/continue-feature` / `/continue-program` / `/map-repo` (or re-enter YOLO with no new prompt) — not a fresh patch. Plain chat never mints; use [`/mint-expert`](experts.md) to add or curate an expert.
 
 Plain-chat auto-build uses **YOLO** paths only (plus `/map-repo` for brownfield baseline). For human gates on product initiatives, invoke `/ship-feature` or `/discover` → `/plan-program` → `/build-program` explicitly.
 
-**Business roles (intake routes):** `/map-repo` = brownfield onboarding / tech lead repo audit; `/patch` = hotfix / small change request; `/yolo` = feature delivery without approval gates; `/yolo-program` = program delivery without approval gates (VP initiative, ungated). Full mapping: [README Command reference](../README.md#command-reference).
+**Business roles (intake routes):** `/map-repo` = brownfield onboarding / tech lead repo audit; `/patch` = hotfix / small change request; `/yolo` = feature delivery without approval gates; `/yolo-program` = program delivery without approval gates (VP initiative, ungated); `/mint-expert` = hiring a domain specialist. Full mapping: [README Command reference](../README.md#command-reference). Experts guide: [experts.md](experts.md).
 
 ## `/map-repo` vs `/patch` vs `/yolo` vs `/yolo-program`
 

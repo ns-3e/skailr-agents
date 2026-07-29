@@ -14,7 +14,7 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 
 ## Non-negotiable rules
 
-- **Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/` and channel appends if boards exist.
+- **Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/`, under `.claude/experts/` during the post-confirm auto-mint step, and channel appends if boards exist.
 - **Do not seed** `.claude/program/brief.md`, `ledger.md`, `plan.md`, or `contracts/`. Those imply an active program and break resume heuristics.
 - **Do not start** `/yolo`, `/patch`, or `/yolo-program` automatically after confirm. Tell the user which command to run for which backlog item.
 - Still run **script gates** where applicable (`check-ownership --map-only` on the draft map).
@@ -138,6 +138,52 @@ Tell the user:
 
 Do **not** auto-start those commands.
 
+## Post-confirm — internal expert auto-mint (internal step)
+
+Runs **only after** the confirm gate, alongside the optional Intair sync. This is an internal step, not a tracked phase: it adds no row to `progress.md`, it is **never** a second gate, and it never halts the run. Record its outcome as one append-only line under `## Notes` in `progress.md`.
+
+It sits after the gate deliberately. The human has already seen the orientation and backlog that justify a mint in the gate report, which satisfies "notify" without asking a command that already has one gate to grow another.
+
+### Preconditions (skip silently if any fails)
+
+1. `.claude/experts/config.json` has `auto_mint` true. A **missing** config means all defaults (`gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) and is the normal state of a project that has never minted.
+2. The `/mint-expert` command exists in this project. If it does not, skip and note the skip.
+3. The baseline was confirmed. Never mint on a revision loop or a blocked run.
+
+### Signal counting
+
+A vertical qualifies only with at least `mint_threshold` (default 2) **independent** signals. Independent means different sources:
+
+| Qualifying signal | Counts as |
+| ----------------- | --------- |
+| A Directory Boundaries entry in `orientation.md` for a distinct subsystem | 1 |
+| Two or more `backlog.md` items sharing a category | 1 total, not one each |
+| Three or more consults in this run that matched no band | 1 total |
+| An explicit mention of the vertical in `.claude/repo/request.md` | 1 |
+
+Below threshold, **mint nothing and propose nothing**. You may post a single `heads-up` naming the near-miss vertical, and that is all.
+
+### What may be minted here
+
+`classification: internal` **only**, always `maturity: provisional` and `gate: soft`. External and hybrid experts require a scout research artifact and mint only through an explicit `/mint-expert`. A provisional expert can advise and co-author immediately and can never block.
+
+### Procedure
+
+For each qualifying vertical, follow the mint procedure in `.claude/commands/mint-expert.md` exactly (see its "Reuse by the auto-mint triggers" section), in order, abandoning at the first failure, with `minted.by: map-repo`: resolve the slug (`-expert` suffix required; abort on collision), create `.claude/experts/` lazily if absent, write the profile from `.claude/program/schemas/expert-profile.template.md` with a non-empty `## Known limits`, validate with `node scripts/skailr/check-experts.mjs`, **delete the profile if validation fails**, regenerate `registry.md`, append the durable log line, notify, then check the roster cap. Do not invent a shorter path: a roster must never contain an invalid profile, even transiently.
+
+Sources for an internal expert minted here are `.claude/repo/orientation.md`, `findings.md`, and the real repo paths the boundary entry names.
+
+### Notification (both parts, neither is a gate)
+
+1. A `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` or `.claude/program/channels/program.md` if boards exist: `Minted <slug> (internal, provisional) via map-repo. Basis: <signals>. Profile: .claude/experts/profiles/<slug>.md. Advisory only until promoted.` Never `to: @human` and never `type: contract-change` — either would halt the pipeline and break "notification, not per-mint approval."
+2. The durable log line in `.claude/experts/registry.md`. Required: channels are per-run and gitignored, so without this the notification does not survive the run.
+
+Exceeding `roster_cap` still mints and adds a consolidation heads-up.
+
+### Report it
+
+Name every minted expert in the final report with its slug, basis, and profile path, and state plainly that they are advisory until promoted. If nothing was minted, say nothing about it.
+
 ## Phase 5 — Optional Intair
 
 Only after confirm.
@@ -154,4 +200,4 @@ Mark `intair` complete. Final progress `status: confirmed`.
 
 Lead with: **Map-repo complete** (or **awaiting confirm** if still at the gate).
 
-Then: pointers to `orientation.md`, `ownership.json`, `findings.md`, `backlog.md`, `map-report.md`, and (if any) `intair-sync.md`.
+Then: pointers to `orientation.md`, `ownership.json`, `findings.md`, `backlog.md`, `map-report.md`, and (if any) `intair-sync.md` and newly minted experts under `.claude/experts/`.

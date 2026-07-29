@@ -53,6 +53,15 @@ Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`)
 - **After** `YIELD: <path>`: keep slice `in_progress`; immediately re-dispatch the same role in a fresh Task with handoff + spec (+ story/research). Cap consecutive yields per slice at **5**, then surface in the final report / to the human.
 - **On slice complete:** delete/confirm absent handoff file before marking the slice complete.
 
+## Setup — expert consult-or-mint (soft, non-blocking)
+
+Run once, before Phase 1. **Never a gate.** Every failure mode here is a skip: a project with no `.claude/experts/` behaves exactly as it did before experts existed, and you never warn the user about an absent roster.
+
+1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes, and carry it forward: the same slugs are used for co-author input and for the gate.
+2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the request. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`, including validation and the delete-the-profile-on-invalid step.
+3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human` and never `type: contract-change` — minting notifies, it does not ask.
+4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+
 ## Phase 1 — Research
 
 Invoke the `researcher` subagent via the Task tool. Pass the feature request; it writes `.claude/tmp/research.md`.
@@ -67,6 +76,8 @@ Checkpoint: `research` → complete.
 
 Invoke the `story-writer` subagent. It writes `.claude/tmp/story.md`.
 
+**Expert co-author (when setup selected a band).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. Concurrent dispatch keeps expert consultation off the critical path. The expert writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`** — that boundary is what keeps ownership disjoint. If its input lands with a must-have or failure mode the story missed, re-invoke `story-writer` once with the file path in context. Any expert dispatch that returns `no-expert` is a skip, not a retry.
+
 Instruct it that this is YOLO mode: it must **not** leave blocking Open Questions for a human. Every open question becomes an **Assumed** answer with a one-line rationale.
 
 Your check before continuing:
@@ -77,12 +88,15 @@ Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print 
 
 ## Phase 3 — Spec (auto-approve)
 
+**Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`, refreshing `.claude/tmp/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
+
 Invoke the `architect` subagent. It writes `.claude/tmp/spec.md`.
 
 Verify before continuing:
 1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has request shape, response shape, and error cases.
+4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
 
 Optionally write `.claude/tmp/ownership.json` for later enforcement.
 
@@ -111,7 +125,14 @@ Checkpoint: `verify` → complete.
 
 ## Phase 6 — Validation
 
-Invoke `validator`. It writes `validation-report.md`.
+**Expert gate (when a band matched).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`.
+
+Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory`, which is the shipped default and the only case v1 exercises.
+
+- `advisory` + `fail` → record the finding, post a `heads-up`, and **continue**. A soft-gate failure is a finding, not a halt.
+- `binding` + `fail` → halt in the `/map-repo`-confirm-gate shape: surface it and end your turn. No new gate mechanism.
+
+Invoke `validator`. It writes `validation-report.md`. Pass it every verdict file; the validator cites them as evidence in its own sign-off. There is exactly one sign-off role per tier and the expert is not it.
 
 Checkpoint: `validate` → complete.
 
@@ -135,8 +156,9 @@ Then print, in this order:
 6. **Files changed** — grouped by backend and frontend
 7. **Quiet skips** — every TODO, ignore, and stub introduced
 8. **Documentation** — changelog / docs touched
-9. **Channel transcript** — pointer to `.claude/tmp/channels/feature.md` and any orchestrator `decision` notes
-10. **Recommended next action** — one sentence
+9. **Experts** — which were consulted, anything minted this run (slug, basis, advisory until promoted), and every verdict with its authority. Omit this section entirely when no expert was involved
+10. **Channel transcript** — pointer to `.claude/tmp/channels/feature.md` and any orchestrator `decision` notes
+11. **Recommended next action** — one sentence
 
 Offer to fix blocking findings and re-run verify/validate, or to open the PR.
 

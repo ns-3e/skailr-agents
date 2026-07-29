@@ -28,6 +28,15 @@ On a fresh start:
 
 **Checkpoint rule:** after each phase’s artifact + checks succeed, mark that phase `complete` in `progress.md` **before** the next step. Usage limits can kill the session; progress is how `/continue-feature` resumes.
 
+## Setup — expert consult-or-mint (soft, non-blocking)
+
+Run once, before Phase 1. **Never a gate**, and never a third approval stop: this command already has two. Every failure mode here is a skip, and a project with no `.claude/experts/` behaves exactly as it did before experts existed.
+
+1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes and carry the slugs forward.
+2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the request. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`, including validation and the delete-on-invalid step.
+3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
+4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+
 ## Phase 1 — Research
 
 Invoke the `researcher` subagent via the Task tool. Pass it the feature request and instruct it to follow its output contract, writing to `.claude/tmp/research.md`. If `.claude/repo/orientation.md` exists, instruct it to read that first and deepen Prior Art for this feature.
@@ -39,6 +48,8 @@ Checkpoint: `research` → complete.
 ## Phase 2 — Story
 
 Invoke the `story-writer` subagent. It reads `research.md` and the request, and writes `.claude/tmp/story.md`.
+
+**Expert co-author (when setup selected a band).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. It writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`**. If its input names a must-have or domain failure mode the story missed, re-invoke `story-writer` once with that file in context before you present the story at Gate 1, and show the expert's contribution to the user there. A `no-expert` return is a skip, not a retry.
 
 Checkpoint: `story` → complete (story written; awaiting human approval — leave frontmatter `status: story`).
 
@@ -57,10 +68,13 @@ If the user comes back with changes, re-invoke `story-writer` with their feedbac
 
 Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
 
+**Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md` so `.claude/tmp/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
+
 When it returns, verify three things yourself before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — no path matches both. If they overlap, send it back to the architect to resolve ownership.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
+4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
 
 Checkpoint: `spec` → complete after those checks pass.
 

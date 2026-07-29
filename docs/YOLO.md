@@ -19,6 +19,8 @@ Prefer a clean working tree (or commit WIP first). Feature YOLO uses `feature/<s
 
 YOLO still respects the active **model routing** profile (`.claude/model-routing.json`) and escalate-on-retry via skill `route-models` — see [MODEL_ROUTING.md](MODEL_ROUTING.md).
 
+When a project has (or should grow) domain depth, YOLO and related builds run a **consult-or-mint** setup against `.claude/experts/` before story/spec: matching experts co-author as scoped input and may soft-gate at validate. Explicit mint/curate: [`/mint-expert`](experts.md). Guide: [experts.md](experts.md).
+
 ---
 
 ## Feature YOLO — `/yolo`
@@ -124,7 +126,8 @@ If the verdict is SHIP WITH FIXES or DO NOT SHIP, ask Claude to fix blocking fin
 
 | You want… | Command | Business equivalent |
 | --------- | ------- | ------------------- |
-| Question only (plain chat) | Intake → researcher ask mode — [INTAKE.md](INTAKE.md) | Q&A (no delivery) |
+| Question only (plain chat) | Intake → expert advise (exact-one band) or researcher ask mode — [INTAKE.md](INTAKE.md) | Q&A (no delivery) |
+| Mint or curate a domain expert | `/mint-expert` — [experts.md](experts.md) | **Hiring a domain specialist** |
 | Small fix, sync lineage | `/patch` | **Hotfix / small change request** |
 | One feature, gated | `/ship-feature` → `/build-feature` | **Gated feature intake** → **approved-spec delivery** |
 | One feature, one-shot | `/yolo` | **Feature delivery without approval gates** |

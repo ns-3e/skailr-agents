@@ -40,6 +40,16 @@ On a fresh start:
 - Write the raw request verbatim to `.claude/program/request.md`.
 - Write `.claude/program/mode.md` with a single line: `yolo` so the final report and resumes know gates were skipped.
 
+## Setup — expert consult-or-mint (soft, non-blocking)
+
+Run once, before Phase 1. **Never a gate**, and never a reason to stop a YOLO run. A project with no `.claude/experts/` behaves exactly as it did before experts existed, and you never warn the user about an absent roster.
+
+1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Note which non-`deprecated` bands cover parts of this initiative; record them in `brief.md` assumptions or `plan.md` so Phase 3 knows which domain leads get expert input.
+2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the request. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`, including validation and the delete-on-invalid step.
+3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/program/channels/program.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
+4. **Experts are not a team.** Never route a workstream to an expert and never give one an ownership glob.
+5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+
 ## Phase 1 — Discovery (auto-brief, no interview)
 
 Prefer existing brownfield baseline: if `.claude/repo/orientation.md` exists, pass it to the architect (skip inventing orientation). Else if the initiative clearly touches an existing codebase, invoke `researcher` for a fast orientation pass into `.claude/tmp/research.md` (do not rely on ignored `.claude/program/orientation.md`). Keep light research lightweight. If `.claude/repo/ownership.json` exists, treat it as a draft hint for Job 2 kernel/workstream cuts (not a freeze substitute).
@@ -77,11 +87,14 @@ Then **auto-approve** the plan and follow skill `freeze-contract`: set contracts
 Follow `/build-program` Phases A–E exactly (foundation → parallel workstreams with JIT team disclosure → integration → program validation → documentation), with these overrides:
 
 - Preflight: treat the plan as approved and contracts as frozen (you just did that). Create `program/<slug>` if needed.
+- Field guide (Phase A): **initialize the field guide** — copy `.claude/program/schemas/field-guide.template.md` to `.claude/program/field-guide.md`, replacing `<slug>` in the frontmatter with the program slug. If the program is a resume and `field-guide.md` already exists, do not overwrite it — the existing entries are institutional memory for this run. If no template exists, create `field-guide.md` with the header and an empty Entries section.
+- Field guide (Phase B): also pass `.claude/program/field-guide.md` (if it exists) to each dispatched agent as startup context — agents should read it before beginning their work and may append entries for non-obvious discoveries they make.
 - Channel router: **never halt the whole program for `@human` or `contract-change`.** Apply YOLO rules above. Unrelated workstreams keep running.
 - Engineering workstreams: use YOLO feature orchestration (auto-approve story/spec) rather than stopping for `/continue-feature` / `/build-feature` gates.
 - Script gates and ledger updates remain mandatory before advancing phases.
 - Emit stubs as needed: `node scripts/skailr/emit-stubs.mjs`.
 - Context handoff: honor `YIELD:` and `.claude/program/workstreams/<ws>/handoff/*.md` (and nested `.claude/tmp/handoff/`) per `/build-program` and skill `write-handoff-and-yield`.
+- Experts: pass co-author input to the routed domain leads and collect gate verdicts before program validation, exactly as `/build-program` specifies. A soft-gate `fail` is a recorded finding plus a heads-up, never a halt — which is also the YOLO default for everything else.
 
 ## Final report to the user
 
@@ -99,8 +112,9 @@ Then print, in order:
 8. **Cross-cutting review** — security, data integrity, operational readiness
 9. **Quiet skips** across the aggregate diff
 10. **Documentation** — what was written or reconciled
-11. **Channel transcript** — pointer to `.claude/program/channels/`
-12. **Recommended next action** — one sentence
+11. **Experts** — consulted, minted this run (slug, basis, advisory until promoted), and every verdict with its authority. Omit entirely when no expert was involved
+12. **Channel transcript** — pointer to `.claude/program/channels/`
+13. **Recommended next action** — one sentence
 
 Offer to fix blocking findings and re-run integration/validation, or to open the PR.
 
