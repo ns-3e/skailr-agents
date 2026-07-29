@@ -78,6 +78,25 @@ COMPOSES / DOES NOT COMPOSE — with the single most important blocking reason.
 
 Every frozen contract has been exercised real-against-real. Every cross-boundary journey from the brief has a real status. No stub remains in the integration suite. Findings are precise enough that the owning workstream can act without you rerunning anything. If the system does not compose, say so plainly — a program that passes each team's local tests but fails to integrate has not shipped anything.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "integration-verifier", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Integration-verifier-specific Intair writes
+
+**After integration verification completes**, record the outcome:
+```json
+{
+  "layer": "operational", "type": "Outcome",
+  "properties": {"outcome_id": "<program-slug>-integration-outcome", "kind": "success", "summary": "<whether workstreams compose and key findings>", "measured_at": "<now>"},
+  "attribution": {"actor": "integration-verifier", "actor_kind": "agent", "at": "<now>", "basis": "task:<program-slug>"}
+}
+```
 
 ## Channels — how you raise and answer cross-agent questions
 

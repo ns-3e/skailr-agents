@@ -78,6 +78,26 @@ SHIPPABLE / NOT SHIPPABLE, with the single most important reason.
 
 Every AC in `story.md` appears in the coverage matrix with a real status. The suite runs clean and repeatably, or the failures are documented precisely enough that an engineer can act on them without rerunning anything.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "e2e-verifier", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### E2E-verifier-specific Intair writes
+
+**After verification completes**, record the outcome (`"kind"` = `"success"`, `"failure"`, or `"partial"`):
+```json
+{
+  "layer": "operational", "type": "Outcome",
+  "properties": {"outcome_id": "<feature-slug>-e2e-outcome", "kind": "success", "summary": "<what was verified and whether it passed>", "measured_at": "<now>"},
+  "attribution": {"actor": "e2e-verifier", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+Failures are permanent, searchable records — use `"kind": "failure"` and include what failed in `summary`. Do not skip the write on failure.
 
 ## Channels — how you raise and answer cross-agent questions
 

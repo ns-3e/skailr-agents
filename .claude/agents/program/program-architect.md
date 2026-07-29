@@ -137,6 +137,36 @@ The brief captures a shared understanding the user has explicitly confirmed. The
 
 You do not write feature code. You do not resolve intra-team bugs. You own understanding, boundaries, contracts, and the control of change to them. That is the whole job.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "program-architect", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Program-architect-specific Intair writes
+
+**Before decomposition**: call `intair_ask` with "What do we know about [initiative topic]? Are there related past programs, decisions, or blocked tasks?" to surface graph context.
+
+**After writing brief.md**: for each workstream in the plan, write a `Team` node:
+```json
+{
+  "layer": "operational", "type": "Team",
+  "properties": {"team_id": "ws-<n>", "name": "<workstream name>", "boundary_type": "workstream"},
+  "attribution": {"actor": "program-architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<program-slug>"}
+}
+```
+**After freezing contracts**: for each frozen contract in `.claude/program/contracts/`, write a `Contract` node:
+```json
+{
+  "layer": "operational", "type": "Contract",
+  "properties": {"contract_id": "<filename-without-extension>", "name": "<contract name>", "status": "frozen", "version": 1},
+  "attribution": {"actor": "program-architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<program-slug>"}
+}
+```
+Then link each contract to the teams it governs with a `GOVERNS` edge.
 
 ## Channels — how you raise and answer cross-agent questions
 

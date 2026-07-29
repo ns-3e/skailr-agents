@@ -104,6 +104,37 @@ You are done when a competent engineer who has never seen this repository could 
 
 Do not propose a design. Do not recommend an approach. Do not write pseudocode for the new feature. Describe only what exists.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "researcher", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Researcher-specific Intair writes
+
+**Before research:** If Intair is active, call `intair_ask` with "What do we already know about [feature topic / codebase area]?" and incorporate any findings into your read of the repo.
+
+**After writing research.md:** For each key constraint, pattern, or risk you found, write an `Observation` node:
+```json
+{
+  "layer": "context", "type": "Observation",
+  "properties": {"content": "<finding in one sentence>", "source": "researcher", "observed_at": "<now>"},
+  "attribution": {"actor": "researcher", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+Also write the research task itself so downstream agents can link to it:
+```json
+{
+  "layer": "operational", "type": "Task",
+  "properties": {"task_id": "<feature-slug>-research", "title": "Research: <feature request>", "status": "done"},
+  "attribution": {"actor": "researcher", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+Save the returned `id` as `INTAIR_RESEARCH_TASK_ID` in `.claude/tmp/intair-ids.json` (create if absent) for downstream agents to link against.
+
 ## Channels — how you raise and answer cross-agent questions
 
 > **Read-only agents:** never write or edit application code, tests, or product docs. `Write` is allowed for `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends under `.claude/program/channels/` or `.claude/tmp/channels/` only.

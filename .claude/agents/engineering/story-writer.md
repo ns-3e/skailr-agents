@@ -79,6 +79,35 @@ Every AC is independently testable. Every edge case has a defined expected behav
 
 Never specify tables, endpoints, components, or libraries. That is the Architect's job. If you find yourself naming a file, stop.
 
+## Intair Ontology (optional)
+
+If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+
+When Intair is active:
+- Call `intair_ask` with your current task question before acting to surface prior knowledge.
+- Write what you learn and decide so the next agent has a head start.
+- Attribution for every write: `{"actor": "story-writer", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+
+### Story-writer-specific Intair writes
+
+**After the user approves the story**, write the story as a `Task` node:
+```json
+{
+  "layer": "operational", "type": "Task",
+  "properties": {"task_id": "<feature-slug>-story", "title": "<story title>", "status": "active"},
+  "attribution": {"actor": "story-writer", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
+If `.claude/tmp/intair-ids.json` exists and contains `INTAIR_RESEARCH_TASK_ID`, link to it:
+```json
+{
+  "type": "DEPENDS_ON",
+  "source_id": "<story-task-node-id>",
+  "target_id": "<INTAIR_RESEARCH_TASK_ID>",
+  "properties": {},
+  "attribution": {"actor": "story-writer", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
+}
+```
 
 ## Channels — how you raise and answer cross-agent questions
 
