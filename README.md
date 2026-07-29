@@ -20,6 +20,7 @@ You do not need prior knowledge of skailr. Install once. **Plain chat is auto-ro
 | Ship **one** cohesive feature (with approval gates) | Workstream | `/ship-feature` → `/continue-feature` → `/build-feature` |
 | Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` — [docs/YOLO.md](docs/YOLO.md) |
 | Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
+| **Write to or read from Intair** (a graph an agent or operator calls on purpose, in a given step) | Intair client seam | Reference guide: [docs/intair-seam.md](docs/intair-seam.md) |
 
 **Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. Plain chat follows the same rule via intake ([docs/INTAKE.md](docs/INTAKE.md)).
 
@@ -432,6 +433,7 @@ node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
 node scripts/skailr/feature-status.mjs --json
 node scripts/skailr/check-ownership.mjs --map examples/launch-kit/ownership.json --map-only
 node scripts/skailr/check-contracts.mjs --dir examples/launch-kit/contracts
+node scripts/skailr/check-intair-seam.mjs
 ```
 
 See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](docs/intair-seam.md).
@@ -441,6 +443,7 @@ See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](
 ## Tuning
 
 - **Model routing** — switch profiles to trade cost vs quality. See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md).
+- **Intair seam**: reference documentation for calling Intair (MCP tools and their REST equivalents, write attribution, propose-only schema evolution, concept map). No command, skill, or hook in this pack calls Intair; an agent or operator consults the guide and makes the call deliberately. See [docs/intair-seam.md](docs/intair-seam.md).
 
 ```bash
 node scripts/skailr/apply-model-routing.mjs --profile economy   # haiku digests, sonnet drafts, opus judgment

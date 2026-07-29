@@ -12,3 +12,7 @@
 !.claude/program/schemas/**
 node_modules/
 examples/parallel-api/stubs/
+# Local checkouts of sibling products (never ship inside this pack)
+src/
+**/__pycache__/
+*.pyc
