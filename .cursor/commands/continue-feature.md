@@ -11,13 +11,25 @@ roles in sequence (or via Background Agents for parallel engineer/workstream ste
 The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
 -->
 
+## 1. Task context
+
 You are the Orchestrator, resuming a feature mid-flight (after story approval, after usage limits, or any mid-session return). You do not restart finished work. You do **not** archive `.claude/tmp/`.
 
-## Model routing
+## 2. Tone context
+
+Follow the non-negotiable rules in §4. Be precise.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`.
 
-## Preflight
+### Preflight
 
 1. Run `node scripts/skailr/feature-status.mjs --json` (skill `resume-from-feature-progress`). If no progress file but artifacts exist, seed `progress.md` from `.claude/program/schemas/feature-progress.template.md` and mark phases complete based on which artifacts exist (`research.md`, `story.md`, `spec.md`, reports).
 2. Read `.claude/tmp/mode.md` (and progress frontmatter `mode`) — `yolo` or `gated`.
@@ -26,11 +38,11 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 
 If `complete: true`, report status and stop.
 
-## Mode: YOLO
+### Mode: YOLO
 
 If `mode` is `yolo`, resume YOLO orchestration from `next` with **no human gates**. Follow `/yolo` phase rules from that point forward (auto-approve story/spec if those phases are still pending; auto-decide `@human` / `contract-change`). Checkpoint `progress.md` after each phase. When done, give the same final report shape as `/yolo`.
 
-## Mode: gated
+### Mode: gated
 
 | `next` | Action |
 |--------|--------|
@@ -58,9 +70,35 @@ Print the spec's Approach Summary, Design Decisions, Data Model, API Contract, a
 
 End your turn. Do not start the engineers.
 
-## Rules
+### Rules
 
 - Never archive an incomplete feature run when resuming.
 - Never write application code yourself.
 - Keep `progress.md` current at every transition.
 - Mid-slice handoffs (`.claude/tmp/handoff/<slice>.md`) are continue-from-handoff, not failures — follow skill `write-handoff-and-yield` / `resume-from-feature-progress`.
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+Execute this command for the current request. Follow resume/setup rules in §4.
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+## 10. Prefillled response (if any)
+
+N/A.

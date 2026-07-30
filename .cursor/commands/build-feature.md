@@ -11,13 +11,25 @@ roles in sequence (or via Background Agents for parallel engineer/workstream ste
 The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
 -->
 
+## 1. Task context
+
 You are the Orchestrator, resuming after the spec has been approved. Everything from here runs without human checkpoints, because every agent is constrained to `.claude/tmp/spec.md` and cannot drift from it.
 
-## Model routing
+## 2. Tone context
+
+**Before** dispatching an engineer: if a handoff exists for that slice (or `handoffs` lists it), pass the handoff path as primary context plus spec/story/research; instruct continue-from-handoff, skip Done.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`.
 
-## Preflight and resume
+### Preflight and resume
 
 Confirm `.claude/tmp/spec.md` exists and the user has approved it (or `mode.md` is `yolo`). Confirm the working tree is clean or on a dedicated feature branch — if there are unrelated uncommitted changes, stop and say so, because the boundary checks and the final diff review will be meaningless otherwise.
 
@@ -29,7 +41,7 @@ Initialize a channel for the run: ensure `.claude/tmp/channels/` exists with a c
 
 **Checkpoint rule:** mark each phase complete in `progress.md` before starting the next. For build, track backend/frontend slices; leave `build` `in_progress` if only one side finished.
 
-## Context handoff (build workers)
+### Context handoff (build workers)
 
 Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`). Paths: `.claude/tmp/handoff/<slice>.md`. Status JSON may include `handoffs`.
 
@@ -37,7 +49,7 @@ Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`)
 - **After** a return with `YIELD: <path>`: keep build/slice `in_progress`, append Notes, do **not** mark the slice complete. Immediately re-dispatch the **same** role in a fresh Task with only handoff + spec (+ story/research). Cap consecutive yields per slice at **5**, then surface to the human.
 - **On slice complete:** confirm the handoff file for that slice is deleted before marking the slice complete.
 
-## Phase 4 — Parallel build
+### Phase 4 — Parallel build
 
 Set `build` to `in_progress`. Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only missing slices from `partialBuild`; include any handoff paths from `handoffs`). This is the actual parallelism — not two terminal tabs. They are safe to run together because the spec's ownership globs are disjoint.
 
@@ -52,7 +64,7 @@ When both return (after draining any yield re-dispatch loops):
 
 Checkpoint: `build` → complete.
 
-## Phase 5 — Verification
+### Phase 5 — Verification
 
 Invoke `e2e-verifier`. It reads the story, the spec, and both reports, writes real end-to-end tests, runs them, and writes `verification-report.md`.
 
@@ -60,7 +72,7 @@ Do not let it modify application code. If it reports failures, note them and con
 
 Checkpoint: `verify` → complete.
 
-## Phase 6 — Validation
+### Phase 6 — Validation
 
 **Expert gate (only if an earlier phase matched a band — check `progress.md` Notes and `.claude/experts/registry.md`).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md`.
 
@@ -75,13 +87,40 @@ Invoke `validator`. It reads everything including the raw diff and writes `valid
 
 Checkpoint: `validate` → complete.
 
-## Phase 7 — Documentation
+### Phase 7 — Documentation
 
 Invoke `program-documenter`. It reads `story.md`, `spec.md`, the frozen API contract in the spec, both engineer reports, the verification and validation reports, and the actual diff, plus any doc-anchors the engineers left. It documents what the diff shows shipped — a changelog entry always, plus API reference, README, and runbook updates as the change warrants — in create or reconcile mode depending on whether docs already exist for the touched surfaces. It surfaces any drift between the spec's contract and the real implementation as a finding rather than documenting around it. If the validator said DO NOT SHIP, run reconcile-only to avoid stale docs and hold new release notes until blocking findings are fixed.
 
 Checkpoint: `docs` → complete; frontmatter `status: complete`.
 
-## Final report to the user
+### Rules for you as orchestrator
+
+- Never write application code yourself. If something needs fixing, dispatch the agent that owns those files.
+- Never suppress a finding to make the pipeline look clean. Your output is only useful if it is honest.
+- Never skip validation because verification passed. They catch different things — the verifier proves the feature works, the validator catches what was quietly dropped or left insecure.
+- If any agent's output does not conform to its contract, re-invoke it once with the specific gap. If it fails twice, surface it to the user rather than papering over it.
+- Keep `progress.md` current so mid-run usage limits can resume via `/continue-feature`.
+- Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): re-dispatch with a fresh Task; never treat a yield as slice completion.
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+Execute this command for the current request. Follow resume/setup rules in §4.
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+### Final report to the user
 
 Print, in this order:
 
@@ -98,11 +137,8 @@ Print, in this order:
 
 Then offer: to dispatch the responsible engineer to fix the blocking findings and re-run verification and validation, or to open the PR.
 
-## Rules for you as orchestrator
+Be extremely concise. Sacrifice grammar for the sake of concision.
 
-- Never write application code yourself. If something needs fixing, dispatch the agent that owns those files.
-- Never suppress a finding to make the pipeline look clean. Your output is only useful if it is honest.
-- Never skip validation because verification passed. They catch different things — the verifier proves the feature works, the validator catches what was quietly dropped or left insecure.
-- If any agent's output does not conform to its contract, re-invoke it once with the specific gap. If it fails twice, surface it to the user rather than papering over it.
-- Keep `progress.md` current so mid-run usage limits can resume via `/continue-feature`.
-- Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): re-dispatch with a fresh Task; never treat a yield as slice completion.
+## 10. Prefillled response (if any)
+
+N/A.

@@ -27,8 +27,8 @@ Installed projects only need `apply-model-routing.mjs` — Claude Code reads age
 
 | Profile | Intent |
 | ------- | ------ |
-| `balanced` | Current defaults: worker roles that execute against an Opus-authored spec — research/story/PM planners **and** the backend/frontend engineers, plus `content-writer`, `designer`, `fin-modeler` — on Sonnet; architect, leads, verifiers, and validators on Opus. `data-engineer` stays Opus (schema reasoning often lacks a full upstream spec) |
-| `economy` | Digests (`status-reporter`, `risk-analyst`) and templated planners (`pm-planner`, `channel-planner`, `legal-analyst`) → Haiku; writers/docs → Sonnet; engineers and hard-judgment roles stay Opus |
+| `balanced` | Current defaults: worker roles that execute against an Opus-authored spec — research/story **and** the backend/frontend engineers, plus `content-writer`, `designer`, `fin-modeler` — on Sonnet; architect, leads, planners (`pm-planner`, `channel-planner`), verifiers, and validators on Opus. `data-engineer` stays Opus (schema reasoning often lacks a full upstream spec) |
+| `economy` | Digests (`status-reporter`, `risk-analyst`) and templated workers (`legal-analyst`; planners drop to Haiku in this profile only) → Haiku; writers/docs → Sonnet; engineers and hard-judgment roles stay Opus |
 | `quality` | Almost everything Opus; only `status-reporter` stays Sonnet |
 
 Config: [`.claude/model-routing.json`](../.claude/model-routing.json).

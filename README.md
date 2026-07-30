@@ -459,6 +459,27 @@ The installer copies `.claude/` and `.cursor/` into your project, creates `.clau
 ./install.sh /path/to/your-project
 ```
 
+### Upgrading an existing install
+
+There is no separate update command. To push a newer skailr pack into a project that already has skailr, pull or clone this repo and re-run the installer against that project:
+
+```bash
+./install.sh /path/to/your-project
+# or: ./install.sh /path/to/your-project --claude-only
+```
+
+Re-install **does not wipe** portfolio, program, feature, or repo runtime state. Directories are created if missing; existing contents are left alone:
+
+| Preserved | Overwritten (pack files) |
+| --------- | ------------------------ |
+| `.claude/portfolio/` | Agents, commands, skills, teams registry |
+| `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`, intake, settings, model-routing |
+| `.claude/tmp/` feature artifacts | Program schemas + channel templates (`PROTOCOL.md`, `program.md`, `feature.md`) |
+| `.claude/repo/` map-repo baseline | Cursor rules/commands (allowlisted) and `scripts/skailr/` |
+| `.claude/experts/` (asserted byte-identical) | |
+
+Local edits to pack files in the consumer repo are replaced on upgrade. Commit the refreshed pack paths afterward; leave gitignored runtime under `.claude/tmp/` and most of `.claude/program/` uncommitted.
+
 Manual (Claude Code only):
 
 ```bash

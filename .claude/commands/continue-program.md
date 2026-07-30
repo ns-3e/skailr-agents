@@ -3,13 +3,25 @@ description: Resume mid-initiative — pick up from the program ledger at the fi
 allowed-tools: Task, Read, Write, Bash
 ---
 
+## 1. Task context
+
 You are the Program Orchestrator, resuming a program mid-flight. You do not restart finished work. You do **not** archive `.claude/program/`.
 
-## Model routing
+## 2. Tone context
+
+Follow the non-negotiable rules in §4. Be precise.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`.
 
-## Preflight
+### Preflight
 
 1. Run `node scripts/skailr/ledger-status.mjs` if available; otherwise read `.claude/program/ledger.md` (skill `resume-from-ledger`).
 2. Read `.claude/program/mode.md` — `yolo` or absent/`gated`.
@@ -18,7 +30,7 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 5. Confirm a clean working tree or dedicated branch `program/<slug>`.
 6. Do **not** reset channels under `.claude/program/channels/` — they are the append-only transcript.
 
-## Apply decisions first
+### Apply decisions first
 
 ### Gated mode (default when `mode.md` is not `yolo`)
 
@@ -39,7 +51,7 @@ Do **not** re-ask the human for a decision that is already recorded as a channel
 - Auto-decide: invoke `program-architect` when the seam is a contract; choose the smallest safe resolution; append a channel `type: decision` with rationale; bump versions / re-dispatch blast-radius as needed; continue.
 - Engineering workstreams stay YOLO-style (auto-approve story/spec).
 
-## Resume rule
+### Resume rule
 
 Pick up at the **first phase not marked complete** in the ledger:
 
@@ -55,3 +67,29 @@ Pick up at the **first phase not marked complete** in the ledger:
 Follow the same rules as `/build-program` from that phase forward: script gates (`check-ownership`, `check-contracts`, `validate-channels`) must pass before advancing. In gated mode, halt on **new** `@human` / `contract-change` only. In YOLO mode, auto-decide per above. Check `.claude/program/workstreams/<ws>/handoff/*.md` (and nested `.claude/tmp/handoff/` for feature-scoped engineering) and continue-from-handoff per skill `resume-from-ledger` / `write-handoff-and-yield`.
 
 Update the ledger at every transition. When done, give the same final report shape as `/build-program` (or `/yolo-program` if mode is yolo).
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+Execute this command for the current request. Follow resume/setup rules in §4.
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+## 10. Prefillled response (if any)
+
+N/A.

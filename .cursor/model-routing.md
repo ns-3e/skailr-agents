@@ -12,7 +12,7 @@ When dispatching a role via Task in Cursor, pass the model from this table
 | ---- | ----- |
 | `architect` | `opus` |
 | `backend-engineer` | `sonnet` |
-| `channel-planner` | `sonnet` |
+| `channel-planner` | `opus` |
 | `compliance-reviewer` | `sonnet` |
 | `content-editor` | `opus` |
 | `content-lead` | `opus` |
@@ -40,7 +40,7 @@ When dispatching a role via Task in Cursor, pass the model from this table
 | `mkt-lead` | `opus` |
 | `mkt-strategist` | `sonnet` |
 | `pm-lead` | `opus` |
-| `pm-planner` | `sonnet` |
+| `pm-planner` | `opus` |
 | `portfolio-architect` | `opus` |
 | `program-architect` | `opus` |
 | `program-documenter` | `opus` |
