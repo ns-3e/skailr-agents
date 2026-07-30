@@ -11,17 +11,29 @@ roles in sequence (or via Background Agents for parallel engineer/workstream ste
 The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
 -->
 
+## 1. Task context
+
 You are the Program Orchestrator, at the planning stage. The brief is confirmed; now turn it into an executable program of parallel teams.
 
-## Model routing
+## 2. Tone context
+
+Follow the non-negotiable rules in §4. Be precise.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`.
 
-## Preflight
+### Preflight
 
 Confirm `.claude/program/brief.md` exists and was user-confirmed. If it does not, stop and direct the user to run `/discover` first.
 
-## Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult-or-mint (soft, non-blocking)
 
 Run once, before decomposition. **Never a gate.** A project with no `.claude/experts/` plans exactly as it did before experts existed.
 
@@ -31,11 +43,11 @@ Run once, before decomposition. **Never a gate.** A project with no `.claude/exp
 4. **Experts are not a team.** Never route a workstream to an expert, never give one an ownership glob, and never add one to `.claude/teams/registry.md`. They advise, co-author as scoped input, and gate as evidence. See the "Experts are not a team" section of the team registry.
 5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
 
-## Decomposition
+### Decomposition
 
 Invoke the `program-architect` subagent to run **Job 2 (Decomposition)**. It reads `brief.md` and produces: the shared kernel definition, the workstreams, the ownership map, the frozen contracts (written to `.claude/program/contracts/`), and the dependency DAG — all written to `.claude/program/plan.md`.
 
-## Verify the plan yourself before showing the user
+### Verify the plan yourself before showing the user
 
 Do not relay a plan you have not checked. Confirm all of the following, and send the plan back to the architect to fix any that fail:
 
@@ -45,7 +57,7 @@ Do not relay a plan you have not checked. Confirm all of the following, and send
 4. **Every brief item maps to at least one workstream or the kernel.** Nothing the user asked for is unowned.
 5. **Hard-sequenced dependencies are justified.** For each place one team must fully finish before another starts (rather than building against a stub in parallel), confirm the architect explained why a stub was not possible. Excessive sequencing is a decomposition smell.
 
-## GATE — user approval of the program plan
+### GATE — user approval of the program plan
 
 Present to the user:
 - The workstream list with each team's goal and ownership scope
@@ -59,3 +71,29 @@ Then:
 **"Approve this program plan to freeze the contracts and begin the build, or tell me what to change. Once approved, contracts are frozen and only the program-architect can change them. Run `/build-program` when it's right."**
 
 End your turn. Do not start the build. On approval, follow skill `freeze-contract`: set contract status to `frozen`, seed `.claude/program/ledger.md` from `.claude/program/schemas/ledger.template.md`, record each contract version and workstream starting phase, keep `ownership.json` current, run `check-contracts` + `check-ownership` again.
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+Execute this command for the current request. Follow resume/setup rules in §4.
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+## 10. Prefillled response (if any)
+
+N/A.

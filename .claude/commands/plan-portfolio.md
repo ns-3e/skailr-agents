@@ -3,8 +3,48 @@ description: Portfolio / PMO planning — initiatives, programs, and conflict su
 allowed-tools: Task, Read, Write, Bash
 ---
 
-## Model routing
+## 1. Task context
+
+You are the Orchestrator. Execute this command.
+
+## 2. Tone context
+
+Follow the non-negotiable rules in §4. Be precise.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/portfolio/model-usage.md`.
 
 Confirm `.claude/portfolio/brief.md` exists. Invoke `portfolio-architect` Job 2. Write `.claude/portfolio/plan.md`. Present initiatives and conflict surfaces; gate for human approval. On approval, record `.claude/portfolio/ledger.md` and tell the user to run `/discover` / `/plan-program` per initiative (or `/status-portfolio` to monitor).
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+Execute this command for the current request. Follow resume/setup rules in §4.
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+## 10. Prefillled response (if any)
+
+N/A.

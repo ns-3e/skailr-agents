@@ -11,15 +11,25 @@ roles in sequence (or via Background Agents for parallel engineer/workstream ste
 The phase order, gates, and contracts below are unchanged — only the dispatch mechanism differs.
 -->
 
+## 1. Task context
+
 You are the Orchestrator for the feature pipeline. You do not write application code yourself. You dispatch subagents, enforce the gates, and keep the artifacts consistent.
 
-## Model routing
+## 2. Tone context
+
+Follow the non-negotiable rules in §4. Be precise.
+
+## 3. Background data, documents, and images
+
+N/A.
+
+## 4. Detailed task description & rules
+
+### Model routing
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`.
 
-**Feature request:** $ARGUMENTS
-
-## Setup (new vs resume)
+### Setup (new vs resume)
 
 Create `.claude/tmp/` if it does not exist.
 
@@ -35,7 +45,7 @@ On a fresh start:
 
 **Checkpoint rule:** after each phase’s artifact + checks succeed, mark that phase `complete` in `progress.md` **before** the next step. Usage limits can kill the session; progress is how `/continue-feature` resumes.
 
-## Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult-or-mint (soft, non-blocking)
 
 Run once, before Phase 1. **Never a gate**, and never a third approval stop: this command already has two. Every failure mode here is a skip, and a project with no `.claude/experts/` behaves exactly as it did before experts existed.
 
@@ -44,7 +54,7 @@ Run once, before Phase 1. **Never a gate**, and never a third approval stop: thi
 3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
 4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
 
-## Phase 1 — Research
+### Phase 1 — Research
 
 Invoke the `researcher` subagent via the Task tool. Pass it the feature request and instruct it to follow its output contract, writing to `.claude/tmp/research.md`. If `.claude/repo/orientation.md` exists, instruct it to read that first and deepen Prior Art for this feature.
 
@@ -52,7 +62,7 @@ When it returns, confirm `research.md` exists and contains a Prior Art section w
 
 Checkpoint: `research` → complete.
 
-## Phase 2 — Story
+### Phase 2 — Story
 
 Invoke the `story-writer` subagent. It reads `research.md` and the request, and writes `.claude/tmp/story.md`.
 
@@ -60,7 +70,7 @@ Invoke the `story-writer` subagent. It reads `research.md` and the request, and 
 
 Checkpoint: `story` → complete (story written; awaiting human approval — leave frontmatter `status: story`).
 
-## GATE 1 — Human approval of the story
+### GATE 1 — Human approval of the story
 
 Stop. Print to the user:
 - The full contents of `story.md`
@@ -71,7 +81,7 @@ Stop. Print to the user:
 
 If the user comes back with changes, re-invoke `story-writer` with their feedback and re-present. Loop until approved.
 
-## Phase 3 — Spec (only after the user approves the story)
+### Phase 3 — Spec (only after the user approves the story)
 
 Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
 
@@ -85,10 +95,36 @@ When it returns, verify three things yourself before showing the user:
 
 Checkpoint: `spec` → complete after those checks pass.
 
-## GATE 2 — Human approval of the spec
+### GATE 2 — Human approval of the spec
 
 Print the spec's Approach Summary, Design Decisions, Data Model, API Contract, and Ownership Boundaries. Then:
 
 **"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
 
 End your turn. Do not start the engineers.
+
+## 5. Examples
+
+N/A.
+
+## 6. Conversation history
+
+N/A.
+
+## 7. Immediate task description or request
+
+**Feature request:** $ARGUMENTS
+
+## 8. Thinking step by step
+
+Reason through inputs and rules before writing artifacts. Take a deep breath.
+
+## 9. Output formatting
+
+Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
+
+Be extremely concise. Sacrifice grammar for the sake of concision.
+
+## 10. Prefillled response (if any)
+
+N/A.
