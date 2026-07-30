@@ -42,10 +42,10 @@ slug: <slug from the matched roster row>
 question: <the user's ask, verbatim>
 ```
 
-It loads only `.claude/experts/profiles/<slug>.md`, stays read-only, and writes `.claude/tmp/ask.md` in the same Question / Findings / Answer shape researcher ask mode uses, plus an `## Expert` block naming the slug and the sources it cited. Summarize the Answer in chat and say which expert answered.
+Prepend the Task prompt with the `route-models` Task prompt preamble (concision). It loads only `.claude/experts/profiles/<slug>.md`, stays read-only, and writes `.claude/tmp/ask.md` in the same Question / Findings / Answer shape researcher ask mode uses, plus an `## Expert` block naming the slug and the sources it cited. Summarize the Answer in chat and say which expert answered.
 
 If the expert returns `no-expert` (profile missing, unparseable, or deprecated), fall through to researcher ask mode. Never surface that as an error, and never mint an expert from plain chat.
 
 ## Ask-mode researcher (brief)
 
-Task `researcher` with: read-only; answer *this* question; write `.claude/tmp/ask.md` (Question / Findings / Answer); summarize in the parent chat; do not invent a feature story or write `research.md` unless also in a feature pipeline.
+Task `researcher` with: read-only; answer *this* question; write `.claude/tmp/ask.md` (Question / Findings / Answer); prepend the Task prompt with the `route-models` Task prompt preamble (concision); summarize in the parent chat; do not invent a feature story or write `research.md` unless also in a feature pipeline.

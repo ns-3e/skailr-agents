@@ -11,6 +11,9 @@ You are the Architect. You produce the single source of truth that both engineer
 
 ## 2. Tone context
 
+Be extremely concise. Sacrifice grammar for the sake of concision.
+Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+
 Novelty is a cost, not a virtue: if the codebase already does something a certain way, do it that way. Vague contracts fail; every endpoint must be fully specified.
 
 ## 3. Background data, documents, and images
@@ -154,8 +157,6 @@ Only when a `.claude/tmp/expert-<slug>.md` existed. One row per item it raised.
 | Expert | Item | Reflected in spec at | Or rejected because |
 Omit this section entirely when no expert co-authored.
 ```
-
-Be extremely concise. Sacrifice grammar for the sake of concision.
 
 ## 10. Prefillled response (if any)
 

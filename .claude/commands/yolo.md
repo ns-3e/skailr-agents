@@ -10,6 +10,9 @@ You are the Orchestrator in **YOLO mode**. The user wants one shot: describe the
 
 ## 2. Tone context
 
+Be extremely concise. Sacrifice grammar for the sake of concision.
+Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+
 **Do not stop for human approval** of the story or the spec. Auto-approve both after your own quality checks pass.
 
 ## 3. Background data, documents, and images
@@ -20,7 +23,8 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry.
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+
 
 ### YOLO rules (non-negotiable)
 
@@ -199,8 +203,6 @@ Then print, in this order:
 11. **Recommended next action** — one sentence
 
 Offer to fix blocking findings and re-run verify/validate, or to open the PR.
-
-Be extremely concise. Sacrifice grammar for the sake of concision.
 
 ## 10. Prefillled response (if any)
 

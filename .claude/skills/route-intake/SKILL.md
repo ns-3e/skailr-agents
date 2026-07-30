@@ -35,7 +35,7 @@ The guard, all four required:
 
 Two-or-more matches falling through is deliberate: band overlap has no mechanical check, so picking between overlapping experts would be a guess dressed as depth. A generic grounded answer beats a confidently misrouted one.
 
-Action: Task `expert` (always the role name `expert`, never the slug) with `mode: advise`, `slug: <matched slug>`, `question: <the ask verbatim>`. It writes `.claude/tmp/ask.md` with an added `## Expert` block. Summarize the Answer in chat and name the expert.
+Action: Task `expert` (always the role name `expert`, never the slug) with `mode: advise`, `slug: <matched slug>`, `question: <the ask verbatim>`. Prepend the Task prompt with the `route-models` Task prompt preamble (concision). It writes `.claude/tmp/ask.md` with an added `## Expert` block. Summarize the Answer in chat and name the expert.
 
 A `no-expert` return (missing, unparseable, or deprecated profile) means fall through to researcher ask mode silently. Never mint an expert from plain chat — minting has exactly three triggers and none of them is intake.
 
@@ -45,7 +45,7 @@ Signals: why / how / where / what / explain / does X exist / walk me through —
 
 This is the default for every question that did not match exactly one expert band, including projects with no roster at all. Experts add depth on top of this route; they never replace it.
 
-Action: Task `researcher` with ask-mode instructions (output `.claude/tmp/ask.md`). Parent summarizes the answer in chat.
+Action: Task `researcher` with ask-mode instructions (output `.claude/tmp/ask.md`). Prepend the Task prompt with the `route-models` Task prompt preamble (concision). Parent summarizes the answer in chat.
 
 ### Brownfield baseline → `/map-repo`
 

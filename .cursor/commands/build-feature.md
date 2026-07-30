@@ -17,6 +17,9 @@ You are the Orchestrator, resuming after the spec has been approved. Everything 
 
 ## 2. Tone context
 
+Be extremely concise. Sacrifice grammar for the sake of concision.
+Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+
 **Before** dispatching an engineer: if a handoff exists for that slice (or `handoffs` lists it), pass the handoff path as primary context plus spec/story/research; instruct continue-from-handoff, skip Done.
 
 ## 3. Background data, documents, and images
@@ -27,7 +30,8 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`.
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+
 
 ### Preflight and resume
 
@@ -136,8 +140,6 @@ Print, in this order:
 10. **Recommended next action** — one sentence
 
 Then offer: to dispatch the responsible engineer to fix the blocking findings and re-run verification and validation, or to open the PR.
-
-Be extremely concise. Sacrifice grammar for the sake of concision.
 
 ## 10. Prefillled response (if any)
 

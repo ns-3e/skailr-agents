@@ -22,6 +22,9 @@ a validator as the only pass condition and a notification that is never a gate.
 
 ## 2. Tone context
 
+Be extremely concise. Sacrifice grammar for the sake of concision.
+Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+
 **Missing → all defaults**: `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`,
 
 ## 3. Background data, documents, and images
@@ -36,7 +39,7 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from
 `.claude/model-routing.json` (active profile) for role `expert-scout`, apply escalate /
 downgrade rules, and append a line to `.claude/tmp/model-usage.md` (or
 `.claude/program/model-usage.md` inside a program run). Escalate once if a scout returns a
-thin research artifact.
+thin research artifact. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
 
 ### Non-negotiables
 
@@ -496,8 +499,6 @@ Then:
 
 On a refusal or failure, report the step that stopped you, exactly what was written and then
 removed, and what the caller must change. State plainly that the roster is unchanged.
-
-Be extremely concise. Sacrifice grammar for the sake of concision.
 
 ## 10. Prefillled response (if any)
 

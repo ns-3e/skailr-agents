@@ -17,6 +17,17 @@ Before every `Task` (subagent) dispatch in orchestrator commands (`/ship-feature
 4. **Claude Code:** invoke the named agent (frontmatter `model:` should already match the active profile after `apply-model-routing.mjs`). If you must override for a one-off escalate, say so in the Task prompt.
 5. **Cursor:** pass the resolved model as the Task `model` parameter. Role defaults are also listed in `.cursor/model-routing.md` and on each `.cursor/rules/<agent>.mdc`.
 
+## Task prompt preamble (every dispatch)
+
+**Prepend** this to every Task `prompt` (first lines of the prompt string), including channel re-dispatches and lead→worker dispatches:
+
+```text
+Be extremely concise. Sacrifice grammar for the sake of concision.
+Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+```
+
+Do not omit it for engineers or other builders: they stay terse in narration; deliverables remain full and correct.
+
 ## Downgrade (save tokens / rate limits)
 
 Use **one tier below** the role default (tiers: `haiku` → `sonnet` → `opus`; never below `haiku`) when **all** of:
