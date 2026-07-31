@@ -1,7 +1,7 @@
 ---
 name: fin-lead
 description: Lead of the finance team. Plans a finance workstream, dispatches its worker agents, and owns the model brief that modelers build against. The finance-domain equivalent of the engineering architect + orchestrator. Loaded when the program routes a finance workstream; loads its own workers just-in-time.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

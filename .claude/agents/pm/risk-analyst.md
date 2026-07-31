@@ -1,7 +1,7 @@
 ---
 name: risk-analyst
 description: PM worker. Maintains the risk register — likelihood, impact, owner, trigger, mitigation — for the delivery workstream.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

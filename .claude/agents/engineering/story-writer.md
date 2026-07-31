@@ -1,7 +1,7 @@
 ---
 name: story-writer
 description: Converts a rough feature request into a rigorous user story with testable acceptance criteria and enumerated edge cases. Runs after researcher, before architect.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

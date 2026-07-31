@@ -1,7 +1,7 @@
 ---
 name: design-strategist
 description: Design-team worker. Turns a design brief into layout hierarchy, artboard inventory, and design-system mapping — the design equivalent of story-writer plus a light architect. Dispatched by design-lead before asset authoring.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

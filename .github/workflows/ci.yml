@@ -29,6 +29,9 @@ jobs:
           done < <(find .claude/agents -name '*.md' -type f | sort)
           exit $fail
 
+      - name: Check Write-capable roles also grant Edit
+        run: node scripts/skailr/check-agent-tools.mjs
+
       - name: Check model routing matches active profile
         run: node scripts/skailr/apply-model-routing.mjs --check
 

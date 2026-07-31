@@ -1,6 +1,6 @@
 ---
 description: Approved-spec delivery — parallel build, E2E verification, and final validation
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

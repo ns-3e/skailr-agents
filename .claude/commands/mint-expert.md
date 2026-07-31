@@ -1,7 +1,7 @@
 ---
 description: Mint a project domain expert (T1 explicit): resolve slug, research if external, write profile, validate, regenerate registry, notify
 argument-hint: <topic or vertical> [internal|external|hybrid], or "promote|revise|retire <slug>"
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

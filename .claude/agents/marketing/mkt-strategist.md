@@ -1,7 +1,7 @@
 ---
 name: mkt-strategist
 description: Marketing-team worker. Turns a campaign brief into positioning, audience, message pillars, and channel mix — before channel execution. Dispatched by mkt-lead before planners.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

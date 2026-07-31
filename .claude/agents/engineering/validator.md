@@ -1,7 +1,7 @@
 ---
 name: validator
 description: Adversarial read-only feature sign-off. Compares story + spec + reports against the real diff; catches dropped ACs, quiet skips, and security gaps. Runs after e2e-verifier.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, Edit
 model: opus
 ---
 

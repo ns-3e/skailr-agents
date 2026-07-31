@@ -1,7 +1,7 @@
 ---
 name: architect
 description: Turns an approved user story into a complete technical blueprint — data model, migrations, API contracts, file-by-file change plan, and a clean backend/frontend work split. Runs after story-writer, before the engineers.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: opus
 ---
 

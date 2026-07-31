@@ -1,7 +1,7 @@
 ---
 name: legal-validator
 description: Adversarial legal/compliance sign-off. Fails the workstream if any in-scope claim lacks a traced control or residual risk is hidden. Read-mostly.
-tools: Read, Grep, Glob, Write, Bash
+tools: Read, Grep, Glob, Write, Edit, Bash
 model: opus
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: mkt-lead
 description: Lead of the marketing team. Plans a campaign workstream, dispatches its worker agents, and owns the campaign brief that planners build against. The marketing-domain equivalent of the engineering architect + orchestrator. Loaded when the program routes a marketing workstream; loads its own workers just-in-time.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

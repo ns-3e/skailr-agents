@@ -1,7 +1,7 @@
 ---
 name: legal-analyst
 description: Legal/compliance worker. Drafts control statements, requirement clauses, and evidence maps for one disjoint owned unit. Dispatched by legal-lead.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

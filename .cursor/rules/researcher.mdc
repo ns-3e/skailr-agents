@@ -5,9 +5,9 @@ alwaysApply: false
 
 **Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
-<!-- Cursor limitation: Claude Code tools are [Read, Grep, Glob, Write]. Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->
+<!-- Cursor limitation: Claude Code tools are [Read, Grep, Glob, Write, Edit]. Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->
 
-**Tool restriction (honor manually):** Read, Grep, Glob, Write — Write only to `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends; never edit application code.
+**Tool restriction (honor manually):** Read, Grep, Glob, Write, Edit — Write/Edit only to `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends; never edit application code.
 
 ## 1. Task context
 

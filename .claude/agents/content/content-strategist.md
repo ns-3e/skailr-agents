@@ -1,7 +1,7 @@
 ---
 name: content-strategist
 description: Content-team worker. Turns a content brief and its audience into an angle, structure, and outline that a writer can execute — the content equivalent of story-writer plus a light architect. Dispatched by content-lead before drafting.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

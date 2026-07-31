@@ -1,7 +1,7 @@
 ---
 description: Program delivery without approval gates — full discover→plan→build→validate→docs one-shot
 argument-hint: <long description of the initiative / whole app / MVP>
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

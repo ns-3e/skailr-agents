@@ -1,7 +1,7 @@
 ---
 name: initiative-lead
 description: Thin lead for a single initiative spanning one or more programs. Coordinates status and cross-program blockers; defers contract freeze to program-architects.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: sonnet
 ---
 

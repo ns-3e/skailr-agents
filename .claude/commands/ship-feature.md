@@ -1,7 +1,7 @@
 ---
 description: Gated feature intake — research, story, and spec with stakeholder approval gates
 argument-hint: <feature request in plain language>
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

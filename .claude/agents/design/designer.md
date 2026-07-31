@@ -1,7 +1,7 @@
 ---
 name: designer
 description: Design-team worker. Authors one owned artboard or asset set from an approved outline as a markdown design spec and eng handoff notes. Parallel designers, disjoint assets.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

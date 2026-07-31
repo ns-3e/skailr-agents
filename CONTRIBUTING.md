@@ -43,7 +43,7 @@ Hard rule: the concision line appears **only once**, as the last line of §9 —
 2. Set `name:` to the filename without `.md`.
 3. Write the body using the 10-step prompt structure above (concision line only at end of §9).
 4. Add `<name>` to **every** profile’s `roles` map in [`.claude/model-routing.json`](.claude/model-routing.json), then run `npm run models:check` (or `node scripts/skailr/apply-model-routing.mjs --check`).
-5. If the agent is read-only over app code but may post to channels, grant `Write` only for channel appends and document that in the body (§4).
+5. If the agent is read-only over app code but may post to channels, grant `Write` and `Edit` only for channel appends (and other allowed artifacts) and document that in the body (§4). Claude Code prefers `Edit` for existing files; `Write` without `Edit` forces full-file rewrites. Run `npm run check:agent-tools` to verify.
 6. Run `./scripts/remirror.sh`.
 7. Regenerate `manifest.json` (remirror script updates it) or add the artifact by hand.
 8. Smoke-test: `./install.sh /tmp/skailr-smoke && rm -rf /tmp/skailr-smoke`.
@@ -58,7 +58,7 @@ See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) for profiles (`economy` / `ba
 
 ## Adding a command
 
-1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed).
+1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed). If `allowed-tools` includes `Write`, also include `Edit` (Claude Code surgical edits). Verify with `npm run check:agent-tools`.
 2. Write the body using the 10-step prompt structure above (orchestrator identity → §1; rules/phases → §4; `$ARGUMENTS` → §7; final report → §9 + concision).
 3. Add `"<name>": "<tier>"` to the `COMMANDS` map in `scripts/remirror.sh` (`workstream` | `program` | `portfolio`). Without this, remirror still mirrors the Cursor file from the glob but **omits** the command from `manifest.json`.
 4. Append the stem to `PACKAGED_COMMANDS` in `install.sh` and `$PackagedCommands` in `install.ps1` (Cursor install uses an allowlist; Claude copies all `*.md`).
@@ -69,7 +69,7 @@ See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) for profiles (`economy` / `ba
 
 - Describe *why*, not only what.
 - Keep unrelated refactors out of the PR.
-- Ensure CI passes (manifest path check, agent name check, install smoke test).
+- Ensure CI passes (manifest path check, agent name check, agent-tools Write⇒Edit check, install smoke test).
 
 ## Code of conduct
 

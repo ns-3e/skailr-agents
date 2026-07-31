@@ -1,6 +1,6 @@
 ---
 description: Portfolio / PMO planning — initiatives, programs, and conflict surfaces from a confirmed brief
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

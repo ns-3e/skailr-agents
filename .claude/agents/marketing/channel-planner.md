@@ -1,7 +1,7 @@
 ---
 name: channel-planner
 description: Marketing-team worker. Builds one owned channel or campaign plan — calendar, required assets, CTAs, and success metrics. Parallel planners, disjoint units.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: opus
 ---
 

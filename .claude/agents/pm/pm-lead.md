@@ -1,7 +1,7 @@
 ---
 name: pm-lead
 description: Lead of the PM/delivery team. Plans delivery workstreams, owns milestones and dependency health, and compiles exception digests for the CEO inbox. Loaded when a workstream routes to pm.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

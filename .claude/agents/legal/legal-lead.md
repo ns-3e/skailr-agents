@@ -1,7 +1,7 @@
 ---
 name: legal-lead
 description: Lead of the legal/compliance team. Plans compliance workstreams, dispatches analysts and reviewers, and owns requirement/control artifacts. Loaded when a workstream routes to legal.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

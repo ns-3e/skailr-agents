@@ -1,7 +1,7 @@
 ---
 name: fin-modeler
 description: Finance-team worker. Builds one owned model, worksheet, or line-item schedule with explicit formulas and inputs. Parallel modelers, disjoint units.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

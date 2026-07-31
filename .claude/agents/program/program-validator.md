@@ -1,7 +1,7 @@
 ---
 name: program-validator
 description: Final program-level sign-off. Read-only. Compares the original program brief against everything actually built across all workstreams, and reports what is missing, insecure, divergent, or silently dropped at the whole-initiative level. Runs last, after integration verification.
-tools: Read, Grep, Glob, Bash, Write
+tools: Read, Grep, Glob, Bash, Write, Edit
 model: opus
 ---
 

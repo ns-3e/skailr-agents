@@ -1,7 +1,7 @@
 ---
 name: portfolio-architect
 description: CEO-counterpart for multi-initiative portfolios. Discovers portfolio intent, decomposes into initiatives/programs, spots cross-initiative conflicts, and owns portfolio-level escalations. Does not write feature code.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

@@ -1,7 +1,7 @@
 ---
 description: Hotfix / small change — bounded fix with lineage sync; no human gates
 argument-hint: <bug fix or small change in plain language>
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

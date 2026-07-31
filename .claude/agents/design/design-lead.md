@@ -1,7 +1,7 @@
 ---
 name: design-lead
 description: Lead of the design team. Plans a visual workstream, dispatches its worker agents, and owns the design brief that designers build against. The design-domain equivalent of the engineering architect + orchestrator. Loaded when the program routes a design workstream; loads its own workers just-in-time.
-tools: Read, Grep, Glob, Write, Task
+tools: Read, Grep, Glob, Write, Edit, Task
 model: opus
 ---
 

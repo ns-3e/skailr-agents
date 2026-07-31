@@ -1,7 +1,7 @@
 ---
 name: content-writer
 description: Content-team worker. Drafts the actual prose for one owned piece from an approved outline, grounded in named sources, in the brand voice. Dispatched in parallel with other writers, each scoped to a disjoint piece.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 

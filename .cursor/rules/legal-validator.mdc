@@ -5,9 +5,9 @@ alwaysApply: false
 
 **Model (Cursor Task):** opus — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
-<!-- Cursor limitation: Claude Code tools are [Read, Grep, Glob, Write, Bash]. Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->
+<!-- Cursor limitation: Claude Code tools are [Read, Grep, Glob, Write, Edit, Bash]. Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->
 
-**Tool restriction (honor manually):** Read, Grep, Glob, Bash, Write — Write solely to validation report and channel appends.
+**Tool restriction (honor manually):** Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to validation report and channel appends.
 
 ## 1. Task context
 

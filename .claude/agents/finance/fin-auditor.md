@@ -1,7 +1,7 @@
 ---
 name: fin-auditor
 description: Adversarial finance sign-off. Fails the workstream if totals do not reconcile or assumptions are untraced. Invokes skill reconcile-model. Read-mostly.
-tools: Read, Grep, Glob, Write, Bash
+tools: Read, Grep, Glob, Write, Edit, Bash
 model: opus
 ---
 

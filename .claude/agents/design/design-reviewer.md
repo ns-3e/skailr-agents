@@ -1,7 +1,7 @@
 ---
 name: design-reviewer
 description: Design-team verifier and validator combined. Read-only over asset specs. Audits accessibility and design-system conformance — the design-domain equivalent of the e2e-verifier and validator. Runs after designers, before the workstream is called done.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: opus
 ---
 

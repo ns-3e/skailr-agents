@@ -17,14 +17,14 @@ CURSOR_RULES.mkdir(parents=True, exist_ok=True)
 CURSOR_CMDS.mkdir(parents=True, exist_ok=True)
 
 CHANNEL_WRITE_ONLY = {
-    "researcher": "Read, Grep, Glob, Write — Write only to `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends; never edit application code.",
-    "validator": "Read, Grep, Glob, Bash, Write — Write solely to append channel messages; never edit application code.",
-    "program-validator": "Read, Grep, Glob, Bash, Write — Write solely to append channel messages; never edit application code.",
-    "content-editor": "Write is for the audit report and channel appends; do not rewrite draft content as an author.",
-    "legal-validator": "Read, Grep, Glob, Bash, Write — Write solely to validation report and channel appends.",
-    "design-reviewer": "Write is for the design-review report and channel appends; do not rewrite asset specs as an author.",
-    "mkt-analyst": "Write is for the mkt-review report and channel appends; do not rewrite campaign plans as an author.",
-    "fin-auditor": "Read, Grep, Glob, Bash, Write — Write solely to audit-report and channel appends; do not rewrite models as an author.",
+    "researcher": "Read, Grep, Glob, Write, Edit — Write/Edit only to `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends; never edit application code.",
+    "validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to append channel messages; never edit application code.",
+    "program-validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to append channel messages; never edit application code.",
+    "content-editor": "Write and Edit are for the audit report and channel appends; do not rewrite draft content as an author.",
+    "legal-validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to validation report and channel appends.",
+    "design-reviewer": "Write and Edit are for the design-review report and channel appends; do not rewrite asset specs as an author.",
+    "mkt-analyst": "Write and Edit are for the mkt-review report and channel appends; do not rewrite campaign plans as an author.",
+    "fin-auditor": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to audit-report and channel appends; do not rewrite models as an author.",
     "expert": "Read, Grep, Glob, Write, Edit, Bash — Write and Edit only for `.claude/tmp/ask.md`, `.claude/tmp/expert-<slug>.md`, `.claude/tmp/expert-verdict-<slug>.md`, the one loaded profile under `.claude/experts/` during a curate-expert pass, and channel appends; Bash is for read-only git staleness checks; never edit application code, `story.md`, or `spec.md`.",
 }
 

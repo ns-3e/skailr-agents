@@ -1,6 +1,6 @@
 ---
 description: CEO / exec status review — initiative traffic lights and exception inbox rollup
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

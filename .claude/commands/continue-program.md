@@ -1,6 +1,6 @@
 ---
 description: Resume mid-initiative — pick up from the program ledger at the first incomplete phase
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

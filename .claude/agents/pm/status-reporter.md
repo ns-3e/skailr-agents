@@ -1,7 +1,7 @@
 ---
 name: status-reporter
 description: PM worker. Compiles the status digest and exception candidates for the CEO inbox. Dispatched by pm-lead.
-tools: Read, Grep, Glob, Write, Bash
+tools: Read, Grep, Glob, Write, Edit, Bash
 model: sonnet
 ---
 

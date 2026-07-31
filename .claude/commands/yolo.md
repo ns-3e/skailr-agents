@@ -1,7 +1,7 @@
 ---
 description: Feature delivery without approval gates — full research→build→validate→docs one-shot
 argument-hint: <feature request in plain language>
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

@@ -1,7 +1,7 @@
 ---
 name: expert-scout
 description: Deep external research before an external or hybrid expert may be minted. The only pack role with web tooling (WebSearch, WebFetch). Writes .claude/experts/research/<slug>.md from the kernel research template and refuses to authorize a mint the sources cannot carry. Never writes a profile and never mints.
-tools: Read, Grep, Glob, Write, WebSearch, WebFetch
+tools: Read, Grep, Glob, Write, Edit, WebSearch, WebFetch
 model: opus
 ---
 

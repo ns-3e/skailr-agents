@@ -1,7 +1,7 @@
 ---
 description: CEO / exec strategy — discover portfolio intent until the company-level brief is confirmed
 argument-hint: <portfolio description>
-allowed-tools: Task, Read, Write, Bash
+allowed-tools: Task, Read, Write, Edit, Bash
 ---
 
 ## 1. Task context

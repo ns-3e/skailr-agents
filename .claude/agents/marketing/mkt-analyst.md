@@ -1,7 +1,7 @@
 ---
 name: mkt-analyst
 description: Marketing-team verifier and validator combined. Audits message alignment to positioning and measurement-plan completeness — the marketing-domain gate before the workstream is called done.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: opus
 ---
 

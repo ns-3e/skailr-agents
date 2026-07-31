@@ -1,7 +1,7 @@
 ---
 name: fin-analyst
 description: Finance-team worker. Maintains the assumption register — each driver named, sourced, and sensitivity-noted — for the finance workstream.
-tools: Read, Grep, Glob, Write
+tools: Read, Grep, Glob, Write, Edit
 model: sonnet
 ---
 
