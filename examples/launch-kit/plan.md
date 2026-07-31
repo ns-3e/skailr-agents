@@ -9,13 +9,30 @@
 | launch-copy | content | `content-lead` |
 | landing-design | design | `design-lead` |
 | gtm-campaign | marketing | `mkt-lead` |
-| launch-surface | engineering | `/ship-feature` → `/build-feature` |
+| launch-surface | engineering | skill `run-feature-queue` |
+
+## Workstreams (excerpt)
+
+### launch-surface
+
+Team: engineering. Goal: ship the public launch surface and feature-facts API.
+Owns: `apps/web/**`, `apps/api/launch/**`.
+Produces contracts: launch-api. Consumes: landing-hero-design, launch-pricing (read-only facts).
+
+Features (MECE):
+
+| ID | Slug | Title | Goal | Depends-on | Maps-to brief |
+|----|------|-------|------|------------|---------------|
+| F-001 | launch-api | Launch feature facts API | Expose pricing/feature facts for copy and portal | — | Feature facts for GTM |
+| F-002 | launch-landing | Launch landing surface | Public landing wired to design + API | F-001 | Launch marketing site |
+
+MECE proof: brief launch outcomes map to F-001 (API facts) and F-002 (landing UI); no overlap.
 
 ## Execution DAG
 
 1. **pricing-model** (finance) — freeze list price + packaging.
 2. **gtm-positioning** (marketing) — freeze positioning / message pillars (early; before copy and design).
-3. **launch-surface** (engineering) — feature facts / API (parallel with copy after brief).
+3. **launch-surface** (engineering) — feature queue F-001 → F-002 (parallel with copy after brief).
 4. **launch-copy** (content) — consumes pricing, positioning, feature facts; produces approved copy blocks.
 5. **landing-design** (design) — consumes copy + positioning; produces design handoff.
 6. **gtm-campaign** (marketing) — consumes copy, design assets, pricing; produces channel plans (no reverse contract into content/design).

@@ -1,7 +1,7 @@
 ---
 description: Hotfix / small change — bounded fix with lineage sync; no human gates
 argument-hint: <bug fix or small change in plain language>
-allowed-tools: Task, Read, Write, Edit, Bash
+allowed-tools: Task, Read, Grep, Glob, Write, Edit, Bash
 ---
 
 ## 1. Task context
@@ -23,7 +23,7 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. Escalate once on gate failure / retry. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. Escalate once on gate failure / retry. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 
 ### Patch rules (non-negotiable)
@@ -50,7 +50,8 @@ Create `.claude/tmp/` if it does not exist.
 Run once, before the size gate. **Never a gate**, and kept cheap: a patch must stay cheaper than `/yolo`.
 
 1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). If exactly one non-`deprecated` row's `route-when` covers this ask, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/patch-request.md`, and pass the resulting `.claude/tmp/expert-<slug>.md` to the owning engineer alongside the request. Two or more matches mean no expert route: note it and continue.
-2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals. A single localized fix is one signal and mints nothing, which is the expected outcome for most patches. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`.
+2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false. A single localized fix is one signal → usually mint nothing.
+
 3. **Notify.** A mint posts one `type: heads-up` to `@all` on the run's channel board if one exists, and always appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
 4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally. Never warn the user about an absent roster.
 
@@ -76,6 +77,8 @@ Resolve owners:
 4. Else infer from the ask + `.claude/repo/orientation.md` if present, else quick repo orientation which of backend / frontend / data apply.
 
 Dispatch the owning engineer Task(s). Pass: the patch request, relevant spec/contract excerpts if any, and instructions to implement **only** the bounded change, write a short report under `.claude/tmp/` (e.g. `patch-backend-report.md`), or yield per `write-handoff-and-yield`.
+
+When the change touches **UI paths** (frontend ownership, components, pages, styles): instruct the engineer to follow skill `apply-ux-quality` lightly — checklist self-check on changed surfaces. Mint a full `$ARTIFACT_ROOT/ui-spec.md` only when the patch adds a **new** user-visible surface; otherwise do not expand into a full feature pipeline.
 
 When they return:
 
@@ -105,42 +108,18 @@ Invoke `program-documenter` in **reconcile** mode against the patch diff. Prefer
 - Keep patch cheaper than `/yolo` — no full research → story → spec → validate unless size-gated upward.
 - If any agent output misses its contract, re-invoke once; if it fails twice, surface it in the final report.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 **Patch request:** $ARGUMENTS
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 ### Final report to the user
 
-Lead with: **Patch complete** (no human gates).
-
-Then:
-
-1. **Summary** — one paragraph what changed
-2. **Assumptions made**
-3. **Files changed**
-4. **Contract decisions** — channel seq ids / none
-5. **Lineage synced** — artifacts touched
-6. **Documentation** — reconcile summary
-7. **Verify** — what ran or why skipped
-8. **Experts** — consulted or minted this run, if any. Omit entirely otherwise
-9. **Recommended next action** — one sentence
-
-Mark `patch-report.md` `status: complete`.
-
-## 10. Prefillled response (if any)
-
-N/A.
+1. **What changed** — one line + paths
+2. **Verification** — how it was checked (one line)
+3. **Lineage** — synced or N/A
+4. **Blocking issues** — one line each; path to any report; omit if none
+5. **Next action** — one sentence

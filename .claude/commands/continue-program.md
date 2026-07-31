@@ -1,6 +1,6 @@
 ---
 description: Resume mid-initiative — pick up from the program ledger at the first incomplete phase
-allowed-tools: Task, Read, Write, Edit, Bash
+allowed-tools: Task, Read, Grep, Glob, Write, Edit, Bash
 ---
 
 ## 1. Task context
@@ -22,7 +22,7 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 
 ### Preflight
@@ -53,7 +53,7 @@ Do **not** re-ask the human for a decision that is already recorded as a channel
 
 - Do **not** halt the whole program for new `@human` or `contract-change` messages.
 - Auto-decide: invoke `program-architect` when the seam is a contract; choose the smallest safe resolution; append a channel `type: decision` with rationale; bump versions / re-dispatch blast-radius as needed; continue.
-- Engineering workstreams stay YOLO-style (auto-approve story/spec).
+- Engineering workstreams stay YOLO-style (auto-approve story/spec) via skill `run-feature-queue`.
 
 ### Resume rule
 
@@ -62,36 +62,23 @@ Pick up at the **first phase not marked complete** in the ledger:
 | Ledger marker | Resume at |
 |---|---|
 | plan approved, kernel not frozen | `/build-program` Phase A |
-| kernel frozen, workstreams incomplete | Phase B at the first unfinished concurrency group |
+| kernel frozen, workstreams incomplete | Phase B — skill `run-feature-queue` for eng WS (`nextFeature` / `artifactRoot` from `ledger-status`); domain leads for other teams |
 | workstreams done, integration incomplete | Phase C |
 | integration done, validation incomplete | Phase D |
 | validation done, docs incomplete | Phase E |
 | all complete | Report status; do not rebuild |
 
-Follow the same rules as `/build-program` from that phase forward: script gates (`check-ownership`, `check-contracts`, `validate-channels`) must pass before advancing. In gated mode, halt on **new** `@human` / `contract-change` only. In YOLO mode, auto-decide per above. Check `.claude/program/workstreams/<ws>/handoff/*.md` (and nested `.claude/tmp/handoff/` for feature-scoped engineering) and continue-from-handoff per skill `resume-from-ledger` / `write-handoff-and-yield`.
+Follow the same rules as `/build-program` from that phase forward: script gates (`check-ownership`, `check-contracts`, `validate-channels`) must pass before advancing. In gated mode, halt on **new** `@human` / `contract-change` only. In YOLO mode, auto-decide per above. For eng features mid-build, check `$ARTIFACT_ROOT/handoff/*.md` and continue-from-handoff per skills `resume-from-ledger` / `run-feature-queue` / `write-handoff-and-yield` / `run-ticket-board`.
 
 Update the ledger at every transition. When done, give the same final report shape as `/build-program` (or `/yolo-program` if mode is yolo).
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 Execute this command for the current request. Follow resume/setup rules in §4.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
 
-## 10. Prefillled response (if any)
-
-N/A.

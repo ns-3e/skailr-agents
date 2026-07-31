@@ -30,7 +30,7 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 
 ### Preflight and resume
@@ -41,14 +41,14 @@ Initialize channels: ensure `.claude/program/channels/` exists with `PROTOCOL.md
 
 **Script gates (mandatory before advancing any phase):** follow meta-skill `run-gated-pipeline` — `check-ownership.mjs`, `validate-channels.mjs`, `check-contracts.mjs` must exit 0 (or documented skip only when artifacts do not yet exist).
 
-### Context handoff (engineering slices)
+### Context handoff (engineering features)
 
-Build workers may yield mid-slice (skill `write-handoff-and-yield`). Program paths: `.claude/program/workstreams/<ws>/handoff/<slice>.md` (`backend` | `frontend` | `data`).
+Build workers may yield mid-ticket (skill `write-handoff-and-yield`). Paths live under the **active feature** artifact root: `.claude/program/workstreams/<ws>/features/<slug>/handoff/<ticket-id|slice>.md`.
 
-- Before re-dispatching an engineer, if a handoff exists for that slice/ws, pass it as primary context (skill `resume-from-ledger`).
-- After `YIELD: <path>`: keep the slice in progress; immediately re-dispatch the same role in a fresh Task with handoff + contracts/spec. Cap consecutive yields per slice at **5**, then surface to the human.
-- On slice complete: delete the handoff file before marking the workstream/slice done.
-- Feature-scoped engineering flows nested under a workstream may also use `.claude/tmp/handoff/` — honor those the same way as `/build-feature`.
+- Before re-dispatching an engineer, if a handoff exists for that ticket/slice, pass it as primary context (skill `resume-from-ledger` / `run-feature-queue`).
+- After `YIELD: <path>`: keep the ticket `claimed`; immediately re-dispatch the same role in a fresh Task with `ARTIFACT_ROOT` + handoff + ticket + spec. Cap consecutive yields per ticket at **5**, then surface to the human.
+- On ticket/slice complete: delete the handoff file before resolving / marking done.
+- Always run skill `run-ticket-board` with `--root $ARTIFACT_ROOT` when that feature’s `board.md` exists. Never use a flat `workstreams/<ws>/board.md`.
 
 ### Phase A — Foundation (build and freeze the kernel)
 
@@ -63,13 +63,13 @@ Read the DAG. Determine the first concurrency group: every workstream whose cont
 
 **Dispatch every workstream in a concurrency group at the same time.** For each workstream, disclosure happens in tiers so context stays lean:
 
-- **Tier 2 — load the team lead.** From the workstream's `Team` field in `plan.md`, load *that team's lead agent only* (e.g. `content-lead`). For engineering workstreams, run the standard `/ship-feature` → `/build-feature` flow (there is no separate `eng-lead` agent yet). You do not load other teams' agents, and you do not load this team's workers yet. A pure-engineering program never loads a single content, design, marketing, or finance token; a content workstream never loads finance.
-- **Tier 3 — the lead loads its own workers and domain reference.** The lead plans the domain workstream and dispatches its worker agents and any heavy domain reference (brand guidelines, design system, model conventions) only as it needs them — the same progressive-disclosure pattern skills use for their reference files.
+- **Tier 2 — load the team lead.** From the workstream's `Team` field in `plan.md`, load *that team's lead agent only* (e.g. `content-lead`). For **engineering** workstreams, follow skill `run-feature-queue` (serial MECE features from `plan.md`; each feature runs the nested feature pipeline + `run-ticket-board` under `.claude/program/workstreams/<ws>/features/<slug>/`). Gated mode uses story/spec approval stops; there is no separate `eng-lead` agent yet. You do not load other teams' agents, and you do not load this team's workers yet. A pure-engineering program never loads a single content, design, marketing, or finance token; a content workstream never loads finance.
+- **Tier 3 — the lead loads its own workers and domain reference.** The lead plans the domain workstream and dispatches its worker agents and any heavy domain reference (brand guidelines, design system, model conventions) only as it needs them — the same progressive-disclosure pattern skills use for their reference files. Non-eng leads map plan Features to their disjoint owned units.
 
-Each team, whatever its domain, runs the same shape internally: plan → parallel workers scoped to disjoint owned units → domain verifier → domain validator against the workstream's contracts. For engineering that is the eight-agent flow; for other domains it is that domain's equivalent. Each team:
+Each team, whatever its domain, runs the same shape internally: plan → parallel workers scoped to disjoint owned units → domain verifier → domain validator against the workstream's contracts. For engineering that is the feature queue (each feature: eight-agent flow + ticket board); for other domains it is that domain's equivalent. Each team:
 1. Works scoped to its workstream's owned units and against the frozen contracts it consumes (building against stubs/placeholders for contracts whose producers are not yet real).
 2. Produces the contracts it owns — these become available to unblock downstream groups.
-3. Writes its reports under `.claude/program/workstreams/<ws>/`.
+3. Writes its reports under `.claude/program/workstreams/<ws>/` (eng: per-feature roots + WS rollup).
 
 Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the kernel; deliver only its owned units; produce its owned contracts to spec; respect its boundary. Also pass `.claude/program/field-guide.md` (if it exists) to each dispatched agent as startup context — agents should read it before beginning their work and may append entries for non-obvious discoveries they make.
 
@@ -134,41 +134,20 @@ Run this after validation so the documenter can note anything the validator flag
 - Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as slice completion.
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it rather than papering over it.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 Execute this command for the current request. Follow resume/setup rules in §4.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 ### Final report to the user
 
-Print, in order:
-1. **Verdict** from the program-validator — SHIP / SHIP WITH FIXES / DO NOT SHIP
-2. **Brief fulfillment** — every brief item's status; call out anything missing or partial
-3. **Blocking findings** in full
-4. **Integration result** — does the system compose; any contract drift
-5. **Per-workstream status** — what each delivered
-6. **Cross-cutting review** — security, data integrity, operational readiness across boundaries
-7. **Quiet skips** across the aggregate diff
-8. **Documentation** — what was written or reconciled, and any contract drift the documenter surfaced
-9. **Experts** — which were consulted, and every verdict with its authority and how the program-validator treated it. Omit entirely when no expert was involved
-10. **Channel transcript** — pointer to `.claude/program/channels/`, count of messages by type, and any thread that escalated to the human
-11. **Recommended next action** — one sentence
+1. **Verdict** — one line
+2. **Blocking findings** — one line each; full text only if ≤3 or user asks; path to program-validation-report
+3. **Workstream status** — one line per WS
+4. **Contracts / integration** — pass/fail + paths
+5. **Quiet skips / docs / experts / channels** — pointers; omit empty
+6. **Next action** — one sentence
 
-Then offer to dispatch owning teams to fix blocking findings and re-run integration and validation, or to open the PR.
-
-## 10. Prefillled response (if any)
-
-N/A.

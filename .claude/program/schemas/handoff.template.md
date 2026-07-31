@@ -1,17 +1,17 @@
 ---
 schema: skailr.handoff/v1
-slice: backend | frontend | data
+slice: backend | frontend | data | T-001
 role: backend-engineer | frontend-engineer | data-engineer
 workstream: null | <ws-slug>
-yield: <1-based count for this slice in this run>
+yield: <1-based count for this slice/ticket in this run>
 updated: <ISO-8601>
 ---
 
-# Handoff: <slice>
+# Handoff: <slice or ticket id>
 
 ## Goal
 
-One paragraph: what this slice must deliver (from the spec).
+One paragraph: what this ticket/slice must deliver (from the ticket or spec).
 
 ## Ownership
 
@@ -28,11 +28,11 @@ Globs / owned units this role may touch. Do not expand scope on resume.
 
 ## Decisions
 
-Assumptions and choices made mid-slice that the next Task must keep. Empty is fine.
+Assumptions and choices made mid-work that the next Task must keep. Empty is fine.
 
 ## Open channels
 
-Channel message IDs still open that affect this slice (`MSG-…`), or `none`.
+Channel message IDs still open that affect this work (`MSG-…`), or `none`.
 
 ## Next steps
 

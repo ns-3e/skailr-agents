@@ -24,9 +24,12 @@ Before every `Task` (subagent) dispatch in orchestrator commands (`/ship-feature
 ```text
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
+Required artifact structure = required non-empty fields; omit empty optional sections.
+Task return: artifact path(s) + one-line status only. Never paste report/story/spec bodies.
+On success end with: DONE: <path>[, <path>…]
 ```
 
-Do not omit it for engineers or other builders: they stay terse in narration; deliverables remain full and correct.
+Do not omit it for engineers or other builders: they stay terse in narration; deliverables remain full and correct. Orchestrators re-read artifacts from disk — chat duplication is waste. Pass **paths** in Task prompts (not file contents); the subagent Reads what it needs.
 
 ## Downgrade (save tokens / rate limits)
 

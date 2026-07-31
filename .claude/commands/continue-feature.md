@@ -1,7 +1,7 @@
 ---
 description: Resume mid-feature — pick up from progress.md at the first incomplete phase (YOLO or gated)
 argument-hint: optional feedback or empty to resume
-allowed-tools: Task, Read, Write, Edit, Bash
+allowed-tools: Task, Read, Grep, Glob, Write, Edit, Bash
 ---
 
 ## 1. Task context
@@ -23,7 +23,13 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
+
+
+### Artifact root
+
+Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a program (skill `run-feature-queue`), the orchestrator sets `ARTIFACT_ROOT=.claude/program/workstreams/<ws>/features/<slug>` and all paths below are under that root. Prepend every Task prompt with `ARTIFACT_ROOT=<path>`. Ticket board: skill `run-ticket-board` with `ticket-status.mjs --root $ARTIFACT_ROOT`.
+
 
 
 ### Preflight
@@ -46,54 +52,41 @@ If `mode` is `yolo`, resume YOLO orchestration from `next` with **no human gates
 | `research` | Tell the user to run `/ship-feature` with the request (or continue research if request exists). |
 | `story` | Finish story-writer if needed, then Gate 1 (present story; stop for approval). |
 | `spec` | Confirm story was approved (user said approve / continue / ran this after Gate 1). If unclear and story is not yet approved, stop and ask. Then run Phase 3 (architect → spec checks) and **GATE 2** — present spec; tell them to run `/build-feature` when right. End turn. Do not start engineers. |
-| `build` / `verify` / `validate` / `docs` | Hand off into `/build-feature` from that phase (same checkpoints and gates). If `next` is `build` and `handoffs` is set, `/build-feature` must pass those paths into the engineer Tasks (skill `resume-from-feature-progress`). |
+| `build` / `verify` / `validate` / `docs` | Hand off into `/build-feature` from that phase (same checkpoints and gates). If `next` is `build`, `/build-feature` follows skill `run-ticket-board` when `board.md` exists (ticket handoffs under `$ARTIFACT_ROOT/handoff/<id>.md`); else classic slices + `handoffs` from `feature-status`. |
 
 ### Phase 3 — Spec (gated, when `next` is `spec`)
 
-Invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
+Invoke the `architect` subagent. It reads `research.md` and `story.md`, writes `.claude/tmp/spec.md`, and mints `.claude/tmp/board.md` + `.claude/tmp/tickets/`.
 
-When it returns, verify three things yourself before showing the user:
+When it returns, verify before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — prefer `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md`. If they overlap, send it back to the architect.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
+4. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once.
+5. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
 
 Optionally write `.claude/tmp/ownership.json`. Checkpoint: `spec` → complete.
 
 ### GATE 2 — Human approval of the spec
 
-Print the spec's Approach Summary, Design Decisions, Data Model, API Contract, and Ownership Boundaries. Then:
+Print:
+- **Ownership Boundaries** (BACKEND / FRONTEND / DATA globs)
+- **Approach Summary** as 3–5 bullets (or point at the section)
+- **Ticket board** — `.claude/tmp/board.md` + ticket count (titles only)
+- **UI spec** — `.claude/tmp/ui-spec.md` when present (or note N/A)
+- Path: `.claude/tmp/spec.md` (do **not** paste Data Model / API Contract bodies)
 
-**"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
+Then: **"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
 
 End your turn. Do not start the engineers.
 
-### Rules
-
-- Never archive an incomplete feature run when resuming.
-- Never write application code yourself.
-- Keep `progress.md` current at every transition.
-- Mid-slice handoffs (`.claude/tmp/handoff/<slice>.md`) are continue-from-handoff, not failures — follow skill `write-handoff-and-yield` / `resume-from-feature-progress`.
-
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 Execute this command for the current request. Follow resume/setup rules in §4.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
 
-## 10. Prefillled response (if any)
-
-N/A.

@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 /**
  * feature-status.mjs — print feature pipeline status and next incomplete phase.
- * Usage: node scripts/skailr/feature-status.mjs [--progress .claude/tmp/progress.md] [--json]
+ * Usage:
+ *   node scripts/skailr/feature-status.mjs [--progress .claude/tmp/progress.md] [--root .claude/tmp] [--json]
+ *
+ * When `<root>/board.md` exists, merges ticket-board state (via ticket-status)
+ * so resume can continue the frontier instead of only BE/FE slices.
+ * Default root is the directory containing progress.md (or `.claude/tmp`).
  */
-import { readFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, resolve, dirname } from "node:path";
+import { spawnSync } from "node:child_process";
 
 function parseFrontmatter(text) {
   if (!text.startsWith("---")) return {};
@@ -30,16 +36,14 @@ function extractTable(body, heading) {
     }
     if (inSection && line.startsWith("## ")) break;
     if (!inSection || !line.startsWith("|")) continue;
-    if (line.includes("---") || /Phase|Slice/i.test(line)) continue;
+    if (line.includes("---") || /Phase|Slice|ID \|/i.test(line)) continue;
     const raw = line.split("|").map((c) => c.trim());
-    // Drop leading/trailing empties from markdown row fences; keep interior blanks
     if (raw.length && raw[0] === "") raw.shift();
     if (raw.length && raw[raw.length - 1] === "") raw.pop();
     if (raw.length < 2) continue;
     rows.push({
       name: raw[0],
       status: raw[1],
-      // Phases: Phase|Status|Completed|Notes — Build: Slice|Status|Report
       completed: raw[2] || "",
       extra: raw.length >= 4 ? raw[3] : raw[2] || "",
     });
@@ -57,12 +61,31 @@ const ORDER = [
   "docs",
 ];
 
+function loadTicketBoard(root) {
+  const board = join(root, "board.md");
+  if (!existsSync(resolve(board))) return null;
+  const script = resolve("scripts/skailr/ticket-status.mjs");
+  if (!existsSync(script)) return { hasBoard: true, error: "no_ticket_status_script" };
+  const r = spawnSync(
+    process.execPath,
+    [script, "--root", root, "--json"],
+    { encoding: "utf8" },
+  );
+  try {
+    return JSON.parse(r.stdout || "{}");
+  } catch {
+    return { hasBoard: true, error: "ticket_status_parse_failed", stderr: r.stderr };
+  }
+}
+
 function main() {
   let progressPath = ".claude/tmp/progress.md";
+  let rootArg = null;
   let json = false;
   for (let i = 2; i < process.argv.length; i++) {
     if (process.argv[i] === "--progress") progressPath = process.argv[++i];
-    if (process.argv[i] === "--json") json = true;
+    else if (process.argv[i] === "--root") rootArg = process.argv[++i];
+    else if (process.argv[i] === "--json") json = true;
   }
   if (!existsSync(resolve(progressPath))) {
     const payload = { ok: false, error: "no_progress", next: null };
@@ -91,6 +114,12 @@ function main() {
       report: r.extra || r.completed,
     }),
   );
+  const progressTickets = extractTable(body, "Tickets (when board exists)").map((r) => ({
+    id: r.name,
+    title: r.status,
+    status: r.completed,
+    report: r.extra,
+  }));
 
   let next = null;
   for (const name of ORDER) {
@@ -110,28 +139,48 @@ function main() {
       ? buildSlices.filter((s) => s.status !== "complete").map((s) => s.slice)
       : [];
 
-  const HANDOFF_SLICES = ["backend", "frontend", "data"];
+  const artifactRoot = rootArg || dirname(progressPath).replace(/\\/g, "/");
+  const board = loadTicketBoard(artifactRoot);
+
   const handoffs = [];
   if (next === "build") {
-    for (const slice of HANDOFF_SLICES) {
-      const rel = join(".claude/tmp/handoff", `${slice}.md`);
-      if (existsSync(resolve(rel))) {
-        handoffs.push({ slice, path: rel.replace(/\\/g, "/") });
+    const handoffDir = join(artifactRoot, "handoff");
+    if (existsSync(resolve(handoffDir))) {
+      for (const f of readdirSync(resolve(handoffDir))) {
+        if (!f.endsWith(".md")) continue;
+        const key = f.replace(/\.md$/, "");
+        handoffs.push({
+          slice: key,
+          ticket: /^T-\d+/i.test(key) ? key : null,
+          path: join(handoffDir, f).replace(/\\/g, "/"),
+        });
       }
     }
   }
 
+  const defaultRequest = join(artifactRoot, "request.md").replace(/\\/g, "/");
   const payload = {
     ok: true,
     feature: fm.feature || null,
     mode: fm.mode || null,
     status: fm.status || null,
     updated: fm.updated || null,
-    request: fm.request || ".claude/tmp/request.md",
+    request: fm.request || defaultRequest,
+    artifactRoot,
     phases,
     buildSlices,
+    progressTickets: progressTickets.length ? progressTickets : null,
+    board: board && board.hasBoard !== false ? board : null,
     next,
     partialBuild: partialBuild.length ? partialBuild : null,
+    partialRoles:
+      board && board.partialRoles && board.partialRoles.length
+        ? board.partialRoles
+        : partialBuild.length
+          ? partialBuild
+          : null,
+    frontier: board && board.frontier ? board.frontier : null,
+    parallel: board && board.parallel ? board.parallel : null,
     handoffs: handoffs.length ? handoffs : null,
     complete: next === null,
   };
@@ -140,7 +189,13 @@ function main() {
     console.log(`Feature: ${payload.feature || "(unknown)"}`);
     console.log(`Mode:    ${payload.mode || "(unknown)"}`);
     console.log(`Status:  ${payload.status || "(unknown)"}`);
+    console.log(`Root:    ${payload.artifactRoot}`);
     console.log(`Next:    ${payload.next || "(all phases complete)"}`);
+    if (payload.board && payload.board.count != null) {
+      console.log(
+        `Board:   ${payload.board.count} tickets; frontier=${(payload.frontier || []).map((t) => t.id).join(",") || "none"}`,
+      );
+    }
     if (payload.partialBuild) {
       console.log(`Build pending slices: ${payload.partialBuild.join(", ")}`);
     }

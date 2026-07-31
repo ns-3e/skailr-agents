@@ -33,9 +33,11 @@ updated: <ISO-8601>
 
 ## Workstream cursors
 
-| Workstream | Team | Phase | Status |
-|------------|------|-------|--------|
-| | | | pending |
+One row per feature (from plan.md Features). A workstream is complete when every feature row for that workstream is `complete`. Feature phase mirrors the nested feature pipeline: `research` | `story` | `spec` | `build` | `verify` | `validate` | `docs` | `complete`. Artifact root: `.claude/program/workstreams/<ws>/features/<slug>/`.
+
+| Workstream | Team | Feature | Feature phase | Status |
+|------------|------|---------|---------------|--------|
+| | | | | pending |
 
 ## Blockers
 

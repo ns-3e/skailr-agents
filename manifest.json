@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "artifacts": [
     {
       "id": "content-editor",
@@ -389,6 +389,13 @@
       "cursor_path": ".cursor/commands/yolo-program.md"
     },
     {
+      "id": "skill-apply-ux-quality",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/apply-ux-quality/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-call-intair",
       "tier": "skill",
       "type": "skill",
@@ -480,10 +487,24 @@
       "cursor_path": null
     },
     {
+      "id": "skill-run-feature-queue",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/run-feature-queue/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-run-gated-pipeline",
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/run-gated-pipeline/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-run-ticket-board",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/run-ticket-board/SKILL.md",
       "cursor_path": null
     },
     {
@@ -606,10 +627,45 @@
       "cursor_path": null
     },
     {
+      "id": "schema-board.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/board.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-ticket.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/ticket.template.md",
+      "cursor_path": null
+    },
+    {
       "id": "schema-orientation.template",
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/orientation.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-ui-spec.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/ui-spec.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-design-brief.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/design-brief.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-artboard.template",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/artboard.template.md",
       "cursor_path": null
     },
     {

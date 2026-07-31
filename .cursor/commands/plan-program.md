@@ -30,7 +30,7 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 
 ### Preflight
@@ -42,7 +42,8 @@ Confirm `.claude/program/brief.md` exists and was user-confirmed. If it does not
 Run once, before decomposition. **Never a gate.** A project with no `.claude/experts/` plans exactly as it did before experts existed.
 
 1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Note which non-`deprecated` bands cover parts of this brief and record them in `plan.md` so `/build-program` knows which domain leads get expert input.
-2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the brief. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`.
+2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
+
 3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/program/channels/program.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change` — either would halt the program, and minting notifies rather than asks.
 4. **Experts are not a team.** Never route a workstream to an expert, never give one an ownership glob, and never add one to `.claude/teams/registry.md`. They advise, co-author as scoped input, and gate as evidence. See the "Experts are not a team" section of the team registry.
 5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
@@ -60,15 +61,16 @@ Do not relay a plan you have not checked. Confirm all of the following, and send
 3. **The DAG is acyclic** and every workstream's depends-on list references real contracts. Concurrency groups are explicit.
 4. **Every brief item maps to at least one workstream or the kernel.** Nothing the user asked for is unowned.
 5. **Hard-sequenced dependencies are justified.** For each place one team must fully finish before another starts (rather than building against a stub in parallel), confirm the architect explained why a stub was not possible. Excessive sequencing is a decomposition smell.
+6. **MECE Features per workstream.** Every workstream has a Features (MECE) table with ID / Slug / Title / Goal / Depends-on / Maps-to brief, plus a MECE proof line. An engineering workstream with an empty Features table fails — send back to the architect. Confirm every brief item mapped to a WS also maps to exactly one feature in that WS (or the kernel). Feature `Depends-on` may only reference feature IDs in the same workstream (or documented same-WS order); tickets are not invented at plan time.
 
 ### GATE — user approval of the program plan
 
 Present to the user:
-- The workstream list with each team's goal and ownership scope
+- The workstream list with each team's goal, ownership scope, and MECE Features (titles + depends-on)
 - The shared kernel and what it contains
 - The contracts index and the dependency DAG (foundation → concurrency groups → integration)
 - Any hard-sequenced dependencies, called out explicitly
-- Confirmation that ownership is disjoint
+- Confirmation that ownership is disjoint and Features are MECE
 
 Then:
 
@@ -76,26 +78,13 @@ Then:
 
 End your turn. Do not start the build. On approval, follow skill `freeze-contract`: set contract status to `frozen`, seed `.claude/program/ledger.md` from `.claude/program/schemas/ledger.template.md`, record each contract version and workstream starting phase, keep `ownership.json` current, run `check-contracts` + `check-ownership` again.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 Execute this command for the current request. Follow resume/setup rules in §4.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
 
-## 10. Prefillled response (if any)
-
-N/A.

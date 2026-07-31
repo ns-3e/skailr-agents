@@ -1,7 +1,7 @@
 ---
 description: Mint a project domain expert (T1 explicit): resolve slug, research if external, write profile, validate, regenerate registry, notify
 argument-hint: <topic or vertical> [internal|external|hybrid], or "promote|revise|retire <slug>"
-allowed-tools: Task, Read, Write, Edit, Bash
+allowed-tools: Task, Read, Grep, Glob, Write, Edit, Bash
 ---
 
 ## 1. Task context
@@ -32,7 +32,7 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from
 `.claude/model-routing.json` (active profile) for role `expert-scout`, apply escalate /
 downgrade rules, and append a line to `.claude/tmp/model-usage.md` (or
 `.claude/program/model-usage.md` inside a program run). Escalate once if a scout returns a
-thin research artifact. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+thin research artifact. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 ### Non-negotiables
 
@@ -451,21 +451,11 @@ Nothing in this command is Intair-only.
 - One mint per invocation. A topic that wants two experts wants two invocations, each with
   its own sharp band.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 **Mint request:** $ARGUMENTS
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
@@ -493,6 +483,3 @@ Then:
 On a refusal or failure, report the step that stopped you, exactly what was written and then
 removed, and what the caller must change. State plainly that the roster is unchanged.
 
-## 10. Prefillled response (if any)
-
-N/A.

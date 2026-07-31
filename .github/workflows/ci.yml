@@ -32,6 +32,27 @@ jobs:
       - name: Check Write-capable roles also grant Edit
         run: node scripts/skailr/check-agent-tools.mjs
 
+      - name: Check prompt efficiency invariants
+        run: |
+          set -e
+          if grep -RsnF 'message board, not a chat' .claude/agents; then
+            echo "FAIL: channel protocol must live in PROTOCOL.md only (not inlined in agents)"
+            exit 1
+          fi
+          if grep -RsnF 'full contents of `story.md`' .claude/commands; then
+            echo "FAIL: commands must not paste full story.md into chat"
+            exit 1
+          fi
+          if grep -RsnF 'Take a deep breath' .claude/agents .claude/commands; then
+            echo "FAIL: remove Take a deep breath scaffold from agents/commands"
+            exit 1
+          fi
+          if grep -RsnF 'Full vertical slice with real file paths' .claude/agents .claude/program/schemas; then
+            echo "FAIL: researcher/orientation must use capped slice format (paths + ≤5 lines)"
+            exit 1
+          fi
+          echo "OK: prompt efficiency invariants"
+
       - name: Check model routing matches active profile
         run: node scripts/skailr/apply-model-routing.mjs --check
 
@@ -64,6 +85,46 @@ jobs:
           node scripts/skailr/validate-channels.mjs --dir examples/parallel-api/channels
           node scripts/skailr/emit-stubs.mjs --dir examples/parallel-api/contracts --out /tmp/skailr-stubs
           node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
+          # ticket board smoke
+          TB=$(mktemp -d)
+          mkdir -p "$TB/tickets"
+          cat > "$TB/board.md" <<'EOF'
+# Board: CI
+
+## Destination
+x
+
+## Done
+
+## Not yet specified
+
+## Out of scope
+
+## Tickets
+
+| ID | Title | Role | Status | Blocked by |
+|----|-------|------|--------|------------|
+| T-001 | A | backend | open | |
+EOF
+          cat > "$TB/tickets/T-001-a.md" <<'EOF'
+---
+id: T-001
+title: A
+role: backend
+status: open
+acs: [AC-1]
+blocked_by: []
+ownership:
+  - src/a/**
+---
+
+# Ticket: A
+
+## Resolution
+EOF
+          node scripts/skailr/ticket-status.mjs validate --root "$TB"
+          node scripts/skailr/ticket-status.mjs claim --id T-001 --root "$TB"
+          node scripts/skailr/ticket-status.mjs resolve --id T-001 --gist "done" --root "$TB"
           test -f /tmp/skailr-stubs/orders-api.stub.js
           echo "fixture scripts OK"
 
@@ -83,9 +144,13 @@ jobs:
           test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
           test -f "$TMP/.claude/skills/route-intake/SKILL.md"
           test -f "$TMP/.claude/skills/sync-lineage/SKILL.md"
+          test -f "$TMP/.claude/skills/run-ticket-board/SKILL.md"
+          test -f "$TMP/.claude/program/schemas/board.template.md"
+          test -f "$TMP/.claude/program/schemas/ticket.template.md"
           test -f "$TMP/.claude/intake.md"
           test -f "$TMP/CLAUDE.md"
           test -f "$TMP/scripts/skailr/check-ownership.mjs"
+          test -f "$TMP/scripts/skailr/ticket-status.mjs"
           test -f "$TMP/.claude/model-routing.json"
           test -f "$TMP/scripts/skailr/apply-model-routing.mjs"
           test -f "$TMP/.cursor/commands/build-feature.md"

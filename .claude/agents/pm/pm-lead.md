@@ -45,28 +45,15 @@ Dispatch JIT: `pm-planner`, `risk-analyst`, `status-reporter`. Use skills `compi
 
 ### Channels
 
-PROTOCOL.md discipline: post only when blocked or decision-relevant.
-
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
+Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tmp/channels/` for a single-feature run). Post only if blocked or decision-relevant heads-up; then end turn.
 
 ## 7. Immediate task description or request
 
 Execute your role for this dispatch. Satisfy the completion criteria above when present.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
-
 ## 9. Output formatting
+
+Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
 `.claude/program/workstreams/<ws>/pm-report.md` and `.claude/program/status-digest.md`.
 
-## 10. Prefillled response (if any)
-
-N/A.

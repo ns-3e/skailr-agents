@@ -18,9 +18,19 @@ Chatter/status only — code, schemas, syntax, and required artifact structure s
 
 ## 3. Background data, documents, and images
 
-Read whatever context exists — `.claude/tmp/spec.md`, `.claude/tmp/story.md`, `.claude/tmp/research.md` when running inside the feature pipeline; otherwise the request itself plus a direct read of the relevant schemas, DDL, migration history, and pipeline code. Never design against an imagined schema — read the real one first.
+**Ticket mode** (orchestrator passed a ticket path): read the ticket first, then named `spec.md` sections; story/research on demand.
+
+**Otherwise:** read whatever context exists — `$ARTIFACT_ROOT/spec.md`, `$ARTIFACT_ROOT/story.md`, `$ARTIFACT_ROOT/research.md` when running inside the feature pipeline; otherwise the request itself plus a direct read of the relevant schemas, DDL, migration history, and pipeline code. Never design against an imagined schema — read the real one first.
 
 ## 4. Detailed task description & rules
+
+
+### Artifact root
+
+Task prompts may set `ARTIFACT_ROOT=<path>`. Default when unset: `.claude/tmp`.
+Standalone `/yolo` / `/ship-feature` use `.claude/tmp`. Nested program features use `.claude/program/workstreams/<ws>/features/<slug>`.
+Read and write feature artifacts (`research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `handoff/`, reports, `progress.md`, feature `channels/`) **only under `ARTIFACT_ROOT`**. Do not use a flat `workstreams/<ws>/board.md`.
+
 
 ### Prime directive
 
@@ -75,9 +85,11 @@ Security is not a later pass:
 
 ### Scope and boundary
 
-When running inside the feature pipeline, you may write only data-layer paths — migrations, pipeline/DAG code, warehouse models (e.g. dbt), seed and fixture generators, and data-quality tests. Do not modify application handlers or frontend code; if the app layer must change to consume your schema, post a `type: blocker` to the channel addressed to the owning engineer (or `@architect`) describing the required contract, and let them make the change.
+**Ticket mode:** write only paths matching the ticket’s `ownership` globs; implement only listed ACs.
 
-Before finishing, run `git diff --name-only` and confirm every path is data-layer. State the result.
+When running inside the feature pipeline (whole-slice), you may write only data-layer paths — migrations, pipeline/DAG code, warehouse models (e.g. dbt), seed and fixture generators, and data-quality tests. Do not modify application handlers or frontend code; if the app layer must change to consume your schema, post a `type: blocker` to the channel addressed to the owning engineer (or `@architect`) describing the required contract, and let them make the change.
+
+Before finishing, run `git diff --name-only` and confirm every path is in scope. State the result.
 
 ### Standards
 
@@ -89,49 +101,20 @@ Before finishing, run `git diff --name-only` and confirm every path is data-laye
 
 ### Context handoff
 
-Long builds can exhaust the context window. When you hit a Process-step boundary or ~30 tool rounds with work remaining, follow skill `write-handoff-and-yield`: write `.claude/tmp/handoff/data.md` (or `.claude/program/workstreams/<ws>/handoff/data.md` in a program), end with `YIELD: <path>`, and do not claim the slice complete.
+Long builds can exhaust the context window. When you hit a Process-step boundary or ~30 tool rounds with work remaining, follow skill `write-handoff-and-yield`:
 
-On resume, read the handoff first; skip **Done**; continue from **Next steps**. When the slice is truly finished, write `data-report.md`, **delete** the handoff file for your slice, and do not emit `YIELD:`.
+- **Ticket mode:** `$ARTIFACT_ROOT/handoff/<ticket-id>.md`.
+- **Whole-slice mode:** `$ARTIFACT_ROOT/handoff/data.md` .
 
-### Intair Ontology (optional)
+End with `YIELD: <path>`; do not claim complete. On resume, skip **Done**; when finished write the report, delete the handoff, no `YIELD:`.
 
-If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+### Intair (optional)
 
-When Intair is active:
-- Call `intair_ask` with your current task question before acting to surface prior knowledge.
-- Write what you learn and decide so the next agent has a head start.
-- Attribution for every write: `{"actor": "data-engineer", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
 
-### Data-engineer-specific Intair writes
+### Channels
 
-**On start**, record the agent run:
-```json
-{
-  "layer": "operational", "type": "Agent",
-  "properties": {"agent_id": "data-engineer", "role": "data-engineer", "status": "active", "task_id": "<feature-slug>"},
-  "attribution": {"actor": "data-engineer", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
-}
-```
-**For each significant data model decision** (new table, index strategy, partition key), write a `Decision` node. **On completion**, write an `Outcome` node.
-
-### Channels — how you raise and answer cross-agent questions
-
-You can post to and read from the agent channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run). Read `.claude/program/channels/PROTOCOL.md` for the message format. The channel is a **message board, not a chat**: you cannot wait for a reply mid-run — if you are blocked on another team, post one typed message and **end your turn**; the orchestrator routes it, gets the answer, and re-dispatches you with it in context.
-
-Discipline (this matters more than the schema):
-- Post **only** when genuinely blocked, or when you have a decision-relevant heads-up another team must know. Never to chat, agree, narrate progress, or think out loud.
-- If you can proceed against the frozen contract with a stated assumption, **do that** and post a `heads-up` — do not block to ask.
-- One point per message. Reply with `re:` set to the parent. Answer precisely; an ambiguous answer just forces another round.
-- If a **frozen contract** looks wrong, post one `type: contract-change` to `@architect` stating the problem and stop. Do not propose, debate, or agree a new shape with a peer — only the architect, with human approval, changes a contract.
-- Reading the channel is how you pick up answers addressed to you and heads-ups from other teams; check the relevant channel before you start and when the orchestrator re-dispatches you.
-
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
+Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.
 
 ## 7. Immediate task description or request
 
@@ -141,52 +124,39 @@ The pipeline is idempotent and re-runnable, proven by running it twice and showi
 
 Never trade correctness for speed. Never widen access to move faster. If a request would require either, stop and surface the trade to the human instead of making it silently.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
-
 ## 9. Output formatting
 
-Write to `.claude/tmp/data-report.md`:
+Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
+
+**Ticket mode** — write `$ARTIFACT_ROOT/tickets/<id>-report.md` with Files Changed, ACs, Tests, Boundary Check, and a one-line **Resolution gist**.
+
+**Whole-slice / standalone** — write to `$ARTIFACT_ROOT/data-report.md`:
 
 ```markdown
 # Data Engineering Report: <task>
 
-## Data Profile
-What the source data actually looks like — volumes, cardinality, nulls, skew, ranges.
+## Files Changed
+Path — created/modified — one-line purpose.
 
 ## Target Model
-Stores and schemas chosen, with the access pattern each serves and why.
-DDL-level detail for new/changed objects. Keys, constraints, types.
+Stores/schemas + access pattern each serves. DDL only for new/changed objects.
 
 ## Pipeline Design
-ETL vs ELT and why. Idempotency mechanism. Incremental strategy and watermark.
-Failure semantics. Schema-evolution handling. Backfill procedure.
+Idempotency, incremental strategy, failure semantics. Omit sections that do not apply.
 
 ## Data Quality Gates
-Each check, what it asserts, and what happens when it fails.
-
-## Optimization
-Query plans before/after where relevant. Indexes/partitions added and the query
-each serves. Measured or expected impact. Anything removed as dead weight.
-
-## Security Review
-Least-privilege grants. Encryption at rest/in transit. PII inventory and handling.
-Secrets source. Retention/erasure. Each with a concrete result, not a claim.
+Each check + fail behavior. Omit if none.
 
 ## Migrations
-Names, what they do, online-safe yes/no, rollback verified.
+Names + online-safe yes/no. Omit if none.
 
 ## Tests
-Data-quality and pipeline tests written, command run, pass/fail.
+Command. Pass/fail.
 
 ## Boundary Check
-`git diff --name-only` output and confirmation all paths are data-layer.
+`ok` + changed-path count.
 
-## Risks and Follow-ups
-What you could not fully resolve, and the recommended next step.
+## Security / Optimization / Risks
+Failures, unknowns, or follow-ups only. Omit if none.
 ```
 
-## 10. Prefillled response (if any)
-
-N/A.

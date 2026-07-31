@@ -151,14 +151,14 @@ You get workstreams, a shared kernel, frozen interface contracts, and a dependen
 Typical flow:
 
 1. Foundation / shared kernel
-2. Parallel workstream teams (each may run an internal feature-style pipeline)
+2. Parallel workstream teams (eng: skill `run-feature-queue` over MECE features; each feature runs the feature pipeline + ticket board)
 3. Integration (real against real)
 4. Program validation against the original brief
 5. Release documentation
 
 State lives under `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`, channels) so you can resume across sessions. Prefer a clean working tree before build.
 
-**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. Engineering mid-slice handoffs live under `.claude/program/workstreams/<ws>/handoff/` and are continued automatically.
+**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. Engineering ticket handoffs live under `.claude/program/workstreams/<ws>/features/<slug>/handoff/` and are continued automatically.
 
 | Command | What it does | Business equivalent |
 | ------- | ------------ | ------------------- |
@@ -205,7 +205,7 @@ What happens:
 
 Backend + frontend engineers run in parallel → E2E verification → adversarial validation → docs.
 
-Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `progress.md`, reports). Runtime state is gitignored.
+Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `progress.md`, reports). Runtime state is gitignored.
 
 **Resume later:** `/continue-feature` when a session stopped mid-feature (including Claude Code usage limits). Incomplete runs are not archived. Mid-build, engineers may also write a handoff under `.claude/tmp/handoff/` and yield a fresh Task; resume continues from that file automatically.
 
@@ -215,7 +215,7 @@ Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `
 | ------- | ------------ | ------------------- |
 | `/ship-feature` | Research → story → spec with approval gates | **Gated feature intake** — stakeholder sign-off before build |
 | `/continue-feature` | Resume from `.claude/tmp/progress.md` at the first incomplete phase | **Resume mid-feature** — after story/spec approval or session interrupt |
-| `/build-feature` | Parallel build → E2E → validation → docs against the approved spec | **Approved-spec delivery** — ship what was signed off |
+| `/build-feature` | Ticket-board (or classic BE∥FE) build → E2E → validation → docs against the approved spec | **Approved-spec delivery** — ship what was signed off |
 
 ---
 
@@ -291,7 +291,7 @@ skailr is **not** an agent framework (no LangGraph-style runtime). Claude Code /
 4. **Coordinate in the open** — markdown channels, not private side chats.
 5. **Freeze interfaces** — parallel teams build against contracts; changing a frozen contract normally needs your approval (YOLO program mode auto-decides and logs it).
 
-Tiers nest: **portfolio** (many initiatives — CEO/PMO layer) → **program** (one large initiative — VP-owned) → **workstream** (one feature pipeline — delivery team). Full slash-command → business mapping: [Command reference](#command-reference).
+Tiers nest: **portfolio** (many initiatives — CEO/PMO layer) → **program** (one large initiative — VP-owned) → **workstream** (team + ownership + contracts) → **features** (MECE shippable outcomes) → **ticket board** (AC build packets under each feature). Full slash-command → business mapping: [Command reference](#command-reference).
 
 **Claude Code vs Cursor.** `.claude/` is the source of truth. `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
 
@@ -396,7 +396,7 @@ The program tier is domain-agnostic. Engineering is one team; content, legal, PM
 | content | pieces / sections | facts sourced + brand voice |
 | legal | requirements / controls | every claim traced |
 | pm | milestones / risks / digests | exceptions escalate |
-| design | assets / artboards | a11y + design-system conformance |
+| design | assets / artboards | a11y + design-system + craft (anti-AI layout) |
 | marketing | channels / segments | message + measurement alignment |
 | finance | worksheets / models | numbers reconcile + assumptions traced |
 
@@ -405,7 +405,7 @@ The program tier is domain-agnostic. Engineering is one team; content, legal, PM
 - **Content:** `content-lead` → strategist → writer → editor. Never ship false claims or generic AI prose.
 - **Legal:** `legal-lead` → analyst → compliance-reviewer → legal-validator. Skill: `trace-requirement`.
 - **PM:** `pm-lead` → planner → risk-analyst → status-reporter. Skill: `compile-status-digest`.
-- **Design:** `design-lead` → strategist → designer → design-reviewer. Markdown specs/handoffs; no Figma required.
+- **Design:** `design-lead` → strategist → designer → design-reviewer. Markdown specs/handoffs; no Figma required. Craft kernel: skill `apply-ux-quality` (principles, anti-AI layouts, checklist). Three ship-blockers: inaccessible, off-system, craft-failed.
 - **Marketing:** `mkt-lead` → strategist → channel-planner → mkt-analyst.
 - **Finance:** `fin-lead` → analyst → modeler → fin-auditor. Skill: `reconcile-model`.
 
@@ -432,20 +432,26 @@ Plain chat routes a question to an expert only when **exactly one** band covers 
 
 ## Workstream tier (feature pipeline)
 
-One feature in → validated implementation out. Program workstreams may run this internally; you can also run it standalone via `/ship-feature`.
+One feature in → validated implementation out. Standalone via `/ship-feature` / `/yolo`. Under a program, each **engineering** workstream is decomposed into MECE **features** in `plan.md`; skill `run-feature-queue` runs this pipeline **once per feature** (serial within the workstream) under `.claude/program/workstreams/<ws>/features/<slug>/`.
 
-**Path:** researcher → story-writer → architect → backend + frontend (optional `data-engineer`) → e2e-verifier → validator → program-documenter.
+**Path:** researcher → story-writer → architect (spec + `ui-spec.md` when UI + ticket board) → frontier ticket workers (backend / frontend / optional data / research / decide) → e2e-verifier → validator (Pass 4 UX when FE ships) → program-documenter.
+
+User-visible UI follows skill `apply-ux-quality`: story UX-outcome ACs, architect-minted `ui-spec.md`, frontend checklist, validator Pass 4. Design team is **not** required on every feature; craft still is.
+
+### Ticket board (Phase 4)
+
+After the architect writes `spec.md`, it mints a local markdown **board** (`$ARTIFACT_ROOT/board.md`) and **tickets** (`$ARTIFACT_ROOT/tickets/`). Standalone `ARTIFACT_ROOT` is `.claude/tmp`; nested program features use `workstreams/<ws>/features/<slug>`. Each ticket carries acceptance criteria, ownership globs, and optional `blocked_by` edges (same board only). The orchestrator claims frontier tickets and dispatches small workers with ticket + spec context (skill `run-ticket-board`; script `ticket-status.mjs --root $ARTIFACT_ROOT`). Refer to tickets by **title** in narration. Channels still coordinate blockers; they do not assign work. Features are not tickets; cross-feature order uses plan.md `Depends-on`.
 
 | Agent | Writes code? | Scope | Purpose |
 | ----- | ------------ | ----- | ------- |
-| researcher | No | Read-only | Maps what exists |
+| researcher | No | Read-only | Maps what exists; also resolves `research` tickets |
 | story-writer | Story doc | n/a | Testable acceptance criteria |
-| architect | Spec doc | n/a | Data model, API, ownership split |
-| backend-engineer | Yes | Backend globs | Migrations, services, handlers, unit tests |
-| frontend-engineer | Yes | Frontend globs | UI, state, API client |
-| data-engineer | Yes | Data globs | ETL/ELT, schemas (optional) |
+| architect | Spec + board + ui-spec | n/a | Data model, API, ownership split, mint tickets, interaction/visual spec when UI |
+| backend-engineer | Yes | Ticket or backend globs | Migrations, services, handlers, unit tests |
+| frontend-engineer | Yes | Ticket or frontend globs | UI, state, API client; UX checklist |
+| data-engineer | Yes | Ticket or data globs | ETL/ELT, schemas (optional) |
 | e2e-verifier | Tests only | Tests | User-perspective proof |
-| validator | No | Read-only | Misses, skips, security gaps |
+| validator | No | Read-only | Misses, skips, security gaps, UX Pass 4 when FE |
 
 **Gates (gated path):** after story; after spec. Then unattended build. YOLO skips the human gates; script gates still run.
 
@@ -701,7 +707,7 @@ No. Frameworks (LangGraph, CrewAI, AutoGen, …) provide a runtime. skailr is an
 
 ### Can I build my entire initial app with `/ship-feature`?
 
-No. `/ship-feature` and `/yolo` produce **one** story and **one** build. They do not create a multi-story backlog or loop features. Use **Path A1** (`/discover` → `/plan-program` → `/build-program`) or **Path A2** (`/yolo-program`) for a whole app or multi-part initiative.
+No. `/ship-feature` and `/yolo` produce **one** story and **one** build (plus that feature’s ticket board). They do not create a multi-story backlog or loop features. Use **Path A1** (`/discover` → `/plan-program` → `/build-program`) or **Path A2** (`/yolo-program`) for a whole app or multi-part initiative. Program planning cuts workstreams, then MECE **features** inside each workstream; each eng feature still runs the feature pipeline + tickets.
 
 ### When should I use `/ship-feature` vs `/yolo` vs `/patch` vs `/map-repo` vs `/discover` vs `/yolo-program`?
 

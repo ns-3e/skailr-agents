@@ -293,7 +293,12 @@ for schema in (
     "patch-report.template.md",
     "feature-progress.template.md",
     "handoff.template.md",
+    "board.template.md",
+    "ticket.template.md",
     "orientation.template.md",
+    "ui-spec.template.md",
+    "design-brief.template.md",
+    "artboard.template.md",
     "backlog.template.md",
     "map-repo-progress.template.md",
     "map-report.template.md",
@@ -321,7 +326,7 @@ if missing:
 manifest = {
     "name": "skailr-agents",
     "description": "Multi-agent operating model for Claude Code and Cursor — teams, contracts, channels, script gates",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "artifacts": entries,
 }
 (ROOT / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")

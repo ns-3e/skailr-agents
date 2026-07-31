@@ -41,6 +41,16 @@ Then:
 
 4. **Record what you did.** One line in your own report: which operation, which element id came back, and the basis you attributed it with.
 
+## Common agent lifecycle writes
+
+When an agent prompt says to follow this skill on start/completion (and Intair is available):
+
+- **On start:** `intair_write_node` — operational `Agent` with `agent_id` / `role` / `status: active` / `task_id`.
+- **On completion:** `intair_write_node` — operational `Outcome` with `kind: success|failure` and a one-sentence `summary`.
+- Before acting: optional `intair_ask` with the current task question.
+
+Skip silently when Intair tools are unavailable. Do not inline full JSON envelopes in role prompts.
+
 ## Reference
 
 This skill is deliberately abbreviated. The full seam reference (all fifteen `intair_*` tools grouped by operation, every REST route, the auth and open/dev-mode rules, the complete attribution and element envelope, the nine error codes, the skailr to Intair concept map with its live-schema caveat, and the v1 out-of-scope list) lives in the pack repo at `docs/intair-seam.md`.

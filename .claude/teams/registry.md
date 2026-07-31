@@ -38,7 +38,7 @@ same way it does for engineering files.
 ### engineering
 - **capability:** Builds working software — research, spec, backend, frontend, optional data pipelines, tests, validation, and documentation. The workstream pipeline (core roles plus optional `data-engineer`).
 - **route-when:** The workstream produces or changes running code, APIs, databases, data pipelines, or any software artifact that must execute correctly.
-- **lead:** invoke the standard `/ship-feature` → `/build-feature` workstream flow (no separate `eng-lead` agent yet)
+- **lead:** follow skill `run-feature-queue` (serial MECE features from `plan.md`; each feature runs the nested `/ship-feature`→`/build-feature` or YOLO pipeline + `run-ticket-board` under `workstreams/<ws>/features/<slug>/`; no separate `eng-lead` agent yet)
 - **owns:** source files, migrations, tests, config
 - **produces contracts of type:** API shapes, data schemas, module interfaces, events
 - **status:** built — agents under `.claude/agents/engineering/`
@@ -71,8 +71,8 @@ same way it does for engineering files.
 - **status:** built
 
 ### design
-- **capability:** Visual and interaction design — layouts, brand assets, mockups, design-system components, with accessibility and system-conformance review.
-- **route-when:** The workstream's deliverable is primarily *visual* — mockups, graphics, slide/landing-page layouts, brand assets, UI design (as distinct from UI *implementation*, which is engineering).
+- **capability:** Visual and interaction design — layouts, brand assets, mockups, design-system components, with accessibility, system-conformance, and craft (anti-AI layout) review via skill `apply-ux-quality`.
+- **route-when:** The workstream's deliverable is primarily *visual* — mockups, graphics, slide/landing-page layouts, brand assets, UI design (as distinct from UI *implementation*, which is engineering). Prefer routing here when success needs net-new brand/visual language; eng product features still meet the feature-path UX bar (`ui-spec` + Pass 4) without loading this team.
 - **lead:** `design-lead`
 - **owns:** assets, artboards, design-system entries
 - **produces contracts of type:** design specs / handoff files that engineering implements; approved visual assets that marketing uses

@@ -30,7 +30,13 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
+
+
+### Artifact root
+
+Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a program (skill `run-feature-queue`), the orchestrator sets `ARTIFACT_ROOT=.claude/program/workstreams/<ws>/features/<slug>` and all paths below are under that root. Prepend every Task prompt with `ARTIFACT_ROOT=<path>`. Ticket board: skill `run-ticket-board` with `ticket-status.mjs --root $ARTIFACT_ROOT`.
+
 
 
 ### Setup (new vs resume)
@@ -54,7 +60,8 @@ On a fresh start:
 Run once, before Phase 1. **Never a gate**, and never a third approval stop: this command already has two. Every failure mode here is a skip, and a project with no `.claude/experts/` behaves exactly as it did before experts existed.
 
 1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes and carry the slugs forward.
-2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the request. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`, including validation and the delete-on-invalid step.
+2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
+
 3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
 4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
 
@@ -77,56 +84,52 @@ Checkpoint: `story` → complete (story written; awaiting human approval — lea
 ### GATE 1 — Human approval of the story
 
 Stop. Print to the user:
-- The full contents of `story.md`
-- The Open Questions section called out separately and prominently
+- **Actor / Job** — one line from the story
+- **Open Questions** — full section (or "none")
+- Path: `.claude/tmp/story.md` (do **not** paste the full story)
 - The line: **"Approve this story, or tell me what to change. Run `/continue-feature` when it's right."**
 
 **Do not invoke any further subagent.** End your turn here. A misunderstood requirement fixed at this gate costs one message; fixed after the build it costs the entire build.
 
 If the user comes back with changes, re-invoke `story-writer` with their feedback and re-present. Loop until approved.
 
+
 ### Phase 3 — Spec (only after the user approves the story)
 
-Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md` and writes `.claude/tmp/spec.md`.
+Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md`, writes `.claude/tmp/spec.md`, and mints `.claude/tmp/board.md` + `.claude/tmp/tickets/`.
 
 **Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md` so `.claude/tmp/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
 
-When it returns, verify three things yourself before showing the user:
+When it returns, verify before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — no path matches both. If they overlap, send it back to the architect to resolve ownership.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
 4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
+5. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once.
+6. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
 
 Checkpoint: `spec` → complete after those checks pass.
 
 ### GATE 2 — Human approval of the spec
 
-Print the spec's Approach Summary, Design Decisions, Data Model, API Contract, and Ownership Boundaries. Then:
+Print:
+- **Ownership Boundaries** (BACKEND / FRONTEND / DATA globs)
+- **Approach Summary** as 3–5 bullets (or point at the section)
+- **Ticket board** — path `.claude/tmp/board.md` and ticket count (titles only; do not paste ticket bodies)
+- **UI spec** — path `.claude/tmp/ui-spec.md` when present (or note N/A)
+- Path: `.claude/tmp/spec.md` (do **not** paste Data Model / API Contract bodies)
 
-**"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
+Then: **"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
 
 End your turn. Do not start the engineers.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 **Feature request:** $ARGUMENTS
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
 Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
 
-## 10. Prefillled response (if any)
-
-N/A.

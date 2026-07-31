@@ -18,13 +18,21 @@ Novelty is a cost, not a virtue: if the codebase already does something a certai
 
 ## 3. Background data, documents, and images
 
-Read both `.claude/tmp/research.md` and `.claude/tmp/story.md` in full before designing anything. Your design must conform to the house conventions the Researcher documented.
+Read both `$ARTIFACT_ROOT/research.md` and `$ARTIFACT_ROOT/story.md` in full before designing anything. Your design must conform to the house conventions the Researcher documented.
 
-**Expert co-author input, when present.** Also read every `.claude/tmp/expert-<slug>.md`. A minted domain expert writes that file as scoped input and never edits `spec.md`, so folding it into the design is your job. Treat it as **required input**: adopt each Domain constraint, Must-have, Failure mode, and Recommended acceptance criterion, or reject it explicitly with a one-line reason. Silent omission is the one unacceptable outcome. Its Failure modes in this domain are the highest-value part for you — they are exactly the cases a generic design gets wrong. The file is often absent; most runs have no expert.
+**Expert co-author input, when present.** Also read every `$ARTIFACT_ROOT/expert-<slug>.md`. A minted domain expert writes that file as scoped input and never edits `spec.md`, so folding it into the design is your job. Treat it as **required input**: adopt each Domain constraint, Must-have, Failure mode, and Recommended acceptance criterion, or reject it explicitly with a one-line reason. Silent omission is the one unacceptable outcome. Its Failure modes in this domain are the highest-value part for you — they are exactly the cases a generic design gets wrong. The file is often absent; most runs have no expert.
 
 Check the relevant channel under `.claude/program/channels/` or `.claude/tmp/channels/` before you start and when the orchestrator re-dispatches you. Read `.claude/program/channels/PROTOCOL.md` for the message format.
 
 ## 4. Detailed task description & rules
+
+
+### Artifact root
+
+Task prompts may set `ARTIFACT_ROOT=<path>`. Default when unset: `.claude/tmp`.
+Standalone `/yolo` / `/ship-feature` use `.claude/tmp`. Nested program features use `.claude/program/workstreams/<ws>/features/<slug>`.
+Read and write feature artifacts (`research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `handoff/`, reports, `progress.md`, feature `channels/`) **only under `ARTIFACT_ROOT`**. Do not use a flat `workstreams/<ws>/board.md`.
+
 
 ### Prime directive
 
@@ -42,122 +50,99 @@ The API contract you define is the seam. If it is vague, the backend and fronten
 
 5. **Frontend design.** Components to create or modify, their props, the state they own, loading/empty/error states, form validation mirroring server-side rules, and the user flow between screens. Map each to the AC IDs it serves.
 
-6. **Work split.** Produce two explicit, non-overlapping file lists — one for the Backend Engineer, one for the Frontend Engineer. If a file must be touched by both (a shared types file, a route manifest), assign it to exactly one owner and note the other's dependency on it. Overlap here is a bug in your spec. **Megafile check.** For every file in the work split, estimate its projected line count after the feature lands. Any file projected to exceed **400 lines** must be called out explicitly — name the file, state the projected count, and propose a decomposition plan (split into submodules, extract helpers, etc.) before assigning it to an engineer. Do not assign a megafile without a decomposition proposal in this spec.
+6. **Interaction & visual spec (user-visible UI).** Follow skill `apply-ux-quality`. If the feature has no user-visible UI, note `N/A: no user-visible UI` in `spec.md` and skip the file. Otherwise write `$ARTIFACT_ROOT/ui-spec.md` from `.claude/program/schemas/ui-spec.template.md`: primary job per view, hierarchy, layout zones, tokens/primitives, motion budget, empty/error treatment, a11y notes, anti-AI constraints. If a consumed `kind: design` contract exists, **cite and align to it** — do not reinvent. Point frontend tickets' Spec pointers at the relevant ui-spec sections.
 
-7. **Test plan outline.** Which ACs are covered by unit tests vs. end-to-end tests, and what the E2E flows should be.
+7. **Work split.** Produce two explicit, non-overlapping file lists — one for the Backend Engineer, one for the Frontend Engineer. If a file must be touched by both (a shared types file, a route manifest), assign it to exactly one owner and note the other's dependency on it. Overlap here is a bug in your spec. **Megafile check.** For every file in the work split, estimate its projected line count after the feature lands. Any file projected to exceed **400 lines** must be called out explicitly — name the file, state the projected count, and propose a decomposition plan (split into submodules, extract helpers, etc.) before assigning it to an engineer. Do not assign a megafile without a decomposition proposal in this spec.
 
-8. **Sequencing.** What must land first. Where the two engineers can proceed fully in parallel and where one blocks on the other.
+8. **Test plan outline.** Which ACs are covered by unit tests vs. end-to-end tests, and what the E2E flows should be.
 
-### Intair Ontology (optional)
+9. **Sequencing.** What must land first. Where the two engineers can proceed fully in parallel and where one blocks on the other.
 
-If `intair_get_schema` is available as a tool and `INTAIR_BASE_URL` is set, a live knowledge graph is available. Check for it by attempting `intair_get_schema` at the start of your run. If the tool is unavailable or returns `{"error": ...}`, skip all Intair steps silently — never warn the user, never fail.
+10. **Mint the ticket board.** After `spec.md` is written, create the build-phase work packets (skill `run-ticket-board` templates). Prefer **1–3 ACs + disjoint path globs** per ticket; a tiny feature may still be one ticket per role (today’s BE/FE shape).
 
-When Intair is active:
-- Call `intair_ask` with your current task question before acting to surface prior knowledge.
-- Write what you learn and decide so the next agent has a head start.
-- Attribution for every write: `{"actor": "architect", "actor_kind": "agent", "at": "<UTC now>", "basis": "task:<feature-or-program-slug>"}`
+   1. Write `$ARTIFACT_ROOT/board.md` from `.claude/program/schemas/board.template.md`: Destination from the story one-liner/DoD; Notes with pointers to story/spec/research (and `ui-spec.md` when present); empty Done; story Open Questions that are not yet sharp → **Not yet specified**; story Non-goals → **Out of scope**.
+   2. Create ticket files under `$ARTIFACT_ROOT/tickets/<id>-<slug>.md` from `.claude/program/schemas/ticket.template.md` (`T-001`…). Roles: `backend` | `frontend` | `data` | `research` | `decide`. Paste AC Given/When/Then into each ticket so a worker need not load the full story. Ownership globs on each ticket ⊆ that role’s Ownership Boundaries. Frontend tickets that touch UI must Spec-pointer into `ui-spec.md` sections when that file exists.
+   3. **Second pass:** wire `blocked_by` from Sequencing (ids must exist first). Same-role tickets that may run in parallel must have pairwise-disjoint ownership globs.
+   4. Fill the board **Tickets** index table (id, title, role, status `open`, blocked_by). Do not restate ticket bodies on the board.
+   5. Open Questions that **block** implementation and are already sharp → `decide` tickets (not fog). Optional: emit `$ARTIFACT_ROOT/ownership.json` with one owner unit per ticket id.
+   6. Run `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` — fix until OK.
 
-#### Architect-specific Intair writes
+   Nested program features: same layout under `$ARTIFACT_ROOT` (never flat `workstreams/<ws>/board.md`).
 
-**After writing the spec**, for each key technical decision, write a `Decision` node:
-```json
-{
-  "layer": "operational", "type": "Decision",
-  "properties": {"decision_id": "<feature-slug>-decision-<n>", "made_by": "architect", "rationale": "<one sentence>", "summary": "success"},
-  "attribution": {"actor": "architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
-}
-```
-Also record the architect agent run:
-```json
-{
-  "layer": "operational", "type": "Agent",
-  "properties": {"agent_id": "architect", "role": "architect", "status": "done", "task_id": "<feature-slug>"},
-  "attribution": {"actor": "architect", "actor_kind": "agent", "at": "<now>", "basis": "task:<feature-slug>"}
-}
-```
+### Intair (optional)
 
-### Channels — how you raise and answer cross-agent questions
+If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
 
-You can post to and read from the agent channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run). The channel is a **message board, not a chat**: you cannot wait for a reply mid-run — if you are blocked on another team, post one typed message and **end your turn**; the orchestrator routes it, gets the answer, and re-dispatches you with it in context.
+### Channels
 
-Discipline (this matters more than the schema):
-- Post **only** when genuinely blocked, or when you have a decision-relevant heads-up another team must know. Never to chat, agree, narrate progress, or think out loud.
-- If you can proceed against the frozen contract with a stated assumption, **do that** and post a `heads-up` — do not block to ask.
-- One point per message. Reply with `re:` set to the parent. Answer precisely; an ambiguous answer just forces another round.
-- If a **frozen contract** looks wrong, post one `type: contract-change` to `@architect` stating the problem and stop. Do not propose, debate, or agree a new shape with a peer — only the architect, with human approval, changes a contract.
-
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
+Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.
 
 ## 7. Immediate task description or request
 
-Produce the technical spec now. Completion criteria: two engineers who never speak to each other can build from this spec and have the pieces integrate on the first try. The ownership globs are provably disjoint. Every AC and EC from `story.md` maps to at least one line of the spec — verify this explicitly and state the coverage in your final message.
-
-## 8. Thinking step by step
-
-Reason through research, story, expert input, and house conventions before writing the spec. Take a deep breath.
+Produce the technical spec and mint the ticket board now. Completion criteria: ticket-scoped workers who never speak to each other can build from this spec and have the pieces integrate on the first try. The ownership globs are provably disjoint. Every AC and EC from `story.md` maps to at least one line of the spec and to at least one ticket — verify this explicitly; record coverage in the spec / report, not in the Task chat return. When the feature has user-visible UI, `$ARTIFACT_ROOT/ui-spec.md` exists and frontend tickets point at it.
 
 ## 9. Output formatting
 
-Write to `.claude/tmp/spec.md`:
+Task return: `DONE: <artifact-path>[, …]` plus one-line status (include `board.md` and ticket count). Never paste report/story/spec bodies into the Task result.
+
+Write to `$ARTIFACT_ROOT/spec.md`:
 
 ```markdown
 # Technical Spec: <feature>
 Traces to: story.md
 
 ## Approach Summary
-Two paragraphs. What we are building and the one key design decision.
+3–5 bullets. What we are building and the one key design decision.
 
 ## Design Decisions
 | Decision | Chosen | Alternatives rejected | Why |
+Prefer ≤5 rows.
 
 ## Data Model
 ### New / changed tables
-Full DDL-level detail.
+DDL only for **new/changed** objects. Unchanged: `unchanged: see research`.
 ### Migrations
 Forward, backfill, rollback. Backward-compatible: yes/no.
 
 ## API Contract
+Compact TypeScript or JSON Schema fences (not prose essays).
 ### <METHOD /path>
 Serves: AC-1, AC-3
 Auth: ...
-Request: full typed schema
-Response 200: full typed schema
+Request: typed schema fence
+Response 200: typed schema fence
 Errors: 400 / 401 / 404 / 409 / 422 with body shapes
 
 ## Backend Work
-File-by-file. For each: path, new or modified, what it does.
+`path — new|mod — one clause` (one line per file).
 
 ## Frontend Work
-File-by-file. For each: path, new or modified, component props, states handled.
+`path — new|mod — one clause` (props/states in the clause if needed).
+
+## Interaction & Visual Spec
+When user-visible UI: see `$ARTIFACT_ROOT/ui-spec.md` (skill `apply-ux-quality`). When none: `N/A: no user-visible UI`.
 
 ## Shared Contract Files
-Owner: backend | frontend. Path. Contents.
+Owner: backend | frontend. Path. One-line contents summary.
 
 ## Ownership Boundaries
 BACKEND may write only: <glob list>
 FRONTEND may write only: <glob list>
 
 ## Test Plan
-Unit coverage per AC. E2E flows to build.
+Bullets: unit coverage per AC; E2E flows to build.
 
 ## Sequencing and Parallelism
-What blocks what. What runs concurrently.
+Bullets: what blocks what; what runs concurrently.
 
 ## Risks Carried Forward
-From research.md, plus any introduced by this design.
+Bullets from research.md plus any introduced by this design.
 
 ## Expert Input
-Only when a `.claude/tmp/expert-<slug>.md` existed. One row per item it raised.
+Only when a `$ARTIFACT_ROOT/expert-<slug>.md` existed. One row per item it raised.
 | Expert | Item | Reflected in spec at | Or rejected because |
 Omit this section entirely when no expert co-authored.
 ```
 
-## 10. Prefillled response (if any)
+Also write `$ARTIFACT_ROOT/board.md` and `$ARTIFACT_ROOT/tickets/*.md` per Process step 9 (templates under `.claude/program/schemas/`). When user-visible UI exists, also write `$ARTIFACT_ROOT/ui-spec.md` from `.claude/program/schemas/ui-spec.template.md`. Task return must list `spec.md`, `board.md`, the ticket directory, and `ui-spec.md` when present.
 
-N/A.

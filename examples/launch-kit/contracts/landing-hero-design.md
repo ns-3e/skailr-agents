@@ -23,6 +23,7 @@ Artifact shape: markdown artboard specs under the design workstream (`assets/her
 - Design-system components/tokens
 - Copy placement by `launch-copy-blocks` block id
 - Accessibility notes (contrast, alt, focus order)
+- Craft self-check (skill `apply-ux-quality` checklist; anti-AI layout constraints)
 - Eng handoff (components, states, responsive rules)
 
 ## Stub policy

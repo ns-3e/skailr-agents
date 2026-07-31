@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * check-agent-tools.mjs — Claude Code prefers Edit for existing files; Write alone
- * forces full-file rewrites ("No Edit tool available; rewriting the full file…").
- * Fail if any agent tools: or command allowed-tools: lists Write without Edit.
+ * check-agent-tools.mjs — Claude Code tool allowlist hygiene.
+ *
+ * 1. Write without Edit forces full-file rewrites
+ *    ("No Edit tool available; rewriting the full file…").
+ * 2. Commands that can Read should also have Grep and Glob so orchestrators
+ *    do not fall back to Bash find/rg for routine repo search.
  *
  * Usage: node scripts/skailr/check-agent-tools.mjs
  */
@@ -39,12 +42,18 @@ function toolsFromFrontmatter(text, key) {
   return null;
 }
 
-function checkFile(path, key) {
-  const text = readFileSync(path, "utf8");
-  const tools = toolsFromFrontmatter(text, key);
-  if (!tools) return null;
+function checkWriteImpliesEdit(path, key, tools) {
   if (tools.includes("Write") && !tools.includes("Edit")) {
     return `${path}: ${key} lists Write without Edit (${tools.join(", ")})`;
+  }
+  return null;
+}
+
+function checkCommandSearchTools(path, tools) {
+  if (!tools.includes("Read")) return null;
+  const missing = ["Grep", "Glob"].filter((t) => !tools.includes(t));
+  if (missing.length) {
+    return `${path}: allowed-tools has Read but missing ${missing.join(", ")} (${tools.join(", ")})`;
   }
   return null;
 }
@@ -52,21 +61,29 @@ function checkFile(path, key) {
 const failures = [];
 
 for (const path of walkMd(join(ROOT, ".claude", "agents"))) {
-  const err = checkFile(path, "tools");
+  const tools = toolsFromFrontmatter(readFileSync(path, "utf8"), "tools");
+  if (!tools) continue;
+  const err = checkWriteImpliesEdit(path, "tools", tools);
   if (err) failures.push(err);
 }
 
 for (const path of walkMd(join(ROOT, ".claude", "commands"))) {
-  const err = checkFile(path, "allowed-tools");
-  if (err) failures.push(err);
+  const tools = toolsFromFrontmatter(readFileSync(path, "utf8"), "allowed-tools");
+  if (!tools) continue;
+  const errEdit = checkWriteImpliesEdit(path, "allowed-tools", tools);
+  if (errEdit) failures.push(errEdit);
+  const errSearch = checkCommandSearchTools(path, tools);
+  if (errSearch) failures.push(errSearch);
 }
 
 if (failures.length) {
-  console.error("check-agent-tools: Write without Edit (Claude Code will full-rewrite files):\n");
+  console.error("check-agent-tools: allowlist gaps:\n");
   for (const f of failures) console.error(`  ${f}`);
   process.exit(1);
 }
 
 const agentCount = walkMd(join(ROOT, ".claude", "agents")).length;
 const cmdCount = walkMd(join(ROOT, ".claude", "commands")).length;
-console.log(`OK: Write implies Edit on ${agentCount} agent(s) and ${cmdCount} command(s)`);
+console.log(
+  `OK: Write⇒Edit on agents/commands; Read⇒Grep+Glob on commands (${agentCount} agent(s), ${cmdCount} command(s))`,
+);

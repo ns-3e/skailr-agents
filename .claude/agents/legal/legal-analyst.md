@@ -26,26 +26,13 @@ N/A.
 
 N/A.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
-
 ## 7. Immediate task description or request
 
 Execute your role for this dispatch. Satisfy the completion criteria above when present.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
-
 ## 9. Output formatting
+
+Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
 Per-control markdown under your owned paths plus a short analyst note in the workstream folder listing control IDs and sources.
 
-## 10. Prefillled response (if any)
-
-N/A.

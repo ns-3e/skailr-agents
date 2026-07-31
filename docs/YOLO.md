@@ -35,13 +35,13 @@ That is the entire interaction until the final report.
 | ----- | -------- | ----------- |
 | Research | `researcher` | No |
 | Story | `story-writer` | **Skipped** — open questions become explicit assumptions |
-| Spec | `architect` | **Skipped** — auto-approved after ownership / AC checks |
-| Build | `backend-engineer` + `frontend-engineer` (parallel) | No |
+| Spec | `architect` (spec + ticket board) | **Skipped** — auto-approved after ownership / AC / board checks |
+| Build | Frontier tickets → role workers (skill `run-ticket-board`; classic BE∥FE if no board) | No |
 | Verify | `e2e-verifier` | No |
 | Validate | `validator` | No |
 | Docs | `program-documenter` | No |
 
-Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `mode.md` = `yolo`, `progress.md`, reports, channels).
+Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `mode.md` = `yolo`, `progress.md`, reports, channels).
 
 Gated alternative: `/ship-feature` → `/continue-feature` → `/build-feature` (**gated feature intake** → **resume mid-feature** → **approved-spec delivery**).
 
@@ -61,12 +61,12 @@ customer portal to pay, admin dashboard. Prefer TypeScript.
 | Discovery | `program-architect` writes `brief.md` with assumptions (no Q&A loop) | **Skipped** |
 | Plan | Decomposition, ownership, contracts, DAG | **Skipped** — auto-approve + freeze |
 | Foundation | Shared kernel build + freeze | No |
-| Workstreams | Parallel teams (engineering workstreams use feature-YOLO internally) | Mid-build `@human` / contract-change **auto-decided** |
+| Workstreams | Parallel teams; eng WS runs skill `run-feature-queue` (MECE features, each with feature-YOLO + `run-ticket-board` under `workstreams/<ws>/features/<slug>/`) | Mid-build `@human` / contract-change **auto-decided** |
 | Integration | `integration-verifier` | No |
 | Validate | `program-validator` | No |
 | Docs | `program-documenter` | No |
 
-Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md`, `mode.md` = `yolo`, `contracts/`, `ledger.md`, `ownership.json`, channels, workstream reports). A **new** initiative archives prior program state; an incomplete run is never archived on resume.
+Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md` with Features tables, `mode.md` = `yolo`, `contracts/`, `ledger.md` with per-feature cursors, `ownership.json`, channels, `workstreams/<ws>/features/<slug>/`). A **new** initiative archives prior program state; an incomplete run is never archived on resume.
 
 Gated alternative: `/discover` → `/plan-program` → `/build-program` (**VP kickoff / discovery** → **program planning + interface freeze** → **program delivery**).
 
@@ -80,8 +80,8 @@ Claude Code can stop mid-run when usage resets. Skailr survives that via **disk 
 
 | Scope | Cursor on disk | Resume with |
 | ----- | -------------- | ----------- |
-| Feature | `.claude/tmp/progress.md` (+ artifacts) | `/continue-feature`, or re-run `/yolo` with **no new prompt** (or the same request text) |
-| Program | `.claude/program/ledger.md` (+ contracts/channels) | `/continue-program`, or re-run `/yolo-program` with **no new prompt** (or the same request text) |
+| Feature | `$ARTIFACT_ROOT/progress.md` (standalone: `.claude/tmp/`; nested: `workstreams/<ws>/features/<slug>/`) | `/continue-feature`, or re-run `/yolo` with **no new prompt** (or the same request text); nested: `/continue-program` + `run-feature-queue` |
+| Program | `.claude/program/ledger.md` (+ contracts/channels + feature cursors) | `/continue-program`, or re-run `/yolo-program` with **no new prompt** (or the same request text) |
 
 Rules:
 
@@ -91,9 +91,9 @@ Rules:
 - After limits reset: same project directory, then one of the resume commands above.
 - When the run eventually finishes, the final report still lists **Assumptions made** and the validator verdict.
 
-### Mid-slice context handoff
+### Mid-ticket / mid-slice context handoff
 
-Build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may also yield **inside** a build Task when a process-step or tool-round budget hits. They write `.claude/tmp/handoff/<slice>.md` (or `.claude/program/workstreams/<ws>/handoff/<slice>.md`), end with `YIELD: <path>`, and the orchestrator immediately re-dispatches the same role in a **fresh Task** with that handoff — or `/continue-feature` / `/continue-program` picks it up after a session death. Skill: `write-handoff-and-yield`. Consecutive yields per slice are capped at 5.
+Build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may also yield **inside** a build Task when a process-step or tool-round budget hits. They write `$ARTIFACT_ROOT/handoff/<ticket-id>.md` (or legacy `<slice>.md`), end with `YIELD: <path>`, and the orchestrator immediately re-dispatches the same role in a **fresh Task** with that handoff — or `/continue-feature` / `/continue-program` picks it up after a session death. Skills: `write-handoff-and-yield`, `run-ticket-board`, `run-feature-queue`. Consecutive yields per ticket/slice are capped at 5.
 
 ---
 

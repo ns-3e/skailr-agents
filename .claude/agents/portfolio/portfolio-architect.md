@@ -39,26 +39,13 @@ Also follow skill `route-models` for model selection.
 
 You may change portfolio-level shared interfaces only with human approval. Per-program frozen contracts remain owned by each program-architect.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
-
 ## 7. Immediate task description or request
 
 Execute your role for this dispatch. Satisfy the completion criteria above when present.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
-
 ## 9. Output formatting
+
+Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
 Follow any output paths and report shapes described in §4. Prefer writing only to the paths this role owns.
 
-## 10. Prefillled response (if any)
-
-N/A.

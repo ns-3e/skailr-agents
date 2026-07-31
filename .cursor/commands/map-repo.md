@@ -30,7 +30,7 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/repo/model-usage.md` (create if needed). Escalate once on thin orientation or ownership validation failure. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/repo/model-usage.md` (create if needed). Escalate once on thin orientation or ownership validation failure. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
 
 ### Non-negotiable rules
@@ -65,7 +65,7 @@ Invoke `researcher` in **repo mode**. Instruct it to:
 - Honor optional focus lenses from `$ARGUMENTS`.
 - Stay read-only over application code.
 
-**Quality gate:** Confirm `orientation.md` exists and has Stack, Directory Boundaries, and at least two Representative Vertical Slices with real paths. On a non-empty tree, if the map is thin, re-invoke once with a narrower instruction. Do not proceed on a vague map of a non-empty tree.
+**Quality gate:** Confirm `orientation.md` exists and has Stack, Directory Boundaries, and at least two Representative Vertical Slices with real paths. When the repo has UI, confirm Design System / Brand Visuals is filled (or explicitly `none / greenfield`). On a non-empty tree, if the map is thin, re-invoke once with a narrower instruction. Do not proceed on a vague map of a non-empty tree.
 
 Mark `map` complete. Set progress `status: ownership`.
 
@@ -97,7 +97,7 @@ Read-only assessment against `orientation.md` + targeted greps. **No application
 Dispatch in parallel when applicable:
 
 1. **Researcher** — security surface, missing tests on load-bearing paths, obvious inefficiencies / dead paths. Severity suggestions + evidence paths.
-2. **`design-reviewer`** — only if orientation shows UI / design-system surfaces. Accessibility and design-system drift findings only.
+2. **`design-reviewer`** — only if orientation shows UI / design-system surfaces. Accessibility, design-system drift, and craft / anti-AI layout findings only (skill `apply-ux-quality`). Feed Design System / Brand Visuals gaps back into orientation if missing.
 3. **`content-editor`** — only if orientation shows public copy, marketing, or user-facing docs surfaces. Factual/voice issues as findings only (no rewrite pass unless the Task is findings-only).
 
 If a domain agent/team is not present in the pack or the surface does not exist, **skip** and note the skip in findings.
@@ -217,21 +217,11 @@ If Intair is unavailable or errors: write a skip note to `intair-sync.md` and ma
 
 Mark `intair` complete. Final progress `status: confirmed`.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 **Map request:** $ARGUMENTS
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
@@ -241,6 +231,3 @@ Lead with: **Map-repo complete** (or **awaiting confirm** if still at the gate).
 
 Then: pointers to `orientation.md`, `ownership.json`, `findings.md`, `backlog.md`, `map-report.md`, and (if any) `intair-sync.md` and newly minted experts under `.claude/experts/`.
 
-## 10. Prefillled response (if any)
-
-N/A.

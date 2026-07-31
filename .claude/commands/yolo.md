@@ -1,7 +1,7 @@
 ---
 description: Feature delivery without approval gates — full research→build→validate→docs one-shot
 argument-hint: <feature request in plain language>
-allowed-tools: Task, Read, Write, Edit, Bash
+allowed-tools: Task, Read, Grep, Glob, Write, Edit, Bash
 ---
 
 ## 1. Task context
@@ -23,7 +23,13 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry. **Also prepend every Task prompt** with: `Be extremely concise. Sacrifice grammar for the sake of concision.` plus `Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.`
+Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
+
+
+### Artifact root
+
+Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a program (skill `run-feature-queue`), the orchestrator sets `ARTIFACT_ROOT=.claude/program/workstreams/<ws>/features/<slug>` and all paths below are under that root. Prepend every Task prompt with `ARTIFACT_ROOT=<path>`. Ticket board: skill `run-ticket-board` with `ticket-status.mjs --root $ARTIFACT_ROOT`.
+
 
 
 ### YOLO rules (non-negotiable)
@@ -45,7 +51,7 @@ Create `.claude/tmp/` if it does not exist.
    - `$ARGUMENTS` is empty, or
    - `$ARGUMENTS` matches the text in `.claude/tmp/request.md` (trim whitespace), or
    - the user said to continue / resume after usage limits
-3. On resume: keep channels; read `mode.md` (expect `yolo`); jump to the phase named by `next` (and only missing build slices if `partialBuild` is set; pass any `handoffs` into those engineer Tasks). Skip finished phases.
+3. On resume: keep channels; read `mode.md` (expect `yolo`); jump to the phase named by `next` (continue ticket frontier if board exists; else only missing build slices if `partialBuild` is set; pass any `handoffs` into those Tasks). Skip finished phases.
 4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Archive to `.claude/tmp/archive/<timestamp>/`.
 
 On a fresh start:
@@ -57,22 +63,23 @@ On a fresh start:
 
 ### Checkpoint rule
 
-After each phase’s artifact exists and your checks pass, mark that phase `complete` in `progress.md` (and update frontmatter `status` / `updated`) **before** dispatching the next agent. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark backend/frontend slices complete as each report lands; mark `build` complete only after both reports + ownership/channel gates pass. If only one side finished, leave `build` `in_progress` so resume re-dispatches only the missing engineer.
+After each phase’s artifact exists and your checks pass, mark that phase `complete` in `progress.md` (and update frontmatter `status` / `updated`) **before** dispatching the next agent. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark tickets (and slice aggregates) complete as each resolves; mark `build` complete only after the board is complete (or both classic slices) + ownership/channel gates pass. Leave `build` `in_progress` while any ticket is open/claimed so resume continues the frontier.
 
 ### Context handoff (build workers)
 
-Engineers may yield mid-slice to reset context (skill `write-handoff-and-yield`). Paths: `.claude/tmp/handoff/<slice>.md`. Status JSON may include `handoffs`.
+Engineers may yield mid-ticket (or mid-slice) to reset context (skill `write-handoff-and-yield`). Ticket path: `.claude/tmp/handoff/<ticket-id>.md`. Legacy: `.claude/tmp/handoff/<slice>.md`. Status JSON may include `handoffs`.
 
-- **Before** dispatching an engineer: if a handoff exists for that slice, pass it as primary context plus spec/story/research; instruct continue-from-handoff.
-- **After** `YIELD: <path>`: keep slice `in_progress`; immediately re-dispatch the same role in a fresh Task with handoff + spec (+ story/research). Cap consecutive yields per slice at **5**, then surface in the final report / to the human.
-- **On slice complete:** delete/confirm absent handoff file before marking the slice complete.
+- **Before** dispatching: if a handoff exists, pass it as primary context plus ticket + spec (or spec/story/research for legacy); instruct continue-from-handoff.
+- **After** `YIELD: <path>`: keep ticket/`claimed` `in_progress`; immediately re-dispatch the same role in a fresh Task with handoff + ticket + spec. Cap consecutive yields per ticket/slice at **5**, then surface in the final report / to the human.
+- **On ticket/slice complete:** delete/confirm absent handoff file before resolving / marking complete.
 
 ### Setup — expert consult-or-mint (soft, non-blocking)
 
 Run once, before Phase 1. **Never a gate.** Every failure mode here is a skip: a project with no `.claude/experts/` behaves exactly as it did before experts existed, and you never warn the user about an absent roster.
 
 1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes, and carry it forward: the same slugs are used for co-author input and for the gate.
-2. **Mint (trigger T3).** Only when `auto_mint` is true in `.claude/experts/config.json` (missing config means the defaults `gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) **and** an uncovered vertical shows at least `mint_threshold` **independent** signals: a Directory Boundaries entry in `.claude/repo/orientation.md`, two or more same-category `backlog.md` items (one signal total), three or more consults in this run that matched no band (one signal total), or the user naming the vertical in the request. Below threshold, mint nothing. `classification: internal` only, always `maturity: provisional` and `gate: soft`; external and hybrid mint only through an explicit `/mint-expert`. Follow the procedure in `.claude/commands/mint-expert.md` in full (see its "Reuse by the auto-mint triggers" section), with `minted.by: build-consult`, including validation and the delete-the-profile-on-invalid step.
+2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
+
 3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human` and never `type: contract-change` — minting notifies, it does not ask.
 4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
 
@@ -104,27 +111,33 @@ Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print 
 
 **Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`, refreshing `.claude/tmp/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
 
-Invoke the `architect` subagent. It writes `.claude/tmp/spec.md`.
+Invoke the `architect` subagent. It writes `.claude/tmp/spec.md` **and** mints `.claude/tmp/board.md` + `.claude/tmp/tickets/` (Process step 9).
 
 Verify before continuing:
 1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has request shape, response shape, and error cases.
 4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
+5. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once. (If mint is missing entirely, continue with classic BE∥FE fallback in Phase 4.)
+6. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
 
 Optionally write `.claude/tmp/ownership.json` for later enforcement.
 
 Then **auto-approve** the spec. Checkpoint: `spec` → complete. Continue immediately into the build.
 
-### Phase 4 — Parallel build
+### Phase 4 — Parallel build (ticket board)
 
 Create the feature branch if one does not exist: `feature/<slug-from-story-title>`.
 
-Set `build` to `in_progress` in progress.md. Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only invoke slices listed in `partialBuild`; include handoff paths from `handoffs` when present).
+Set `build` to `in_progress` in progress.md.
 
-When both return (after draining yield re-dispatch loops):
-- Read both reports; mark each slice complete in the Build slice table only when the report exists and no handoff remains for that slice.
-- Run `git diff --name-only` and verify no file was touched by both. Merge hazard → stop and report (this is a hard abort, not a human gate).
+**If `$ARTIFACT_ROOT/board.md` exists:** follow skill `run-ticket-board` for the full claim → dispatch → resolve loop (research fan-out, decide/@human, frontier parallel Tasks). Refer to tickets by **title**. On resume, use `ticket-status.mjs --json` / `feature-status` `tickets` + `handoffs` (ticket-id keys under `$ARTIFACT_ROOT/handoff/<id>.md`). Cap 5 yields per ticket.
+
+**Else (legacy fallback):** Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only slices in `partialBuild`; include handoff paths from `handoffs`).
+
+When the board is complete (or both classic slices return, after draining yield loops):
+- Mark Tickets / Build slice rows complete when reports exist and no handoffs remain for those tickets/slices.
+- Run `git diff --name-only` and verify no file was touched by two concurrent writers. Merge hazard → stop and report (hard abort, not a human gate).
 - **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json`). Non-zero → halt.
 - **Channel router** (skill `route-channels`). Run `node scripts/skailr/validate-channels.mjs --tmp`. For open messages, route and re-dispatch as usual. Apply YOLO rules above for `@human` / `contract-change`.
 - Run the full test suite, lint, and typecheck. If red, re-invoke the responsible engineer once. Do not hand a red tree to the verifier if one retry can fix it.
@@ -148,6 +161,8 @@ Authority is computed, never chosen: `binding` requires **all three** of `gate_m
 
 Invoke `validator`. It writes `validation-report.md`. Pass it every verdict file; the validator cites them as evidence in its own sign-off. There is exactly one sign-off role per tier and the expert is not it.
 
+When FE shipped user-visible UI (FRONTEND ownership non-empty or `ui-spec.md` exists): confirm `validation-report.md` includes `## UX Quality (Pass 4)`. Missing → re-invoke validator once with skill `apply-ux-quality`.
+
 Checkpoint: `validate` → complete.
 
 ### Phase 7 — Documentation
@@ -164,23 +179,14 @@ Checkpoint: `docs` → complete; frontmatter `status: complete`.
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it in the final report rather than inventing a pass.
 - YOLO skips **human** gates only. Script gates, ownership disjointness, and honest validation stay on.
 - Keep `progress.md` current at every transition so usage-limit deaths can resume via `/continue-feature` or re-invoking `/yolo` with no new request.
-- Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as slice completion.
+- Honor mid-ticket/slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as ticket/slice completion.
+- When a board exists, follow skill `run-ticket-board`; narrate tickets by **title**.
 
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
 
 ## 7. Immediate task description or request
 
 **Feature request:** $ARGUMENTS
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
 
 ## 9. Output formatting
 
@@ -190,20 +196,17 @@ Lead with: **YOLO run complete** (gates were skipped).
 
 Then print, in this order:
 
-1. **Verdict** from the validator — SHIP / SHIP WITH FIXES / DO NOT SHIP
-2. **Assumptions made** — bullet list from story + spec (this replaces the gates the user skipped)
-3. **Blocking findings**, in full
-4. **Requirements coverage summary**
-5. **Test results** — unit and E2E totals
-6. **Files changed** — grouped by backend and frontend
-7. **Quiet skips** — every TODO, ignore, and stub introduced
-8. **Documentation** — changelog / docs touched
-9. **Experts** — which were consulted, anything minted this run (slug, basis, advisory until promoted), and every verdict with its authority. Omit this section entirely when no expert was involved
-10. **Channel transcript** — pointer to `.claude/tmp/channels/feature.md` and any orchestrator `decision` notes
-11. **Recommended next action** — one sentence
+1. **Verdict** — SHIP / SHIP WITH FIXES / DO NOT SHIP (one line)
+2. **Assumptions** — bullets from story + spec (paths if long)
+3. **Blocking findings** — one line each (`id | location | owner | fix`); full text only if ≤3 blockers or the user asks. Always include path to `validation-report.md` (or program equivalent)
+4. **Coverage** — one line (`All AC/EC pass` or count of gaps)
+5. **Tests** — unit + E2E totals
+6. **Files changed** — counts by slice, or path to engineer reports
+7. **Quiet skips** — paths only; omit if none
+8. **Documentation** — paths touched; omit if none
+9. **Experts** — slugs consulted/minted; omit if none
+10. **Channels** — pointer to channel file only
+11. **Next action** — one sentence
 
-Offer to fix blocking findings and re-run verify/validate, or to open the PR.
+Offer to fix blockers and re-run verify/validate, or to open the PR.
 
-## 10. Prefillled response (if any)
-
-N/A.

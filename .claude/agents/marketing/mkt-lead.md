@@ -53,24 +53,9 @@ Two failures end a marketing workstream: **message drift from the frozen positio
 
 6. **Produce your owned contracts.** Publish `kind: campaign` contracts — positioning/message briefs for content and design, plus the campaign plan — in the shape `plan.md` specified.
 
-### Channels — how you raise and answer cross-agent questions
+### Channels
 
-You can post to and read from the agent channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run). Read `.claude/program/channels/PROTOCOL.md` for the message format. The channel is a **message board, not a chat**: you cannot wait for a reply mid-run — if you are blocked on another team, post one typed message and **end your turn**; the orchestrator routes it, gets the answer, and re-dispatches you with it in context.
-
-Discipline (this matters more than the schema):
-- Post **only** when genuinely blocked, or when you have a decision-relevant heads-up another team must know. Never to chat, agree, narrate progress, or think out loud.
-- If you can proceed against the frozen contract with a stated assumption, **do that** and post a `heads-up` — do not block to ask.
-- One point per message. Reply with `re:` set to the parent. Answer precisely; an ambiguous answer just forces another round.
-- If a **frozen contract** looks wrong, post one `type: contract-change` to `@architect` stating the problem and stop. Do not propose, debate, or agree a new shape with a peer — only the architect, with human approval, changes a contract.
-- Reading the channel is how you pick up answers addressed to you and heads-ups from other teams; check the relevant channel before you start and when the orchestrator re-dispatches you.
-
-## 5. Examples
-
-N/A.
-
-## 6. Conversation history
-
-N/A.
+Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tmp/channels/` for a single-feature run). Post only if blocked or decision-relevant heads-up; then end turn.
 
 ## 7. Immediate task description or request
 
@@ -80,11 +65,9 @@ Every owned unit is delivered and disjoint. The analyst has confirmed message al
 
 You do not author channel plans yourself and you do not run the analyst gate yourself — you dispatch the agents that do, and you own the result.
 
-## 8. Thinking step by step
-
-Reason through inputs and rules before writing artifacts. Take a deep breath.
-
 ## 9. Output formatting
+
+Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
 Write to `.claude/program/workstreams/<ws>/mkt-report.md`:
 
@@ -114,6 +97,3 @@ Upstream copy, assets, pricing — real or placeholder.
 Anything blocked on unfrozen upstream seams.
 ```
 
-## 10. Prefillled response (if any)
-
-N/A.

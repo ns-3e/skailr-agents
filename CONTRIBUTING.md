@@ -58,7 +58,7 @@ See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md) for profiles (`economy` / `ba
 
 ## Adding a command
 
-1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed). If `allowed-tools` includes `Write`, also include `Edit` (Claude Code surgical edits). Verify with `npm run check:agent-tools`.
+1. Create `.claude/commands/<name>.md` with `description` (and `argument-hint` / `allowed-tools` as needed). Standard orchestrator allowlist: `Task, Read, Grep, Glob, Write, Edit, Bash`. If you include `Write`, include `Edit`; if you include `Read`, include `Grep` and `Glob`. Verify with `npm run check:agent-tools`.
 2. Write the body using the 10-step prompt structure above (orchestrator identity → §1; rules/phases → §4; `$ARGUMENTS` → §7; final report → §9 + concision).
 3. Add `"<name>": "<tier>"` to the `COMMANDS` map in `scripts/remirror.sh` (`workstream` | `program` | `portfolio`). Without this, remirror still mirrors the Cursor file from the glob but **omits** the command from `manifest.json`.
 4. Append the stem to `PACKAGED_COMMANDS` in `install.sh` and `$PackagedCommands` in `install.ps1` (Cursor install uses an allowlist; Claude copies all `*.md`).
