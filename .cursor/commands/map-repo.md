@@ -165,43 +165,17 @@ Runs **only after** the confirm gate, alongside the optional Intair sync. This i
 
 It sits after the gate deliberately. The human has already seen the orientation and backlog that justify a mint in the gate report, which satisfies "notify" without asking a command that already has one gate to grow another.
 
-### Preconditions (skip silently if any fails)
+Follow skill `consult-or-mint` with:
 
-1. `.claude/experts/config.json` has `auto_mint` true. A **missing** config means all defaults (`gate_mode: soft`, `auto_mint: true`, `roster_cap: 7`, `mint_threshold: 2`) and is the normal state of a project that has never minted.
-2. The `/mint-expert` command exists in this project. If it does not, skip and note the skip.
-3. The baseline was confirmed. Never mint on a revision loop or a blocked run.
+- `mode: consult-and-mint`
+- `trigger: map-repo`
+- `request: .claude/repo/request.md`
+- `evidence: orientation.md`, `backlog.md`, `findings.md`
+- `carry_to: .claude/repo/progress.md` Notes
 
-### Signal counting
+Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip mint evaluation. Preconditions inside the skill (`auto_mint`, mint command present, validator present) still apply; degrade without user-facing chatter about an absent roster.
 
-A vertical qualifies only with at least `mint_threshold` (default 2) **independent** signals. Independent means different sources:
-
-| Qualifying signal | Counts as |
-| ----------------- | --------- |
-| A Directory Boundaries entry in `orientation.md` for a distinct subsystem | 1 |
-| Two or more `backlog.md` items sharing a category | 1 total, not one each |
-| Three or more consults in this run that matched no band | 1 total |
-| An explicit mention of the vertical in `.claude/repo/request.md` | 1 |
-
-Below threshold, **mint nothing and propose nothing**. You may post a single `heads-up` naming the near-miss vertical, and that is all.
-
-### What may be minted here
-
-`classification: internal` **only**, always `maturity: provisional` and `gate: soft`. External and hybrid experts require a scout research artifact and mint only through an explicit `/mint-expert`. A provisional expert can advise and co-author immediately and can never block.
-
-### Procedure
-
-For each qualifying vertical, follow the mint procedure in `.claude/commands/mint-expert.md` exactly (see its "Reuse by the auto-mint triggers" section), in order, abandoning at the first failure, with `minted.by: map-repo`: resolve the slug (`-expert` suffix required; abort on collision), create `.claude/experts/` lazily if absent, write the profile from `.claude/program/schemas/expert-profile.template.md` with a non-empty `## Known limits`, validate with `node scripts/skailr/check-experts.mjs`, **delete the profile if validation fails**, regenerate `registry.md`, append the durable log line, notify, then check the roster cap. Do not invent a shorter path: a roster must never contain an invalid profile, even transiently.
-
-Sources for an internal expert minted here are `.claude/repo/orientation.md`, `findings.md`, and the real repo paths the boundary entry names.
-
-### Notification (both parts, neither is a gate)
-
-1. A `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` or `.claude/program/channels/program.md` if boards exist: `Minted <slug> (internal, provisional) via map-repo. Basis: <signals>. Profile: .claude/experts/profiles/<slug>.md. Advisory only until promoted.` Never `to: @human` and never `type: contract-change` — either would halt the pipeline and break "notification, not per-mint approval."
-2. The durable log line in `.claude/experts/registry.md`. Required: channels are per-run and gitignored, so without this the notification does not survive the run.
-
-Exceeding `roster_cap` still mints and adds a consolidation heads-up.
-
-### Report it
+What may be minted: `classification: internal` only, always `provisional` + `gate: soft` (skill enforces). Sources for an internal expert minted here are `.claude/repo/orientation.md`, `findings.md`, and the real repo paths the boundary entry names.
 
 Name every minted expert in the final report with its slug, basis, and profile path, and state plainly that they are advisory until promoted. If nothing was minted, say nothing about it.
 

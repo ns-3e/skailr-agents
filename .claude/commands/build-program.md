@@ -65,7 +65,9 @@ Each team, whatever its domain, runs the same shape internally: plan → paralle
 
 Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the kernel; deliver only its owned units; produce its owned contracts to spec; respect its boundary. Also pass `.claude/program/field-guide.md` (if it exists) to each dispatched agent as startup context — agents should read it before beginning their work and may append entries for non-obvious discoveries they make.
 
-**Expert co-author input (soft, non-blocking).** If `plan.md` recorded an expert band covering a workstream, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: <the workstream>` **concurrently with** that team's lead, and give the lead `.claude/tmp/expert-<slug>.md` as input to its brief. The expert writes only that file: it never edits a workstream-owned unit, which is what keeps the ownership invariant intact, and it is why co-authoring is scoped input the lead incorporates or explicitly rejects rather than direct authorship. Experts are not a team, are never routed a workstream, and never appear in the ownership map. No roster, no matched band, or a `no-expert` return means skip silently.
+**Expert co-author input (soft, non-blocking).** Read `matched:` from the Experts carry-forward note in `plan.md` (skill `consult-or-mint`). If non-empty and a band covers this workstream, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: <the workstream>` **concurrently with** that team's lead, and give the lead `.claude/tmp/expert-<slug>.md` as input to its brief. The expert writes only that file: it never edits a workstream-owned unit. Experts are not a team, are never routed a workstream, and never appear in the ownership map. If `matched: none` or a `no-expert` return → skip with **no user-facing mention**.
+
+**Recovery mint (once, Phase B start only).** If `plan.md` Experts note says `matched: none` (or has no Experts note) but orientation + brief now show ≥ `mint_threshold` independent signals for a vertical, follow skill `consult-or-mint` once with `mode: consult-and-mint`, `trigger: build-consult`, `carry_to: plan.md`, then use the updated `matched:` for co-author/gate. Still threshold-gated; never mint on one signal.
 
 As each concurrency group completes, before advancing:
 - **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units. Run `node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json` (and `git diff --name-only` for engineering). A collision is a stop-and-report event, not something to merge through.
@@ -101,7 +103,7 @@ Once all workstreams in the DAG are complete, invoke the `integration-verifier`.
 
 ### Phase D — Program validation
 
-**Expert gate (when a band matched).** Before the program-validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: <the workstream or the aggregate diff>`. It writes `.claude/tmp/expert-verdict-<slug>.md`.
+**Expert gate (when plan.md Experts `matched:` is non-empty).** Before the program-validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: <the workstream or the aggregate diff>`. It writes `.claude/tmp/expert-verdict-<slug>.md`. If `matched: none`, skip with **no user-facing mention** (do not say “no experts registry”).
 
 Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard` in `.claude/experts/config.json`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory` — the shipped default, so under normal configuration nothing an expert says is ever binding.
 
@@ -125,6 +127,7 @@ Run this after validation so the documenter can note anything the validator flag
 - Keep the ledger current at every transition; it is what lets this run across sessions without losing its place.
 - Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as slice completion.
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it rather than papering over it.
+- When the ledger is `complete: true`, follow skill `archive-program-state` (`node scripts/skailr/archive-program.mjs`), then skill `cleanup-scoped-artifacts` (`purge` then `retire`), before the final user report. Archive moves live `.claude/program/` runtime to `archive/<ts>-<slug>/`. Own agent worktree only for cleanup; no-op on shared checkout. Never archive or retire while incomplete.
 
 
 ## 7. Immediate task description or request
@@ -137,9 +140,9 @@ Execute this command for the current request. Follow resume/setup rules in §4.
 ### Final report to the user
 
 1. **Verdict** — one line
-2. **Blocking findings** — one line each; full text only if ≤3 or user asks; path to program-validation-report
+2. **Blocking findings** — one line each; full text only if ≤3 or user asks; path to program-validation-report (under archive if already archived)
 3. **Workstream status** — one line per WS
 4. **Contracts / integration** — pass/fail + paths
-5. **Quiet skips / docs / experts / channels** — pointers; omit empty
+5. **Quiet skips / docs / experts / channels / archive** — pointers; omit empty; one line for archive path when archived
 6. **Next action** — one sentence
 

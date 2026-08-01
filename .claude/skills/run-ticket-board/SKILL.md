@@ -64,7 +64,7 @@ For each frontier `role: decide` ticket: claim, post `type: blocker` (or questio
 node scripts/skailr/ticket-status.mjs resolve --id <id> --gist "<one-line gist>" --root <ARTIFACT_ROOT>
 ```
 
-Delete `handoff/<id>.md` if present. Update progress **Tickets** table / Notes under `$ARTIFACT_ROOT/progress.md`.
+Delete `handoff/<id>.md` if present. Workers already ran `cleanup-scoped.mjs purge` on their `DONE:` (own agent worktree caches only; no-op on shared checkout). Do **not** purge sibling worktrees or the main repo `target/`. Update progress **Tickets** table / Notes under `$ARTIFACT_ROOT/progress.md`.
 9. Recompute frontier. Graduate fog from board **Not yet specified** into new ticket files when a resolution made a question sharp (create file, then wire `blocked_by`, refresh board Tickets table). Rule mis-scoped tickets `out-of-scope` (update frontmatter + board **Out of scope**; do not add to **Done**). Ticket `blocked_by` may only reference tickets on **this** board — never feature IDs or other roots.
 10. Repeat until `ticket-status` reports `complete: true`.
 

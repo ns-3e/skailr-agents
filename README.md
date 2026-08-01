@@ -158,7 +158,7 @@ Typical flow:
 
 State lives under `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`, channels) so you can resume across sessions. Prefer a clean working tree before build.
 
-**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. Engineering ticket handoffs live under `.claude/program/workstreams/<ws>/features/<slug>/handoff/` and are continued automatically.
+**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. When a program finishes (`ledger` `status: complete`), skill `archive-program-state` moves live `.claude/program/` runtime into `archive/<ts>-<slug>/` automatically so the next `/discover` or `/yolo-program` starts clean. Engineering ticket handoffs live under `.claude/program/workstreams/<ws>/features/<slug>/handoff/` and are continued automatically.
 
 | Command | What it does | Business equivalent |
 | ------- | ------------ | ------------------- |
@@ -424,7 +424,7 @@ Teams are process roles and stay generic on purpose. A **minted expert** is the 
 - **Experts are not a team.** They are never routed a workstream and never appear in an ownership map. They advise, co-author as scoped input, and gate as evidence a sign-off role cites.
 - **Every claim cites a source.** Profiles carry both industry and repo depth, and `scripts/skailr/check-experts.mjs` validates each one; an invalid profile never reaches the roster.
 - **Soft by default.** A fresh expert is `provisional` and can never block. Promotion to `established` needs explicit human action.
-- **The mechanism ships; the roster is yours.** `install.sh` never touches `.claude/experts/`, so an upgrade leaves your roster byte-identical. A project with no roster behaves exactly as it did before experts existed.
+- **The mechanism ships; the roster is yours.** `install.sh` never touches `.claude/experts/`, so an upgrade leaves your roster byte-identical. A missing roster is an empty consult result, not a reason to skip auto-mint evaluation (skill `consult-or-mint`).
 
 Plain chat routes a question to an expert only when **exactly one** band covers it; zero or two matches fall through to the researcher. Full guide: [docs/experts.md](docs/experts.md).
 
@@ -736,6 +736,10 @@ The team posts `type: contract-change` to `@architect` and stops. The program-ar
 ### Can I add my own domain team?
 
 Yes. Mirror a built domain team under `.claude/agents/<prefix>/`, register a sharp `route-when` in [registry.md](.claude/teams/registry.md), set `status: built`. Design, marketing, and finance are already built as references alongside content.
+
+### Do agents clean up build caches / worktrees?
+
+Yes, when a run finishes successfully. For **programs**, skill `archive-program-state` first moves live `.claude/program/` runtime into `archive/<ts>-<slug>/`. Then skill `cleanup-scoped-artifacts` + `scripts/skailr/cleanup-scoped.mjs` purge allowlisted caches (`target/`, `node_modules/`, `.venv/`, …) **only inside the current agent worktree** under `.claude/worktrees/<id>/`, then retire that worktree. Shared main-checkout caches are left alone (purge is a no-op there). Incomplete `/continue-*` runs never archive or retire. See [docs/YOLO.md](docs/YOLO.md#scoped-worktree-cleanup).
 
 ### Does this work only for software engineering?
 

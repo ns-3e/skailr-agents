@@ -29,16 +29,13 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 
 Confirm `.claude/program/brief.md` exists and was user-confirmed. If it does not, stop and direct the user to run `/discover` first.
 
-### Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult (existing only)
 
-Run once, before decomposition. **Never a gate.** A project with no `.claude/experts/` plans exactly as it did before experts existed.
+Before decomposition. **Never a gate.** Follow skill `consult-or-mint` with `mode: consult-only`, `carry_to: plan.md` (or a staging note until plan exists). Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip later mint evaluation. Experts are not a team: never route a workstream to an expert, never give one an ownership glob, and never add one to `.claude/teams/registry.md`.
 
-1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Note which non-`deprecated` bands cover parts of this brief and record them in `plan.md` so `/build-program` knows which domain leads get expert input.
-2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
+### After brief — expert consult-or-mint (T3)
 
-3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/program/channels/program.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change` — either would halt the program, and minting notifies rather than asks.
-4. **Experts are not a team.** Never route a workstream to an expert, never give one an ownership glob, and never add one to `.claude/teams/registry.md`. They advise, co-author as scoped input, and gate as evidence. See the "Experts are not a team" section of the team registry.
-5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+Brief is already confirmed. Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: .claude/program/brief.md`, `evidence: brief + .claude/repo/orientation.md` / backlog if present, `carry_to: plan.md` (Experts note so `/build-program` knows which domain leads get expert input). Re-consult after any mint.
 
 ### Decomposition
 

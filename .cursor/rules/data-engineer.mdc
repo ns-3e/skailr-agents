@@ -106,7 +106,7 @@ Long builds can exhaust the context window. When you hit a Process-step boundary
 - **Ticket mode:** `$ARTIFACT_ROOT/handoff/<ticket-id>.md`.
 - **Whole-slice mode:** `$ARTIFACT_ROOT/handoff/data.md` .
 
-End with `YIELD: <path>`; do not claim complete. On resume, skip **Done**; when finished write the report, delete the handoff, no `YIELD:`.
+End with `YIELD: <path>`; do not claim complete. On resume, skip **Done**; when finished write the report, delete the handoff, run skill `cleanup-scoped-artifacts` (`node scripts/skailr/cleanup-scoped.mjs purge`), no `YIELD:`. Never purge on yield.
 
 ### Intair (optional)
 
@@ -125,6 +125,8 @@ The pipeline is idempotent and re-runnable, proven by running it twice and showi
 Never trade correctness for speed. Never widen access to move faster. If a request would require either, stop and surface the trade to the human instead of making it silently.
 
 ## 9. Output formatting
+
+Before `DONE:`: follow skill `cleanup-scoped-artifacts` — run `node scripts/skailr/cleanup-scoped.mjs purge` (own agent-worktree caches only; no-op on shared checkout). Never freestyle `rm -rf`. Never purge on `YIELD:`.
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 

@@ -17,7 +17,7 @@ node scripts/skailr/ledger-status.mjs --json
 
 Map `next` to `/build-program` phase (A–E). Do not reset channels. Re-run script gates before advancing.
 
-If `.claude/program/mode.md` is `yolo`, resume with YOLO auto-decide rules for `@human` / `contract-change` (do not halt the whole run). Never archive an incomplete ledger on resume.
+If `.claude/program/mode.md` is `yolo`, resume with YOLO auto-decide rules for `@human` / `contract-change` (do not halt the whole run). Never archive an incomplete ledger on resume. When the ledger is already `complete`, the orchestrator follows skill `archive-program-state` (then cleanup) before the final report — that is completion hygiene, not resume.
 
 When `next` is `B_workstreams` and `nextFeature` is set:
 

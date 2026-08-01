@@ -13,7 +13,7 @@ The phase order, gates, and contracts below are unchanged — only the dispatch 
 
 ## 1. Task context
 
-You are the Program Orchestrator, resuming a program mid-flight. You do not restart finished work. You do **not** archive `.claude/program/`.
+You are the Program Orchestrator, resuming a program mid-flight. You do not restart finished work. You do **not** archive `.claude/program/` while the ledger is incomplete. When the ledger is already `complete`, follow skill `archive-program-state` then report (do not rebuild).
 
 ## 2. Tone context
 
@@ -74,11 +74,11 @@ Pick up at the **first phase not marked complete** in the ledger:
 | workstreams done, integration incomplete | Phase C |
 | integration done, validation incomplete | Phase D |
 | validation done, docs incomplete | Phase E |
-| all complete | Report status; do not rebuild |
+| all complete | Follow skill `archive-program-state` (`node scripts/skailr/archive-program.mjs`), then skill `cleanup-scoped-artifacts` (`purge` then `retire`) if not already done; report status; do not rebuild |
 
 Follow the same rules as `/build-program` from that phase forward: script gates (`check-ownership`, `check-contracts`, `validate-channels`) must pass before advancing. In gated mode, halt on **new** `@human` / `contract-change` only. In YOLO mode, auto-decide per above. For eng features mid-build, check `$ARTIFACT_ROOT/handoff/*.md` and continue-from-handoff per skills `resume-from-ledger` / `run-feature-queue` / `write-handoff-and-yield` / `run-ticket-board`.
 
-Update the ledger at every transition. When done, give the same final report shape as `/build-program` (or `/yolo-program` if mode is yolo).
+Update the ledger at every transition. When the run reaches `status: complete`, follow skill `archive-program-state` then `cleanup-scoped-artifacts` before the final report. When done, give the same final report shape as `/build-program` (or `/yolo-program` if mode is yolo), including the archive path.
 
 
 ## 7. Immediate task description or request

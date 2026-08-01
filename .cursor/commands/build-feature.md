@@ -88,14 +88,14 @@ Checkpoint: `verify` → complete.
 
 ### Phase 6 — Validation
 
-**Expert gate (only if an earlier phase matched a band — check `progress.md` Notes and `.claude/experts/registry.md`).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md`.
+**Expert gate (only if progress Notes Experts `matched:` is non-empty — read that note, not “does registry exist?”).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md`. If `matched: none`, skip with **no user-facing mention**.
 
 Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard` in `.claude/experts/config.json`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory` — the shipped default.
 
 - `advisory` + `fail` → record the finding, post a `heads-up`, and **continue**. A soft-gate failure is a finding, not a halt.
 - `binding` + `fail` → halt in the `/map-repo`-confirm-gate shape: surface it and end your turn.
 
-No roster, no matched band, or a `no-expert` return all mean skip this step silently.
+A `no-expert` return means skip this step silently.
 
 Invoke `validator`. It reads everything including the raw diff and writes `validation-report.md`. Pass it every verdict file; it cites them as evidence in its own sign-off rather than deferring to them. There is exactly one sign-off role per tier.
 
@@ -109,6 +109,17 @@ Invoke `program-documenter`. It reads `story.md`, `spec.md`, the frozen API cont
 
 Checkpoint: `docs` → complete; frontmatter `status: complete`.
 
+### Scoped cleanup (complete runs only)
+
+When `progress.md` is `complete: true`, follow skill `cleanup-scoped-artifacts`:
+
+```bash
+node scripts/skailr/cleanup-scoped.mjs purge
+node scripts/skailr/cleanup-scoped.mjs retire
+```
+
+Own agent worktree only; no-op on shared checkout. Never while incomplete. Never freestyle `rm -rf`.
+
 ### Rules for you as orchestrator
 
 - Never write application code yourself. If something needs fixing, dispatch the agent that owns those files.
@@ -118,6 +129,7 @@ Checkpoint: `docs` → complete; frontmatter `status: complete`.
 - Keep `progress.md` current so mid-run usage limits can resume via `/continue-feature`.
 - Honor mid-ticket/slice `YIELD:` handoffs (skill `write-handoff-and-yield`): re-dispatch with a fresh Task; never treat a yield as completion.
 - When a board exists, follow skill `run-ticket-board`; narrate tickets by **title**.
+- After a complete run: skill `cleanup-scoped-artifacts` (purge then retire) before the final user report.
 
 
 ## 7. Immediate task description or request

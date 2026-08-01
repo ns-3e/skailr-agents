@@ -54,15 +54,9 @@ Create `.claude/tmp/` if it does not exist.
 
 ### Setup — expert consult-or-mint (soft, non-blocking)
 
-Run once, before the size gate. **Never a gate**, and kept cheap: a patch must stay cheaper than `/yolo`.
+Run once, before the size gate. **Never a gate**, and kept cheap: a patch must stay cheaper than `/yolo`. Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: .claude/tmp/patch-request.md`, `carry_to: patch-report.md` (one-line / Experts note). Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip mint evaluation. A single localized fix is usually one signal → mint nothing. Never warn the user about an absent roster.
 
-1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). If exactly one non-`deprecated` row's `route-when` covers this ask, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/patch-request.md`, and pass the resulting `.claude/tmp/expert-<slug>.md` to the owning engineer alongside the request. Two or more matches mean no expert route: note it and continue.
-2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false. A single localized fix is one signal → usually mint nothing.
-
-3. **Notify.** A mint posts one `type: heads-up` to `@all` on the run's channel board if one exists, and always appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
-4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally. Never warn the user about an absent roster.
-
-Record the outcome in one line of `patch-report.md`.
+If carry-forward `matched:` is exactly one slug, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/patch-request.md`, and pass `.claude/tmp/expert-<slug>.md` to the owning engineer. Two or more matches, or `none`, mean no expert co-author: continue with **no user-facing mention**.
 
 ### Size gate
 
@@ -114,6 +108,7 @@ Invoke `program-documenter` in **reconcile** mode against the patch diff. Prefer
 - Never suppress a gate failure to look clean.
 - Keep patch cheaper than `/yolo` — no full research → story → spec → validate unless size-gated upward.
 - If any agent output misses its contract, re-invoke once; if it fails twice, surface it in the final report.
+- After the patch finishes successfully, follow skill `cleanup-scoped-artifacts` (`purge` then `retire`) before the final user report. Own agent worktree only; no-op on shared checkout. Never freestyle `rm -rf`.
 
 
 ## 7. Immediate task description or request

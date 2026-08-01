@@ -35,7 +35,15 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 
 ### Setup
 
-Create `.claude/program/` and its subdirectories if absent: `contracts/`, `channels/` (with `PROTOCOL.md` and an empty `program.md` board — copy from the tracked templates under `.claude/program/channels/` if present), and a `workstreams/` directory. If a previous program's artifacts are present, confirm with the user whether to archive them to `.claude/program/archive/<timestamp>/` before starting — never blend two initiatives' state.
+Create `.claude/program/` and its subdirectories if absent: `contracts/`, `channels/` (with `PROTOCOL.md` and an empty `program.md` board — copy from the tracked templates under `.claude/program/channels/` if present), and a `workstreams/` directory.
+
+**Prior program state (never blend two initiatives):**
+
+1. If live runtime is present and the ledger is `complete` (or missing but runtime files remain) → follow skill `archive-program-state` (`node scripts/skailr/archive-program.mjs`) with **no** user confirm.
+2. If the ledger is incomplete and `$ARGUMENTS` is empty / matches `request.md` / the user said continue → stop and direct them to `/continue-program` (or `/yolo-program` with no new prompt). Do **not** archive.
+3. If the ledger is incomplete and `$ARGUMENTS` is a clearly new initiative (or the user says start over) → follow skill `archive-program-state` with `--force` (`node scripts/skailr/archive-program.mjs --force`). Do not ask with a “still sitting in `.claude/program/`” prompt.
+
+Never freestyle `mv` / `rm` of program state.
 
 Write the raw request verbatim to `.claude/program/request.md`.
 
@@ -43,7 +51,7 @@ Write the raw request verbatim to `.claude/program/request.md`.
 
 Prefer `.claude/repo/orientation.md` when present (from `/map-repo`) so the architect's questions are grounded in a confirmed baseline. Else if the initiative clearly touches an existing codebase, invoke the `researcher` subagent for a fast orientation pass into `.claude/tmp/research.md`. Keep this lightweight — it informs the questions, it is not the full per-feature research (that happens inside each workstream later). If `.claude/repo/ownership.json` exists, mention it to the architect as a draft path-ownership hint only.
 
-**Optional expert consult (advise only, non-blocking).** If `.claude/experts/registry.md` exists and exactly one non-`deprecated` row's `route-when` covers the initiative, dispatch `expert` with `mode: advise` and pass its answer to the architect so the clarifying questions are grounded in domain depth. Two or more matches mean no expert route. **Discovery never mints** — minting has exactly three triggers and this is not one of them; `/plan-program` handles the consult-or-mint step. A missing roster is the normal state and is never mentioned to the user.
+**Optional expert consult (advise only, non-blocking).** Follow skill `consult-or-mint` with `mode: consult-only` against the initiative. If exactly one non-`deprecated` band covers it, dispatch `expert` with `mode: advise` and pass its answer to the architect. Two or more matches, or none, mean no expert route. **Discovery never mints** — minting has exactly three triggers and this is not one of them; `/plan-program` handles consult-and-mint. A missing roster is the normal state and is never mentioned to the user.
 
 ### Discovery
 

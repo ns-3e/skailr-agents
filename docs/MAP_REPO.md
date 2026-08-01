@@ -24,7 +24,7 @@ Plain chat with onboard / brownfield / “map this repo” signals routes here v
 4. **Backlog** — ranked items with suggested `/patch`, `/yolo`, or `/yolo-program` → `backlog.md` + draft `map-report.md`
 5. **Confirm** — human gate (like `/discover`); revise or remap if needed
 6. **Intair** (optional) — deliberate writes via skill `call-intair`; skip if unavailable → `intair-sync.md`
-7. **Expert auto-mint** (internal, post-confirm) — when `auto_mint` is on and a vertical has enough independent signals, mints **internal** experts into `.claude/experts/` using the same procedure as [`/mint-expert`](experts.md); notifies via heads-up + durable log; never a second gate
+7. **Expert auto-mint** (internal, post-confirm) — skill `consult-or-mint` with `trigger: map-repo`. When `auto_mint` is on and a vertical has enough independent signals, mints **internal** experts into `.claude/experts/` using the same procedure as [`/mint-expert`](experts.md); notifies via heads-up + durable log; never a second gate. Empty roster does not skip mint evaluation.
 
 Resume from incomplete `.claude/repo/progress.md` by re-entering `/map-repo` (empty args or “continue”).
 

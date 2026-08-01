@@ -121,9 +121,23 @@ There are exactly **three** auditable triggers and no fourth. There is no ambien
 | --- | --- | --- | --- |
 | T1 explicit | `/mint-expert <topic> [internal\|external\|hybrid]` | Any | `mint-expert` |
 | T2 baseline | The `/map-repo` phase after its human-confirm gate | `internal` only | `map-repo` |
-| T3 build setup | The consult-or-mint step in `/yolo`, `/yolo-program`, `/ship-feature`, `/patch`, `/plan-program` | `internal` only | `build-consult` |
+| T3 build setup | Skill `consult-or-mint` in `/yolo`, `/yolo-program`, `/ship-feature`, `/patch`, `/plan-program` (and recovery in `/build-program`) | `internal` only | `build-consult` |
 
-T2 and T3 run the identical nine-step procedure defined in `.claude/commands/mint-expert.md`. They fire only when `auto_mint` is true **and** the vertical shows at least `mint_threshold` (default 2) **independent** signals. Qualifying signals: a Directory Boundaries entry in `.claude/repo/orientation.md`; two or more `backlog.md` items sharing a category (one signal, not two); three or more consults in one run that matched no band (one signal); an explicit human mention of the vertical.
+Callers follow skill `consult-or-mint`. That skill owns consult → optional mint eval → mint → **re-consult** → carry-forward of matched slugs. Co-author and gate read the carry-forward note, never “does registry exist?”
+
+**Empty roster ≠ skip mint.** A missing `.claude/experts/` or `registry.md` means zero bands matched on consult. It does **not** skip mint evaluation. Narrating “no experts registry” to the user is a bug; silence is required.
+
+T2 and T3 run the identical nine-step procedure in `.claude/commands/mint-expert.md`. They fire only when `auto_mint` is true **and** the vertical shows at least `mint_threshold` (default 2) **independent** signals:
+
+| Qualifying signal | Counts as |
+| --- | --- |
+| Directory Boundaries entry in `.claude/repo/orientation.md` for that vertical | 1 |
+| ≥2 `backlog.md` items sharing a category for that vertical | 1 total |
+| Explicit human mention of the vertical in the active request | 1 |
+| Researcher/architect artifact names that vertical against concrete repo paths (`research.md` Prior Art, or brief/plan citing real paths) | 1 |
+| ≥3 consult attempts in this run that found no band for the same vertical | 1 total |
+
+**Timing:** T3 does not mint at cold start with no evidence. Feature YOLO consults existing experts before research, then runs `consult-and-mint` after research (before story). Program paths mint after the brief exists. `/patch` evaluates in one cheap setup step and usually stays below threshold (one signal).
 
 Below threshold, a run mints nothing and may post a single heads-up about the near miss. A one-signal vertical is not a weak mint; it is no mint. Most `/patch` runs mint nothing, which is the expected outcome.
 
@@ -331,6 +345,7 @@ The roster is **not gitignored**. It is git-tracked, consumer-owned, and agent-m
 | What | Where |
 | --- | --- |
 | Mint procedure, lifecycle forms | `.claude/commands/mint-expert.md` |
+| Consult + auto-mint orchestration | `.claude/skills/consult-or-mint/SKILL.md` |
 | Consult protocol, three modes | `.claude/agents/experts/expert.md` |
 | External research and refusal rules | `.claude/agents/experts/expert-scout.md` |
 | Maintenance operations | `.claude/skills/curate-expert/SKILL.md` |

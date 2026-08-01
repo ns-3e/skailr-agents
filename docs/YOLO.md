@@ -19,7 +19,7 @@ Prefer a clean working tree (or commit WIP first). Feature YOLO uses `feature/<s
 
 YOLO still respects the active **model routing** profile (`.claude/model-routing.json`) and escalate-on-retry via skill `route-models` — see [MODEL_ROUTING.md](MODEL_ROUTING.md).
 
-When a project has (or should grow) domain depth, YOLO and related builds run a **consult-or-mint** setup against `.claude/experts/` before story/spec: matching experts co-author as scoped input and may soft-gate at validate. Explicit mint/curate: [`/mint-expert`](experts.md). Guide: [experts.md](experts.md).
+When a project has (or should grow) domain depth, YOLO and related builds follow skill `consult-or-mint`: consult existing experts early, then (after research or brief evidence) evaluate T3 auto-mint, re-consult, and carry matched slugs into co-author and soft-gate. An empty roster is normal and is **not** a reason to skip mint evaluation; do not narrate “no experts registry” to the user. Explicit mint/curate: [`/mint-expert`](experts.md). Guide: [experts.md](experts.md).
 
 ---
 
@@ -66,7 +66,7 @@ customer portal to pay, admin dashboard. Prefer TypeScript.
 | Validate | `program-validator` | No |
 | Docs | `program-documenter` | No |
 
-Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md` with Features tables, `mode.md` = `yolo`, `contracts/`, `ledger.md` with per-feature cursors, `ownership.json`, channels, `workstreams/<ws>/features/<slug>/`). A **new** initiative archives prior program state; an incomplete run is never archived on resume.
+Artifacts: `.claude/program/` (`request.md`, `brief.md`, `plan.md` with Features tables, `mode.md` = `yolo`, `contracts/`, `ledger.md` with per-feature cursors, `ownership.json`, channels, `workstreams/<ws>/features/<slug>/`). When the ledger reaches `complete`, skill `archive-program-state` moves live runtime to `.claude/program/archive/<ts>-<slug>/` automatically (before worktree cleanup). A **new** initiative also archives prior state via the script (`--force` if incomplete); an incomplete run is never archived on resume.
 
 Gated alternative: `/discover` → `/plan-program` → `/build-program` (**VP kickoff / discovery** → **program planning + interface freeze** → **program delivery**).
 
@@ -111,6 +111,10 @@ Build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may als
 Read the final report carefully — especially **Assumptions made** and the validator verdict. Those replace the gates you skipped.
 
 If the verdict is SHIP WITH FIXES or DO NOT SHIP, ask Claude to fix blocking findings and re-run verify/integrate/validate, or fall back to the gated path for a controlled retry.
+
+### Scoped worktree cleanup
+
+When a **program** finishes (`ledger` `status: complete`), orchestrators follow skill `archive-program-state` first (`node scripts/skailr/archive-program.mjs`) to move live `.claude/program/` runtime into `archive/<ts>-<slug>/`, then skill `cleanup-scoped-artifacts`: purge allowlisted build caches inside the **current agent worktree** (`.claude/worktrees/<id>/`), then retire that worktree. Feature runs skip archive-program (feature tmp archive is separate) and only run cleanup. Shared main-checkout `target/` / `node_modules` are **not** deleted. Incomplete `/continue-*` runs never archive or retire. Build workers also `purge` on their own `DONE:` (no-op outside an agent worktree); they never purge on `YIELD:`.
 
 ---
 

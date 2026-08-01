@@ -52,7 +52,9 @@ Do not claim the ticket/slice is complete in the same message.
 1. Read the handoff path first (orchestrator should pass it).
 2. Skip everything under **Done**. Execute **Next steps**, then remaining **Not done**.
 3. Trust **Do-not-reread** unless you must verify a change you are making.
-4. When truly complete: write the normal report (ticket: `$ARTIFACT_ROOT/tickets/<id>-report.md`; legacy: `$ARTIFACT_ROOT/*-report.md`), **delete** the handoff file, and end with `DONE: <report-path>` (do not emit `YIELD:`).
+4. When truly complete: write the normal report (ticket: `$ARTIFACT_ROOT/tickets/<id>-report.md`; legacy: `$ARTIFACT_ROOT/*-report.md`), **delete** the handoff file, run skill `cleanup-scoped-artifacts` (`purge` only), and end with `DONE: <report-path>` (do not emit `YIELD:`).
+
+**Never** run `cleanup-scoped-artifacts` on yield — caches must survive the next Task.
 
 ## Orchestrator note
 

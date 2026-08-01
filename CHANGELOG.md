@@ -4,8 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Auto-archive program state on complete** — skill `archive-program-state` + `scripts/skailr/archive-program.mjs` move live `.claude/program/` runtime into `archive/<ts>-<slug>/` when the ledger reaches `complete` (before worktree cleanup). `/discover` and `/yolo-program` Setup no longer ask the user to archive finished leftovers; incomplete resume still never auto-archives. `--force` covers explicit start-over / new initiative.
+
 ### Changed
 
+- **Expert consult-or-mint** — skill `consult-or-mint` is now the only build/map procedure for matching bands and T3/T2 auto-mint. Empty `.claude/experts/` / `registry.md` is an empty roster for consult, **not** a skip of mint evaluation. T3 runs after research/brief evidence (not at cold start); re-consults after mint; co-author/gate read carried-forward `matched:` slugs and must not narrate “no experts registry.” Signal table adds researcher/architect path evidence; threshold stays 2. Wired through `/yolo`, `/ship-feature`, `/patch`, `/plan-program`, `/yolo-program`, `/build-program`, `/build-feature`, `/map-repo`, `/discover`. Guide: [docs/experts.md](docs/experts.md).
 - **Model routing — balanced profile worker downgrades.** In the `balanced` profile, `backend-engineer`, `frontend-engineer`, `content-writer`, `designer`, and `fin-modeler` move from `opus` to `sonnet`. These worker roles execute against a fully-specified spec produced by an upstream `opus` planner (architect / team lead), so they get comparable quality at far lower token cost. Planners, leads, verifiers, and validators stay on `opus`; `data-engineer` also stays `opus` (schema reasoning often lacks a full upstream spec). `.claude/model-routing.json` and the Cursor mirror `.cursor/model-routing.md` both updated.
 - **Model routing — economy profile Haiku expansion.** In the `economy` profile, `pm-planner`, `channel-planner`, and `legal-analyst` move from `sonnet` to `haiku` — templated, low-reasoning output (milestone calendars, channel plans, clause drafts) produced against a complete brief. Economy `backend-engineer` and `frontend-engineer` remain `opus`.
 - **Architect — megafile threshold rule.** The `architect` Work split step (Process step 6) now requires a megafile check: any file in the work split projected to exceed **400 lines** after the feature lands must be named with its projected count and a decomposition plan before it is assigned to an engineer. Mirror `.cursor/rules/architect.mdc` updated.

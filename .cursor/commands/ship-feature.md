@@ -55,15 +55,9 @@ On a fresh start:
 
 **Checkpoint rule:** after each phase’s artifact + checks succeed, mark that phase `complete` in `progress.md` **before** the next step. Usage limits can kill the session; progress is how `/continue-feature` resumes.
 
-### Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult (existing only)
 
-Run once, before Phase 1. **Never a gate**, and never a third approval stop: this command already has two. Every failure mode here is a skip, and a project with no `.claude/experts/` behaves exactly as it did before experts existed.
-
-1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes and carry the slugs forward.
-2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
-
-3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
-4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+Before Phase 1. **Never a gate**, and never a third approval stop. Follow skill `consult-or-mint` with `mode: consult-only`, `carry_to: progress.md` Notes. Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip later mint evaluation. Never warn the user about an absent roster.
 
 ### Phase 1 — Research
 
@@ -73,11 +67,15 @@ When it returns, confirm `research.md` exists and contains a Prior Art section w
 
 Checkpoint: `research` → complete.
 
+### After research — expert consult-or-mint (T3)
+
+Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: the feature ask`, `evidence: .claude/tmp/research.md` (+ orientation/backlog if present), `carry_to: progress.md` Notes. Re-consult after any mint. Co-author and gate read **matched:** from that note. Skip when `matched: none` with **no user-facing mention**.
+
 ### Phase 2 — Story
 
 Invoke the `story-writer` subagent. It reads `research.md` and the request, and writes `.claude/tmp/story.md`.
 
-**Expert co-author (when setup selected a band).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. It writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`**. If its input names a must-have or domain failure mode the story missed, re-invoke `story-writer` once with that file in context before you present the story at Gate 1, and show the expert's contribution to the user there. A `no-expert` return is a skip, not a retry.
+**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. It writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`**. If its input names a must-have or domain failure mode the story missed, re-invoke `story-writer` once with that file in context before you present the story at Gate 1, and show the expert's contribution to the user there. A `no-expert` return is a skip, not a retry.
 
 Checkpoint: `story` → complete (story written; awaiting human approval — leave frontmatter `status: story`).
 
@@ -98,7 +96,7 @@ If the user comes back with changes, re-invoke `story-writer` with their feedbac
 
 Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md`, writes `.claude/tmp/spec.md`, and mints `.claude/tmp/board.md` + `.claude/tmp/tickets/`.
 
-**Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md` so `.claude/tmp/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
+**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md` so `.claude/tmp/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
 
 When it returns, verify before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — no path matches both. If they overlap, send it back to the architect to resolve ownership.
@@ -121,7 +119,7 @@ Print:
 
 Then: **"Approve the spec to start the parallel build, or tell me what to change. Run `/build-feature` when it's right."**
 
-End your turn. Do not start the engineers.
+End your turn. Do not start the engineers. Do **not** run `cleanup-scoped-artifacts` here — Gate 2 is not a complete run; `/build-feature` runs purge+retire when `progress.md` is complete.
 
 
 ## 7. Immediate task description or request

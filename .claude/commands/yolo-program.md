@@ -47,23 +47,17 @@ Create `.claude/program/` and subdirs if absent: `contracts/`, `channels/` (copy
    - `$ARGUMENTS` matches `.claude/program/request.md` (trim whitespace), or
    - the user said to continue / resume after usage limits
 3. On resume: keep channels and contracts; read `mode.md` (expect `yolo`); pick up at the first incomplete phase per `/continue-program` / `/build-program` with YOLO channel rules. Do not redo finished workstreams or phases.
-4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Archive to `.claude/program/archive/<timestamp>/`. Never blend two initiatives' state.
+4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Follow skill `archive-program-state` with `--force` (`node scripts/skailr/archive-program.mjs --force`). Never freestyle `mv`. Never blend two initiatives' state.
+5. **Safety net (completed leftovers):** if live runtime is present and the ledger is already `complete` (or missing but runtime files remain), follow skill `archive-program-state` with no `--force` before writing the new request — do not ask the user.
 
 On a fresh start:
 
 - Write the raw request verbatim to `.claude/program/request.md`.
 - Write `.claude/program/mode.md` with a single line: `yolo` so the final report and resumes know gates were skipped.
 
-### Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult (existing only)
 
-Run once, before Phase 1. **Never a gate**, and never a reason to stop a YOLO run. A project with no `.claude/experts/` behaves exactly as it did before experts existed, and you never warn the user about an absent roster.
-
-1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Note which non-`deprecated` bands cover parts of this initiative; record them in `brief.md` assumptions or `plan.md` so Phase 3 knows which domain leads get expert input.
-2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
-
-3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/program/channels/program.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human`, never `type: contract-change`.
-4. **Experts are not a team.** Never route a workstream to an expert and never give one an ownership glob.
-5. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+Before Phase 1. **Never a gate.** Follow skill `consult-or-mint` with `mode: consult-only`, `carry_to: brief.md` assumptions or a staging note. Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip later mint evaluation. Experts are not a team: never route a workstream to an expert and never give one an ownership glob. Never warn the user about an absent roster.
 
 ### Phase 1 — Discovery (auto-brief, no interview)
 
@@ -82,6 +76,10 @@ Your check before continuing:
 - Nothing the user asked for is silently dropped.
 
 Then **auto-confirm** the brief. Do not print a gate prompt. Do not end your turn. If a ledger already exists, record brief confirmation; otherwise note discovery done in Notes until freeze seeds the ledger.
+
+### After brief — expert consult-or-mint (T3)
+
+Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: .claude/program/request.md` / brief, `evidence: brief + orientation/research if present`, `carry_to: plan.md` (Experts note for Phase 3 / build). Re-consult after any mint.
 
 ### Phase 2 — Plan (auto-approve + freeze)
 
@@ -109,7 +107,7 @@ Follow `/build-program` Phases A–E exactly (foundation → parallel workstream
 - Script gates and ledger updates remain mandatory before advancing phases.
 - Emit stubs as needed: `node scripts/skailr/emit-stubs.mjs`.
 - Context handoff: honor `YIELD:` and `$ARTIFACT_ROOT/handoff/*.md` per `/build-program` and skills `run-feature-queue` / `write-handoff-and-yield`.
-- Experts: pass co-author input to the routed domain leads and collect gate verdicts before program validation, exactly as `/build-program` specifies. A soft-gate `fail` is a recorded finding plus a heads-up, never a halt — which is also the YOLO default for everything else.
+- Experts: read `matched:` from the plan Experts note (skill `consult-or-mint`); pass co-author input to the routed domain leads and collect gate verdicts before program validation, exactly as `/build-program` specifies. Soft-gate `fail` is a finding plus a heads-up, never a halt. Skip co-author/gate when `matched: none` with **no user-facing mention**.
 
 ### Rules for you as orchestrator
 
@@ -119,6 +117,7 @@ Follow `/build-program` Phases A–E exactly (foundation → parallel workstream
 - Keep the ledger current at every transition so usage-limit deaths can resume via `/continue-program` or re-invoking `/yolo-program` with no new request.
 - Honor mid-slice `YIELD:` handoffs: fresh Task re-dispatch; never treat a yield as slice completion.
 - If any agent's output does not conform to its contract, re-invoke once; if it fails twice, surface it in the final report rather than inventing a pass.
+- When the ledger is `complete: true`, follow skill `archive-program-state` (`node scripts/skailr/archive-program.mjs`), then skill `cleanup-scoped-artifacts` (`purge` then `retire`), before the final user report. Own agent worktree only for cleanup; no-op on shared checkout. Never archive or retire while incomplete.
 
 
 ## 7. Immediate task description or request
@@ -137,6 +136,6 @@ Lead with: **YOLO program complete** (gates were skipped).
 3. **Blocking findings** — one line each; full text only if ≤3 or user asks; path to program-validation-report
 4. **Workstream status** — one line per WS
 5. **Contracts / integration** — pass/fail one-liners + paths
-6. **Quiet skips / docs / experts / channels** — pointers; omit empty
+6. **Quiet skips / docs / experts / channels / archive** — pointers; omit empty; one line for archive path when archived
 7. **Next action** — one sentence
 

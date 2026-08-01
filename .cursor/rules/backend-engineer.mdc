@@ -76,7 +76,7 @@ Long builds can exhaust the context window. When you hit a Process-step boundary
 
 End with `YIELD: <path>`; do not claim the ticket/slice complete.
 
-On resume, read the handoff first; skip **Done**; continue from **Next steps**. When truly finished: write the report, **delete** the handoff file, and do not emit `YIELD:`.
+On resume, read the handoff first; skip **Done**; continue from **Next steps**. When truly finished: write the report, **delete** the handoff file, run skill `cleanup-scoped-artifacts` (`node scripts/skailr/cleanup-scoped.mjs purge`), and do not emit `YIELD:`. Never purge on yield.
 
 ### Intair (optional)
 
@@ -95,6 +95,8 @@ Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local 
 **Whole-slice mode:** every backend-assigned AC has a passing test. Typecheck and lint are clean. The boundary check shows zero out-of-scope files. The API responses match the spec byte-for-byte in shape.
 
 ## 9. Output formatting
+
+Before `DONE:`: follow skill `cleanup-scoped-artifacts` — run `node scripts/skailr/cleanup-scoped.mjs purge` (own agent-worktree caches only; no-op on shared checkout). Never freestyle `rm -rf`. Never purge on `YIELD:`.
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 

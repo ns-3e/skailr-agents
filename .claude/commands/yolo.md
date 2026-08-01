@@ -73,15 +73,9 @@ Engineers may yield mid-ticket (or mid-slice) to reset context (skill `write-han
 - **After** `YIELD: <path>`: keep ticket/`claimed` `in_progress`; immediately re-dispatch the same role in a fresh Task with handoff + ticket + spec. Cap consecutive yields per ticket/slice at **5**, then surface in the final report / to the human.
 - **On ticket/slice complete:** delete/confirm absent handoff file before resolving / marking complete.
 
-### Setup — expert consult-or-mint (soft, non-blocking)
+### Setup — expert consult (existing only)
 
-Run once, before Phase 1. **Never a gate.** Every failure mode here is a skip: a project with no `.claude/experts/` behaves exactly as it did before experts existed, and you never warn the user about an absent roster.
-
-1. **Consult.** Read the Roster table in `.claude/experts/registry.md` (a missing file is an empty roster, not an error). Select every non-`deprecated` row whose `route-when` covers this request. Record the selection — or "no expert band matched" — in `progress.md` Notes, and carry it forward: the same slugs are used for co-author input and for the gate.
-2. **Mint (T3):** follow `.claude/commands/mint-expert.md` §Reuse by the auto-mint triggers (`minted.by: build-consult`). Skip if below threshold / `auto_mint` false.
-
-3. **Notify.** A mint posts one `type: heads-up` to `@all` on `.claude/tmp/channels/feature.md` and appends the durable log line to `.claude/experts/registry.md`. Never `to: @human` and never `type: contract-change` — minting notifies, it does not ask.
-4. **Degrade silently.** No roster, no config, no `/mint-expert` command, or a `no-expert` return all mean continue normally.
+Before Phase 1. **Never a gate.** Follow skill `consult-or-mint` with `mode: consult-only`, `carry_to: progress.md` Notes. Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip later mint evaluation. Never warn the user about an absent roster.
 
 ### Phase 1 — Research
 
@@ -93,11 +87,15 @@ Confirm `research.md` exists and has a Prior Art section. On a greenfield repo, 
 
 Checkpoint: `research` → complete.
 
+### After research — expert consult-or-mint (T3)
+
+Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: the feature ask`, `evidence: .claude/tmp/research.md` (+ orientation/backlog if present), `carry_to: progress.md` Notes. Re-consult after any mint. Co-author and gate read **matched:** from that note — never “does registry exist?”. Skip co-author/gate when `matched: none` with **no user-facing mention**.
+
 ### Phase 2 — Story (auto-approve)
 
 Invoke the `story-writer` subagent. It writes `.claude/tmp/story.md`.
 
-**Expert co-author (when setup selected a band).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. Concurrent dispatch keeps expert consultation off the critical path. The expert writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`** — that boundary is what keeps ownership disjoint. If its input lands with a must-have or failure mode the story missed, re-invoke `story-writer` once with the file path in context. Any expert dispatch that returns `no-expert` is a skip, not a retry.
+**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. Concurrent dispatch keeps expert consultation off the critical path. The expert writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`** — that boundary is what keeps ownership disjoint. If its input lands with a must-have or failure mode the story missed, re-invoke `story-writer` once with the file path in context. Any expert dispatch that returns `no-expert` is a skip, not a retry.
 
 Instruct it that this is YOLO mode: it must **not** leave blocking Open Questions for a human. Every open question becomes an **Assumed** answer with a one-line rationale.
 
@@ -109,7 +107,7 @@ Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print 
 
 ### Phase 3 — Spec (auto-approve)
 
-**Expert co-author, before the architect (when a band matched).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`, refreshing `.claude/tmp/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
+**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`, refreshing `.claude/tmp/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
 
 Invoke the `architect` subagent. It writes `.claude/tmp/spec.md` **and** mints `.claude/tmp/board.md` + `.claude/tmp/tickets/` (Process step 9).
 
@@ -152,7 +150,7 @@ Checkpoint: `verify` → complete.
 
 ### Phase 6 — Validation
 
-**Expert gate (when a band matched).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`.
+**Expert gate (when progress Notes `matched:` is non-empty).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`. If `matched: none`, skip with **no user-facing mention** (do not say “no experts registry”).
 
 Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory`, which is the shipped default and the only case v1 exercises.
 
@@ -171,6 +169,17 @@ Invoke `program-documenter` as in `/build-feature`. If the validator said DO NOT
 
 Checkpoint: `docs` → complete; frontmatter `status: complete`.
 
+### Scoped cleanup (complete runs only)
+
+When `progress.md` is `complete: true` (all phases done), follow skill `cleanup-scoped-artifacts`:
+
+```bash
+node scripts/skailr/cleanup-scoped.mjs purge
+node scripts/skailr/cleanup-scoped.mjs retire
+```
+
+Own agent worktree caches + retire that worktree only. No-op on a shared main checkout. Never run while the run is incomplete. Never freestyle `rm -rf`. Never touch sibling worktrees or the main repo `target/`.
+
 ### Rules for you as orchestrator
 
 - Never write application code yourself.
@@ -181,7 +190,7 @@ Checkpoint: `docs` → complete; frontmatter `status: complete`.
 - Keep `progress.md` current at every transition so usage-limit deaths can resume via `/continue-feature` or re-invoking `/yolo` with no new request.
 - Honor mid-ticket/slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as ticket/slice completion.
 - When a board exists, follow skill `run-ticket-board`; narrate tickets by **title**.
-
+- After a complete run: skill `cleanup-scoped-artifacts` (purge then retire) before the final user report.
 
 ## 7. Immediate task description or request
 

@@ -396,6 +396,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-archive-program-state",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/archive-program-state/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-call-intair",
       "tier": "skill",
       "type": "skill",
@@ -410,10 +417,24 @@
       "cursor_path": null
     },
     {
+      "id": "skill-cleanup-scoped-artifacts",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/cleanup-scoped-artifacts/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-compile-status-digest",
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/compile-status-digest/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-consult-or-mint",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/consult-or-mint/SKILL.md",
       "cursor_path": null
     },
     {

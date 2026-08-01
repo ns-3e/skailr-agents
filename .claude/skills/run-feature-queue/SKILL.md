@@ -54,7 +54,7 @@ node scripts/skailr/feature-status.mjs --progress <ARTIFACT_ROOT>/progress.md --
 | spec | Task `architect` → `spec.md` + mint `board.md` / `tickets/`; validate with `ticket-status.mjs validate --root $ARTIFACT_ROOT` |
 | build | Skill `run-ticket-board` with `--root $ARTIFACT_ROOT` (claim → parallel Tasks → resolve). Ownership + channels + tests before complete |
 | verify | Task `e2e-verifier` |
-| validate | Task `validator` (expert gate if band matched) |
+| validate | Task `validator` (expert gate if carry-forward `matched:` non-empty) |
 | docs | Task `program-documenter` for this feature slice (or defer rollup to WS/program docs) |
 
 On mid-build `YIELD:`: re-dispatch per `write-handoff-and-yield` under `$ARTIFACT_ROOT/handoff/`.

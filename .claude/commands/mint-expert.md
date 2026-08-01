@@ -361,8 +361,9 @@ bands or retiring stale provisional experts via the curate-expert skill. Not blo
 The nine steps above are the **only** mint procedure. The `/map-repo` phase after its existing
 human-confirm gate (T2) and the consult-or-mint setup step in `/yolo`, `/yolo-program`,
 `/ship-feature`, `/patch`, and `/plan-program` (T3) perform the identical procedure, with the
-same notification and the same roster-cap behavior. This section exists so those callers point
-here instead of reimplementing it.
+same notification and the same roster-cap behavior. Callers follow skill `consult-or-mint`
+rather than reimplementing signal counting. This section exists so those callers point
+here instead of inventing a shorter path.
 
 What is different for T2 and T3, and not negotiable:
 
@@ -374,11 +375,21 @@ What is different for T2 and T3, and not negotiable:
 - **`minted.by`** is `map-repo` for T2 and `build-consult` for T3, not `mint-expert`, and the
   log line and heads-up name that trigger.
 - **The mint fires only when** `config.auto_mint` is true **and** the vertical shows at least
-  `config.mint_threshold` (default 2) **independent** signals. Qualifying signals: a Directory
-  Boundaries entry in `.claude/repo/orientation.md` for a distinct subsystem; two or more
-  `backlog.md` items sharing a category (one signal, not two); three or more consults in one
-  run that matched no band (one signal); an explicit human mention of the vertical in the
-  request. Independent means different sources.
+  `config.mint_threshold` (default 2) **independent** signals. Independent means different
+  sources. Qualifying signals (each counts as 1 unless noted):
+
+  | Qualifying signal | Counts as |
+  | --- | --- |
+  | A Directory Boundaries entry in `.claude/repo/orientation.md` for that vertical | 1 |
+  | Two or more `.claude/repo/backlog.md` items sharing a category for that vertical | 1 total |
+  | Explicit human mention of the vertical in the active request | 1 |
+  | A researcher/architect artifact names that vertical against concrete repo paths (`research.md` Prior Art, or brief/plan subsystem cut citing real paths) | 1 |
+  | Three or more consult attempts **in this run** that found no band for the same vertical | 1 total |
+
+  Callers must follow skill `consult-or-mint` (not this section alone): empty roster is not a
+  skip of mint evaluation; mint after evidence exists; re-consult after a successful mint;
+  carry matched slugs for co-author/gate. Cold setup must not assume “3 unmatched consults”
+  before any consults have run.
 - **Below threshold, a run proposes nothing and mints nothing.** It may post a single
   `heads-up` noting the near-miss vertical, and that is all. A one-signal vertical is not a
   weak mint, it is no mint.

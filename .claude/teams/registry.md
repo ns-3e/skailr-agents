@@ -113,7 +113,7 @@ Some projects also keep a small roster of **minted domain experts** under `.clau
 
 **The live roster is never written into this file.** `install.sh` copies this registry fresh and `scripts/remirror.sh` regenerates it, so anything added here at runtime is destroyed on the next pack upgrade. The consumer roster at `.claude/experts/registry.md` is git-tracked in the consumer project and survives upgrades; this section is a static pointer to it and nothing more.
 
-The program-architect does **not** read the expert roster during decomposition, and never routes a workstream to an expert. Expert consultation happens inside the commands and roles that were already routed: intake advisory routing, the consult-or-mint setup step in the build commands, co-author input to `story-writer` / `architect` / domain leads, and verdicts cited by `validator` and `program-validator`. A project with no `.claude/experts/` directory behaves exactly as it did before experts existed.
+The program-architect does **not** read the expert roster during decomposition, and never routes a workstream to an expert. Expert consultation happens inside the commands and roles that were already routed: intake advisory routing, skill `consult-or-mint` in the build/map commands, co-author input to `story-writer` / `architect` / domain leads, and verdicts cited by `validator` and `program-validator`. A project with no `.claude/experts/` directory behaves exactly as it did before experts existed (empty roster for consult; mint evaluation still runs when the caller asks for it).
 
 ---
 
