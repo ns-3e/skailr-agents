@@ -99,6 +99,15 @@ same way it does for engineering files.
 
 ---
 
+## Tiers above the teams
+
+The portfolio roles (`portfolio-architect`, `initiative-lead`) and program roles
+(`program-architect`, `integration-verifier`, `program-validator`, `program-documenter`)
+are deliberately absent from this registry: it is the manifest the **program-architect
+reads** to route workstreams, not a directory of every role in the pack. Engineering is
+the one team whose lead is a skill (`run-feature-queue`) rather than an agent — see its
+`lead:` line above.
+
 ## Experts are not a team
 
 Some projects also keep a small roster of **minted domain experts** under `.claude/experts/`. They are a different axis from teams and they are deliberately absent from the registry above.

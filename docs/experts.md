@@ -123,11 +123,13 @@ There are exactly **three** auditable triggers and no fourth. There is no ambien
 | T2 baseline | The `/map-repo` phase after its human-confirm gate | `internal` only | `map-repo` |
 | T3 build setup | Skill `consult-or-mint` in `/yolo`, `/yolo-program`, `/ship-feature`, `/patch`, `/plan-program` (and recovery in `/build-program`) | `internal` only | `build-consult` |
 
+(The T3 row lists where the *mint evaluation* can fire. `consult-or-mint` is wired more widely — `/build-feature`, `/map-repo`, and `/discover` also consult — but those callers run consult-only or T2; the two lists differ on purpose.)
+
 Callers follow skill `consult-or-mint`. That skill owns consult → optional mint eval → mint → **re-consult** → carry-forward of matched slugs. Co-author and gate read the carry-forward note, never “does registry exist?”
 
 **Empty roster ≠ skip mint.** A missing `.claude/experts/` or `registry.md` means zero bands matched on consult. It does **not** skip mint evaluation. Narrating “no experts registry” to the user is a bug; silence is required.
 
-T2 and T3 run the identical nine-step procedure in `.claude/commands/mint-expert.md`. They fire only when `auto_mint` is true **and** the vertical shows at least `mint_threshold` (default 2) **independent** signals:
+T2 and T3 run the identical Step 0–9 procedure in `.claude/commands/mint-expert.md`. They fire only when `auto_mint` is true **and** the vertical shows at least `mint_threshold` (default 2) **independent** signals:
 
 | Qualifying signal | Counts as |
 | --- | --- |
@@ -249,7 +251,7 @@ See [intair-seam.md](intair-seam.md).
 
 ## Worked example
 
-The two experts actually minted on this repo, both `internal`: the depth for each is sourced entirely from paths in this repository, with no field-level `url` or `doc` source needed. (A `hybrid` mint would add `expert-scout` and a research artifact to the same nine steps; see Classifications above.)
+The two experts actually minted on this repo, both `internal`: the depth for each is sourced entirely from paths in this repository, with no field-level `url` or `doc` source needed. (A `hybrid` mint would add `expert-scout` and a research artifact to the same Step 0–9 procedure; see Classifications above.)
 
 ```
 /mint-expert skailr pack internal
