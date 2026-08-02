@@ -27,4 +27,5 @@ node scripts/skailr/validate-channels.mjs --dir $ARTIFACT_ROOT/channels
    - else dispatch addressee with only that thread; collect answer; re-dispatch blocked agent
    - When dispatching, follow skill `route-models` including its Task prompt preamble (concision); channel factual lookups may **downgrade** one tier unless the role is `protected`
 4. Repeat until no resolvable opens remain.
-5. Read `.claude/program/channels/PROTOCOL.md` for format rules.
+5. After the drain, rotate oversized boards: `node scripts/skailr/rotate-channels.mjs [--dir <channels>]` (default threshold 50 settled messages). It moves **fully-settled threads only**, raw blocks verbatim, to `archive-<board>.md` in the same directory — append-only semantics preserved; open and partially-settled threads never move.
+6. Read `.claude/program/channels/PROTOCOL.md` for format rules.

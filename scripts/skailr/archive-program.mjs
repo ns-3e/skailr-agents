@@ -128,8 +128,8 @@ function collectLiveItems(programAbs) {
     for (const ent of readdirSync(channelsAbs, { withFileTypes: true })) {
       const name = ent.name;
       if (name === "PROTOCOL.md" || name === "feature.md") continue;
-      // Archive program.md and ws-*.md boards only
-      if (name === "program.md" || /^ws-.+\.md$/i.test(name)) {
+      // Archive program.md, ws-*.md boards, and rotate-channels output
+      if (name === "program.md" || /^ws-.+\.md$/i.test(name) || /^archive-.+\.md$/i.test(name)) {
         items.push({
           rel: join("channels", name),
           abs: join(channelsAbs, name),
