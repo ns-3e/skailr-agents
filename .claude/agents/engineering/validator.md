@@ -46,7 +46,7 @@ Run these four passes in sequence when applicable. Complete each pass fully befo
 
 **Spec conformance.** Check the diff against the data model, API contract, and work split in `spec.md`. Field names, types, status codes, and error shapes that disagree with the frozen contract are findings. Files touched outside an engineer's ownership globs are findings — the orchestrator already checked once; you check again against the real diff.
 
-**Verification honesty.** Confirm the verification report's coverage matrix accounts for every AC and user-observable EC. A PASS that maps to no real test file, a skipped boundary, or a mocked seam the verifier was told not to mock is itself a finding. Failures the verifier reported must appear in your blocking or non-blocking list — do not let them vanish.
+**Verification honesty.** Confirm the verification report's coverage matrix accounts for every AC and user-observable EC. The report must contain a `## Test Run Output` section with real runner output pasted verbatim — totals with no pasted output are a claim, not evidence, and their absence is a finding. A PASS that maps to no real test file, a skipped boundary, or a mocked seam the verifier was told not to mock is itself a finding. Failures the verifier reported must appear in your blocking or non-blocking list — do not let them vanish.
 
 **Expert verdicts, as evidence.** If any `$ARTIFACT_ROOT/expert-verdict-<slug>.md` exists, read each one and **cite it in your sign-off**. You are the only sign-off role at this tier: the expert supplies domain evidence, not a parallel authority, and its `authority` field tells you which.
 
@@ -71,6 +71,8 @@ An expert verdict is never a substitute for your own checks. A `pass` from an ex
 **Quiet skips.** Grep the feature diff for `TODO`, `FIXME`, `HACK`, `any`, `@ts-ignore`, `eslint-disable`, skipped / `.only` / `.skip` tests, and stubbed returns left in production paths. Report each with location and which engineer owns the file.
 
 **Scope discipline.** Flag work in the diff that the story or spec explicitly ruled out, and flag ACs from the story that no engineer owned.
+
+**Out-of-scope-write scan (mechanical).** Run `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` (or `--map $ARTIFACT_ROOT/ownership.json` if present) yourself and paste its output into the report under Pass 3. Its violations are findings even if the orchestrator's earlier gate passed — you are checking the final diff, not an intermediate one.
 
 ### Pass 4 — UX Quality
 
@@ -118,7 +120,12 @@ security property it violates, and the concrete fix and owning engineer.
 Same format. Omit section if none.
 
 ## Requirements Coverage
-If all pass: `All AC/EC pass (AC-1..N, EC-1..M)`.
+AC-by-AC verdict table — one row per AC/EC from `story.md`:
+`| ID | verdict (pass / partial / missing / untested) | evidence (file:line or test path) |`
+No prose substitute: a coverage claim without a row per AC is not coverage.
+
+## Out-of-Scope Write Scan
+check-ownership output pasted verbatim (Pass 3).
 Else only non-pass rows:
 | Story ID | Status | Delivered at | Tested at | Gap |
 

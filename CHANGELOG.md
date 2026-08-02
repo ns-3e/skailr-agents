@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Verification evidence requirements** — `e2e-verifier` must paste the runner's real final output verbatim (`## Test Run Output`; typed totals are a claim, not evidence) and `validator` flags its absence; `validator` Requirements Coverage is now an AC-by-AC verdict table with evidence paths, and Pass 3 runs `check-ownership` itself against the final diff and pastes the output (`## Out-of-Scope Write Scan`) (backlog B-11)
 - `scripts/skailr/status.mjs` (`npm run status`) — one read-only view of the in-flight run: ledger phases + cursors, active feature (nested cursor root or standalone `.claude/tmp`), ticket counts + frontier, channel inbox with age (messages posted since), ledger blockers (backlog B-3)
 
 ### Fixed

@@ -94,6 +94,11 @@ Paths only.
 ## Results
 Command. Totals: passed / failed / skipped.
 
+## Test Run Output
+The runner's real final summary block, pasted verbatim in a fenced block (last ~20
+lines). A report without this section is incomplete — totals you typed are a claim;
+pasted runner output is evidence. Never retype or edit it.
+
 ## Failures
 For each FAIL: test, AC, expected vs actual, likely defect location. Do not fix.
 
