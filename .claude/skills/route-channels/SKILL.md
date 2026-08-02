@@ -21,9 +21,10 @@ node scripts/skailr/validate-channels.mjs --tmp
 node scripts/skailr/validate-channels.mjs --dir $ARTIFACT_ROOT/channels
 ```
 
-2. For each `status: open` message in seq order:
+2. Starvation check first: the validator prints `age=` (messages posted since) per inbox item and `WARN` for addressees matching no team/role. An open item with `age >= 10`, or any addressee WARN, does not wait its turn — re-route it to the right owner now, or surface it to the user with the thread. A parked message never drains itself.
+3. For each `status: open` message in seq order:
    - `to: @human` or `type: contract-change` → mark `blocked-on-human`, surface to user, **end turn**
    - else dispatch addressee with only that thread; collect answer; re-dispatch blocked agent
    - When dispatching, follow skill `route-models` including its Task prompt preamble (concision); channel factual lookups may **downgrade** one tier unless the role is `protected`
-3. Repeat until no resolvable opens remain.
-4. Read `.claude/program/channels/PROTOCOL.md` for format rules.
+4. Repeat until no resolvable opens remain.
+5. Read `.claude/program/channels/PROTOCOL.md` for format rules.

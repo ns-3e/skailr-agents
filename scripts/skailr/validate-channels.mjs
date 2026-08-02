@@ -3,7 +3,7 @@
  * validate-channels.mjs — parse channel boards; fail on malformed MSG or report open human/contract-change.
  * Usage: node scripts/skailr/validate-channels.mjs [--dir .claude/program/channels] [--strict-inbox]
  */
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const MSG_RE =
@@ -21,13 +21,37 @@ const TYPES = new Set([
 const STATUSES = new Set(["open", "answered", "resolved", "blocked-on-human"]);
 
 function parseArgs(argv) {
-  const out = { dir: ".claude/program/channels", strictInbox: false };
+  const out = { dir: ".claude/program/channels", strictInbox: false, roster: null };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === "--dir") out.dir = argv[++i];
     else if (argv[i] === "--strict-inbox") out.strictInbox = true;
     else if (argv[i] === "--tmp") out.dir = ".claude/tmp/channels";
+    else if (argv[i] === "--roster") out.roster = argv[++i];
+    else if (argv[i] === "--no-roster") out.roster = false;
   }
   return out;
+}
+
+/** Known addressees: @human/@all/@architect + registry team names + agent role stems.
+ *  Warn-only — a message parked on a nonexistent addressee never gets drained. */
+function knownAddressees(rosterPath) {
+  const known = new Set(["human", "all", "architect"]);
+  if (rosterPath && existsSync(rosterPath)) {
+    for (const m of readFileSync(rosterPath, "utf8").matchAll(/^### ([a-z][a-z0-9-]*)$/gm)) {
+      known.add(m[1]);
+    }
+  }
+  const agentsDir = ".claude/agents";
+  if (existsSync(agentsDir)) {
+    for (const team of readdirSync(agentsDir)) {
+      const teamDir = join(agentsDir, team);
+      if (!statSync(teamDir).isDirectory()) continue;
+      for (const f of readdirSync(teamDir)) {
+        if (f.endsWith(".md")) known.add(f.replace(/\.md$/, ""));
+      }
+    }
+  }
+  return known;
 }
 
 function parseFile(path, text) {
@@ -99,9 +123,25 @@ function main() {
     process.exit(1);
   }
 
+  const maxSeq = Math.max(0, ...all.map((m) => Number(m.id.slice(4)) || 0));
   console.log(`OK: ${all.length} message(s); inbox=${inbox.length}`);
   for (const m of inbox) {
-    console.log(`  INBOX ${m.id} type=${m.type} to=${m.to} status=${m.status} (${m.file})`);
+    const age = maxSeq - (Number(m.id.slice(4)) || 0); // messages posted since
+    console.log(`  INBOX ${m.id} type=${m.type} to=${m.to} status=${m.status} age=${age} (${m.file})`);
+  }
+
+  // Addressee sanity (warn-only): default roster is the teams registry when present.
+  if (args.roster !== false) {
+    const rosterPath = args.roster || ".claude/teams/registry.md";
+    const known = knownAddressees(rosterPath);
+    for (const m of all) {
+      if (m.status === "resolved" || m.status === "answered") continue;
+      for (const raw of (m.to || "").split(/[,\s]+/).filter(Boolean)) {
+        const name = raw.replace(/^@/, "");
+        if (!name || known.has(name) || name.startsWith("ws-")) continue;
+        console.log(`  WARN ${m.id}: addressee @${name} matches no team, agent role, ws-*, @human/@all/@architect — may never be drained (${m.file})`);
+      }
+    }
   }
 
   if (args.strictInbox && inbox.length) {
