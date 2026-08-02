@@ -13,6 +13,8 @@ Thanks for helping improve skailr-agents.
 
 Do **not** hand-edit generated `.cursor/rules/*.mdc`, `.cursor/commands/*.md`, or root `CLAUDE.md` except via the remirror script. Those files are derived from `.claude/`. Remirror special-cases **registry** and **intake** as `alwaysApply: true` Cursor rules (and regenerates `CLAUDE.md` from intake).
 
+Agent files deliberately repeat a few canonical blocks (tone, task-return, artifact-root, context-handoff, cleanup-before-done). When you edit one of those blocks, edit **every** carrier — `npm run check:blocks` (also in CI) fails on divergence. Role-specific extensions *after* a block are fine; deliberate variants are excluded in `scripts/skailr/check-blocks.mjs`.
+
 ## Maintainer conventions (when changing this repo)
 
 - Prefer the smallest diff that solves the problem; avoid speculative abstractions.

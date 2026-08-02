@@ -56,6 +56,9 @@ jobs:
       - name: Check model routing matches active profile
         run: node scripts/skailr/apply-model-routing.mjs --check
 
+      - name: Check canonical boilerplate blocks identical
+        run: node scripts/skailr/check-blocks.mjs
+
       - name: Check Intair seam intact
         run: node scripts/skailr/check-intair-seam.mjs
 
