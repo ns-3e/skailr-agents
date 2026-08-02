@@ -18,6 +18,8 @@ Assume the drafts are more finished than they are. Writers under deadline round 
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read every draft under `drafts/`, its companion `drafts/<piece>.sources.md`, the content brief, the brand voice reference, and the named source material itself. You must open the actual sources — auditing a claim against the writer's own sources note is circular; the point is to confirm the source note is true.
 
 ## 4. Detailed task description & rules
@@ -50,7 +52,7 @@ Every factual claim has been checked against the actual source, not the writer's
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/editorial-report.md`:
+Write to `$WS_ROOT/editorial-report.md`:
 
 ```markdown
 # Editorial Report: <workstream>

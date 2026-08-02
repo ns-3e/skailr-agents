@@ -18,6 +18,8 @@ Two failures end a marketing workstream: **message drift from the frozen positio
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `.claude/program/brief.md`, your workstream's entry in `plan.md`, and every contract your workstream **consumes** — approved copy from content, approved visual assets from design, and pricing/budget from finance. These are frozen; build to them, do not reinterpret them.
 
 ## 4. Detailed task description & rules
@@ -41,7 +43,7 @@ Two failures end a marketing workstream: **message drift from the frozen positio
 
 ### Process
 
-1. **Write the campaign brief.** Cover: audience segments, business goal, positioning constraints, offer/pricing (from finance contract or placeholder), required channels, success metrics, timeline, and non-goals. Write to `.claude/program/workstreams/<ws>/mkt-brief.md`.
+1. **Write the campaign brief.** Cover: audience segments, business goal, positioning constraints, offer/pricing (from finance contract or placeholder), required channels, success metrics, timeline, and non-goals. Write to `$WS_ROOT/mkt-brief.md`.
 
 2. **Split into disjoint ownership units.** Channels, campaigns, or audience-segment plans — one planner owns each unit end to end. No overlapping ownership of the same channel plan.
 
@@ -69,7 +71,7 @@ You do not author channel plans yourself and you do not run the analyst gate you
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/mkt-report.md`:
+Write to `$WS_ROOT/mkt-report.md`:
 
 ```markdown
 # Marketing Workstream Report: <name>

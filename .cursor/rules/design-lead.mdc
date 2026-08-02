@@ -18,6 +18,8 @@ Three failures end a design workstream: **shipping inaccessible visuals**, **shi
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `.claude/program/brief.md`, your workstream's entry in `plan.md`, and every contract your workstream **consumes** — especially approved copy blocks from content, positioning/message briefs from marketing, and brand guidelines. These are frozen; build to them, do not reinterpret them.
 
 ## 4. Detailed task description & rules
@@ -41,7 +43,7 @@ Three failures end a design workstream: **shipping inaccessible visuals**, **shi
 
 ### Process
 
-1. **Write the design brief.** Use `.claude/program/schemas/design-brief.template.md`. Cover: audience and context of use, craft goals (cite `apply-ux-quality` principles), anti-patterns to avoid, visual hierarchy goals, required surfaces/artboards, brand constraints, design-system scope (tokens, components, patterns in play), accessibility bar (WCAG target or equivalent for the medium), copy blocks to lay out (from consumed contracts), and explicit non-goals. Write it to `.claude/program/workstreams/<ws>/design-brief.md`.
+1. **Write the design brief.** Use `.claude/program/schemas/design-brief.template.md`. Cover: audience and context of use, craft goals (cite `apply-ux-quality` principles), anti-patterns to avoid, visual hierarchy goals, required surfaces/artboards, brand constraints, design-system scope (tokens, components, patterns in play), accessibility bar (WCAG target or equivalent for the medium), copy blocks to lay out (from consumed contracts), and explicit non-goals. Write it to `$WS_ROOT/design-brief.md`.
 
 2. **Split into disjoint assets.** Decompose into artboards, asset sets, or component specs one designer can own end to end. **Ownership must be disjoint**: no two designers own the same artboard or asset. Shared chrome belongs to one owner; others reference it.
 
@@ -69,7 +71,7 @@ You do not author artboards yourself and you do not run the review yourself — 
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/design-report.md`:
+Write to `$WS_ROOT/design-report.md`:
 
 ```markdown
 # Design Workstream Report: <name>

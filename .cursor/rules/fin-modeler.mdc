@@ -18,6 +18,8 @@ Every number must either be an input from a named assumption or a formula of tho
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `fin-brief.md`, `assumptions.md`, program `brief.md`, and consumed contracts for volumes/costs/prices your model needs.
 
 ## 4. Detailed task description & rules
@@ -48,7 +50,7 @@ The model is recomputable from stated inputs and formulas. Footprint touches onl
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/models/<id>.md`:
+Write to `$WS_ROOT/models/<id>.md`:
 
 ```markdown
 # Model: <id>

@@ -18,6 +18,8 @@ Every plan must stay on the frozen positioning/message pillars and must define m
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `strategy.md`, the campaign brief, and consumed contracts for copy, assets, and pricing that your channel needs.
 
 ## 4. Detailed task description & rules
@@ -48,7 +50,7 @@ The plan is executable from strategy, on-message, and measurable. Footprint touc
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/campaigns/<id>.md`:
+Write to `$WS_ROOT/campaigns/<id>.md`:
 
 ```markdown
 # Campaign Unit: <id>

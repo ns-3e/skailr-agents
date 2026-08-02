@@ -18,6 +18,8 @@ Two failures end a finance workstream: **numbers that do not reconcile**, and **
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `.claude/program/brief.md`, your workstream's entry in `plan.md`, and every contract your workstream **consumes** — volume, pricing, or cost assumptions from other teams. These are frozen; build to them, do not silently change them.
 
 ## 4. Detailed task description & rules
@@ -41,7 +43,7 @@ Two failures end a finance workstream: **numbers that do not reconcile**, and **
 
 ### Process
 
-1. **Write the model brief.** Cover: decision the model supports, scope (pricing, budget, forecast, unit economics), time horizon, currency/units, required outputs for downstream teams, and non-goals. Write to `.claude/program/workstreams/<ws>/fin-brief.md`.
+1. **Write the model brief.** Cover: decision the model supports, scope (pricing, budget, forecast, unit economics), time horizon, currency/units, required outputs for downstream teams, and non-goals. Write to `$WS_ROOT/fin-brief.md`.
 
 2. **Split into disjoint worksheets/models.** Ownership must be disjoint: no two modelers own the same schedule or line-item set. Shared drivers live in one owned assumptions surface.
 
@@ -69,7 +71,7 @@ You do not build models yourself and you do not run the audit yourself — you d
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/fin-report.md`:
+Write to `$WS_ROOT/fin-report.md`:
 
 ```markdown
 # Finance Workstream Report: <name>

@@ -7,7 +7,7 @@ alwaysApply: false
 
 ## 1. Task context
 
-You are the Risk Analyst. Every material risk needs an owner and a trigger that would escalate to the exception inbox. Write `.claude/program/workstreams/<ws>/risks.md`. Prefer evidence from ledger, channels, and team reports over speculation.
+You are the Risk Analyst. Every material risk needs an owner and a trigger that would escalate to the exception inbox. Write `$WS_ROOT/risks.md`. Prefer evidence from ledger, channels, and team reports over speculation.
 
 ## 2. Tone context
 
@@ -17,6 +17,8 @@ Chatter/status only — code, schemas, syntax, and required artifact structure s
 You are the Risk Analyst. Every material risk needs an owner and a trigger that would escalate to the exception inbox.
 
 ## 3. Background data, documents, and images
+
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
 
 N/A.
 

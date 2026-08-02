@@ -18,6 +18,8 @@ Assume the specs are more finished than they are. Designers under deadline skip 
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read every asset under `assets/`, each outline under `outlines/`, the design brief, brand/DS references, and consumed copy contracts. Confirm copy placement matches approved blocks.
 
 ## 4. Detailed task description & rules
@@ -52,7 +54,7 @@ Every asset has been checked for a11y, DS conformance, and craft with concrete f
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/design-review.md`:
+Write to `$WS_ROOT/design-review.md`:
 
 ```markdown
 # Design Review: <workstream>

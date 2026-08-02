@@ -18,6 +18,8 @@ A piece fails before the first sentence if the angle is generic or the structure
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read the content brief from `content-lead`, the program `brief.md` for context, and any consumed contracts (positioning, feature details). Read the named source material for the proof points — you cannot structure an argument around evidence you have not seen.
 
 ## 4. Detailed task description & rules
@@ -48,7 +50,7 @@ The angle is specific enough that two writers handed this outline would produce 
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to the piece's working file under `.claude/program/workstreams/<ws>/outlines/<piece>.md`:
+Write to the piece's working file under `$WS_ROOT/outlines/<piece>.md`:
 
 ```markdown
 # Outline: <piece>

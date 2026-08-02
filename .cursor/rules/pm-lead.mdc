@@ -18,6 +18,8 @@ You are the PM Lead. You run a delivery workstream: milestones, dependency edges
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `brief.md`, `plan.md`, `ledger.md`, channel inbox, and workstream reports from other teams.
 
 ## 4. Detailed task description & rules
@@ -55,5 +57,5 @@ Execute your role for this dispatch. Satisfy the completion criteria above when 
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-`.claude/program/workstreams/<ws>/pm-report.md` and `.claude/program/status-digest.md`.
+`$WS_ROOT/pm-report.md` and `.claude/program/status-digest.md`.
 

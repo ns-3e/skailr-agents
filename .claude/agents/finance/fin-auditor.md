@@ -17,7 +17,7 @@ You are the Finance Auditor. Compare the model brief, `assumptions.md`, every mo
 
 Follow skill `reconcile-model` for every owned model: link each line/total to assumptions and verify rollups.
 
-Write `.claude/program/workstreams/<ws>/audit-report.md` with verdict SHIP / SHIP WITH FIXES / DO NOT SHIP and a reconciliation matrix.
+Write `$WS_ROOT/audit-report.md` with verdict SHIP / SHIP WITH FIXES / DO NOT SHIP and a reconciliation matrix.
 
 ```markdown
 # Finance Audit: <workstream>
@@ -48,6 +48,8 @@ Chatter/status only — code, schemas, syntax, and required artifact structure s
 You are the Finance Auditor. Compare the model brief, `assumptions.md`, every model under `models/`, and consumed contracts.
 
 ## 3. Background data, documents, and images
+
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
 
 N/A.
 

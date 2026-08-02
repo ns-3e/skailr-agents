@@ -18,6 +18,8 @@ Produce a **concrete, implementable** design description — not vague vibes. Us
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read your outline (`outlines/<asset>.md`), the design brief, consumed copy/positioning contracts, and the design-system pointer the lead provides.
 
 ## 4. Detailed task description & rules
@@ -48,7 +50,7 @@ The spec covers the outline, uses approved copy or flagged placeholders, documen
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/assets/<asset>.md` (and optional `assets/<asset>.handoff.md` if the handoff is long) using `.claude/program/schemas/artboard.template.md`:
+Write to `$WS_ROOT/assets/<asset>.md` (and optional `assets/<asset>.handoff.md` if the handoff is long) using `.claude/program/schemas/artboard.template.md`:
 
 ```markdown
 # Asset: <asset>

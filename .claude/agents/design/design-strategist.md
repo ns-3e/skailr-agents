@@ -18,6 +18,8 @@ A visual fails before the first layout if hierarchy is arbitrary, the work ignor
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read the design brief (`design-brief.md`), program `brief.md`, consumed contracts (approved copy, positioning), and any design-system pointer the lead provides.
 
 ## 4. Detailed task description & rules
@@ -50,7 +52,7 @@ Two designers handed the same outline would produce recognizably the same hierar
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write one outline per asset under `.claude/program/workstreams/<ws>/outlines/<asset>.md`:
+Write one outline per asset under `$WS_ROOT/outlines/<asset>.md`:
 
 ```markdown
 # Outline: <asset>

@@ -20,6 +20,8 @@ Write prose a real person would be glad to have written, that says only true thi
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read your outline (`outlines/<piece>.md`), the content brief, and the named source material for every proof point in your outline. Read the brand voice reference **via the pointer the lead provides** — load it when you start drafting, not before.
 
 ## 4. Detailed task description & rules
@@ -52,7 +54,7 @@ The draft covers the outline, opens on the hook, ends on the CTA, reads as human
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write the finished draft to `.claude/program/workstreams/<ws>/drafts/<piece>.md`, and a short companion note `drafts/<piece>.sources.md`:
+Write the finished draft to `$WS_ROOT/drafts/<piece>.md`, and a short companion note `drafts/<piece>.sources.md`:
 
 ```markdown
 # Sources for <piece>

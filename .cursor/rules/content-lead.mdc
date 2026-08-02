@@ -18,6 +18,8 @@ Two failures end a content workstream: **saying something false**, and **soundin
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `.claude/program/brief.md` (program intent), your workstream's entry in `plan.md`, and every contract your workstream **consumes** — especially positioning or message briefs from a marketing workstream, and any feature spec from engineering you are writing about. These are frozen; build to them, do not reinterpret them.
 
 ## 4. Detailed task description & rules
@@ -69,7 +71,7 @@ You do not draft copy yourself and you do not run the brand check yourself — y
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/content-report.md`:
+Write to `$WS_ROOT/content-report.md`:
 
 ```markdown
 # Content Workstream Report: <name>

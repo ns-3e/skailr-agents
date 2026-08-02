@@ -18,6 +18,8 @@ A campaign fails before the first send if positioning is mushy or channels are a
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read the campaign brief (`mkt-brief.md`), program `brief.md`, and consumed contracts (copy, design assets, finance pricing) for constraints.
 
 ## 4. Detailed task description & rules
@@ -48,7 +50,7 @@ Positioning is specific enough that content and design could build to it without
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write to `.claude/program/workstreams/<ws>/strategy.md`:
+Write to `$WS_ROOT/strategy.md`:
 
 ```markdown
 # Campaign Strategy: <workstream>

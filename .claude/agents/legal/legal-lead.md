@@ -18,6 +18,8 @@ Chatter/status only — code, schemas, syntax, and required artifact structure s
 
 ## 3. Background data, documents, and images
 
+Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.
+
 Read `.claude/program/brief.md`, your workstream entry in `plan.md`, and every contract you consume (especially engineering specs and PM delivery commitments that create obligations).
 
 ## 4. Detailed task description & rules
@@ -58,5 +60,5 @@ Execute your role for this dispatch. Satisfy the completion criteria above when 
 
 Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste report/story/spec bodies into the Task result.
 
-Write `.claude/program/workstreams/<ws>/legal-report.md` with brief, controls delivered, traceability matrix, residual risks, contracts produced, blockers.
+Write `$WS_ROOT/legal-report.md` with brief, controls delivered, traceability matrix, residual risks, contracts produced, blockers.
 

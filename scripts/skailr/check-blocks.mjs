@@ -44,6 +44,13 @@ const BLOCKS = [
     minCarriers: 8,
   },
   {
+    name: "domain-ws-root",
+    ref: ".claude/agents/content/content-lead.md",
+    anchor: "Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.",
+    exclude: [],
+    minCarriers: 21,
+  },
+  {
     name: "context-handoff",
     ref: ".claude/agents/engineering/backend-engineer.md",
     anchor: null,
