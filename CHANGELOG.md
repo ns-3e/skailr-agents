@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- CI now runs `check-intair-seam.mjs`, `check-experts.mjs`, a version-consistency check (package.json = manifest.json = latest CHANGELOG cut), and a mirror-freshness check (`remirror.sh` must reproduce the committed tree) — the four gaps that let audit findings F-1 and F-2 rot undetected (audit F-14)
+
 ### Fixed
 
 - Docs: `docs/experts.md` says "Step 0–9 procedure" instead of "nine steps" (mint-expert has ten labeled steps) and clarifies that the T3 mint-trigger list is narrower than the consult-or-mint wiring list on purpose; `.claude/teams/registry.md` explains why portfolio/program-tier roles are absent and that engineering's lead is a skill; removed stray empty `assets/Untitled` (audit F-17, F-18, F-19, F-20)

@@ -56,6 +56,35 @@ jobs:
       - name: Check model routing matches active profile
         run: node scripts/skailr/apply-model-routing.mjs --check
 
+      - name: Check Intair seam intact
+        run: node scripts/skailr/check-intair-seam.mjs
+
+      - name: Check expert roster valid
+        run: node scripts/skailr/check-experts.mjs
+
+      - name: Check version consistency (package.json = manifest.json = latest CHANGELOG cut)
+        run: |
+          set -e
+          pkg=$(node -p "require('./package.json').version")
+          man=$(node -p "require('./manifest.json').version")
+          log=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '#[] ')
+          echo "package.json=$pkg manifest.json=$man changelog=$log"
+          if [ "$pkg" != "$man" ] || [ "$pkg" != "$log" ]; then
+            echo "FAIL: versions diverge — cut the release in all three together (see CHANGELOG release-cut note)"
+            exit 1
+          fi
+
+      - name: Check mirror freshness (remirror reproduces the committed tree)
+        run: |
+          set -e
+          bash scripts/remirror.sh
+          if ! git diff --quiet; then
+            echo "FAIL: .cursor/ mirror, CLAUDE.md, or manifest.json is stale — run ./scripts/remirror.sh and commit the result"
+            git diff --stat
+            exit 1
+          fi
+          echo "OK: mirror is fresh"
+
       - name: Check manifest paths resolve
         run: |
           python3 - <<'PY'
