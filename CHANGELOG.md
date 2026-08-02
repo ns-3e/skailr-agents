@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- `install.ps1`: `$PackagedCommands` now includes `mint-expert` (Windows installs silently lacked `.cursor/commands/mint-expert.md` while `install.sh` shipped it), and the gitignore list drops the extra `!.claude/program/schemas/**` line to match `install.sh` exactly (audit F-8)
 - **Nested-run path discipline** — the feature commands (`/yolo`, `/ship-feature`, `/build-feature`, `/continue-feature`) now parameterize every script gate, state write, and expert dispatch on `$ARTIFACT_ROOT` instead of hardcoding `.claude/tmp` (`check-ownership --from-spec`, `feature-status --progress/--root`, `request.md`/`mode.md`/channels seeding); the `expert` role writes `expert-<slug>.md` / `expert-verdict-<slug>.md` under `$ARTIFACT_ROOT` so parallel program features no longer collide on consult files, matching where `architect`/`story-writer`/`validator` already read them; skills `route-channels` and `check-ownership` document the nested invocation forms. Standalone runs are unchanged (`ARTIFACT_ROOT` defaults to `.claude/tmp`) (audit F-10)
 - `/build-program`: removed a truncated, misplaced duplicate of the field-guide init instruction from §2 (the complete instruction lives in Phase A) (audit F-16)
 - `check-contracts.mjs`: contract `status` is validated strictly against `draft|frozen|superseded` — any value containing `|` previously bypassed validation entirely (templates live under `schemas/`, which the script never scans, so the carve-out protected nothing) (audit F-7)

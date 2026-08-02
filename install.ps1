@@ -130,7 +130,7 @@ $PackagedRules = @(
 $PackagedCommands = @(
     "ship-feature", "build-feature", "continue-feature", "yolo", "patch",
     "discover", "plan-program", "build-program", "continue-program", "yolo-program", "map-repo",
-    "discover-portfolio", "plan-portfolio", "status-portfolio"
+    "discover-portfolio", "plan-portfolio", "status-portfolio", "mint-expert"
 )
 
 function Install-Cursor {
@@ -200,7 +200,6 @@ function Append-Gitignore {
         "!.claude/program/channels/program.md",
         "!.claude/program/channels/feature.md",
         "!.claude/program/schemas/",
-        "!.claude/program/schemas/**",
         "node_modules/"
     )
     $existing = @(Get-Content $gi -ErrorAction SilentlyContinue)
