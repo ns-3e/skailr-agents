@@ -4,14 +4,29 @@ Source: `docs/audits/2026-08-02-audit.md`. Sequenced in recommended order. Effor
 S (<½ day) / M (1–2 days) / L (multi-day). Every entry lists the invariant(s) it
 touches; none violates one.
 
-**Status (2026-08-02, second pass — recommended approaches approved):**
-DONE: B-1 (`doctor.mjs`, in CI; its parity check immediately caught install.ps1
-missing the expert/expert-scout rules), B-2 (`check-blocks.mjs`, in CI), B-7
-(archive leftovers reporting), B-8 (built-against stamps + `--consumed` gate +
-integration-verifier wiring). H-1/H-3 confirmed as implemented; H-2 resolved in favor
-of B-10's mechanical whole-thread moves; H-4 closed as a documented deliberate
-non-check (`docs/experts.md`). BLOCKED: B-4 (no PowerShell available on this machine;
-do not land unverified). OPEN: B-3, B-5, B-6, B-9, B-10, B-11, B-12, B-13.
+**Status (2026-08-02, third pass):**
+DONE: B-1 (`doctor.mjs`, in CI; caught install.ps1 missing expert/expert-scout rules),
+B-2 (`check-blocks.mjs`, in CI, now 6 blocks), B-3 (`status.mjs` + `ledger-status`
+treats `done` as terminal), B-6 (`WS_ROOT` across 21 domain agents + `/build-program`
+dispatch), B-7 (archive leftovers reporting), B-8 (built-against stamps), B-9 (inbox
+age + addressee warnings + starvation-first drain), B-10 (`rotate-channels.mjs`, per
+H-2), B-11 (verification evidence: pasted runner output, AC verdict table, mechanical
+out-of-scope scan), B-13 (intake tie-breakers). H-1..H-4 all decided.
+
+CLOSED — SUPERSEDED: B-5 (manifest-driven installers). doctor's installer-parity
+check + CI now make array↔mirror drift impossible to miss (it caught two real
+instances on its first runs); deriving arrays at install time would add a
+python3/node dependency to otherwise dependency-free installers — fragility for no
+remaining detection gain. Reopen only if the installers grow other reasons to parse
+the manifest.
+
+BLOCKED: B-4 (install.ps1 roster-fingerprint guard) — no PowerShell on this machine;
+its own landing rule forbids shipping unverified. Top item once a pwsh env exists.
+
+DEFERRED: B-12 (per-agent prompt tightening) — its own rule is one agent per PR,
+behavior-diffed against the worked examples; batch-editing 36 prompts in an audit
+pass is exactly the risk it warns about. The prime-directive §2/§4 doubling is the
+first candidate when picked up.
 
 ---
 
