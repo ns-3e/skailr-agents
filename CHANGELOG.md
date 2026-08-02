@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-08-02
+
 ### Fixed
 
 - `install.ps1`: `$PackagedRules` now includes `expert` and `expert-scout` (Windows installs lacked both Cursor rules while `install.sh` shipped them) — caught by `doctor.mjs`'s installer-parity check on its first run
