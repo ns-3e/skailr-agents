@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-08-02
+
 ### Added
 
 - **Claude Code plugin channel** — `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` make this repo its own marketplace: `claude plugin marketplace add ns-3e/skailr-agents` then `claude plugin install skailr-agents@skailr`; the plugin exposes `/skailr-agents:install` (bootstraps the full pack into the project via the real installers, then doctor-verifies) and `/skailr-agents:doctor`. `claude plugin validate .` passes; `doctor.mjs` validates the manifests and CI's version-consistency gate now covers `plugin.json` (four versions move together)

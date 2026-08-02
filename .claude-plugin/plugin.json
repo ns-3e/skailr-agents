@@ -1,12 +1,23 @@
 {
   "name": "skailr-agents",
   "displayName": "skailr-agents",
-  "version": "1.8.0",
-  "description": "Multi-agent operating model for Claude Code and Cursor — teams, contracts, channels, script gates. This plugin bootstraps the pack into your project: run /skailr-agents:install once, then use the project-local commands (/yolo, /map-repo, /patch, …).",
-  "author": { "name": "Skailr", "url": "https://skailr.io" },
+  "version": "1.9.0",
+  "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates. This plugin bootstraps the pack into your project: run /skailr-agents:install once, then use the project-local commands (/yolo, /map-repo, /patch, \u2026).",
+  "author": {
+    "name": "Skailr",
+    "url": "https://skailr.io"
+  },
   "homepage": "https://skailr.io",
   "repository": "https://github.com/ns-3e/skailr-agents",
   "license": "MIT",
-  "keywords": ["multi-agent", "operating-model", "orchestration", "teams", "contracts"],
-  "commands": ["./plugin/commands/"]
+  "keywords": [
+    "multi-agent",
+    "operating-model",
+    "orchestration",
+    "teams",
+    "contracts"
+  ],
+  "commands": [
+    "./plugin/commands/"
+  ]
 }
