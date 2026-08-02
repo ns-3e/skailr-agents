@@ -125,7 +125,8 @@ $PackagedRules = @(
     "pm-lead", "pm-planner", "risk-analyst", "status-reporter",
     "design-lead", "design-strategist", "designer", "design-reviewer",
     "mkt-lead", "mkt-strategist", "channel-planner", "mkt-analyst",
-    "fin-lead", "fin-modeler", "fin-analyst", "fin-auditor"
+    "fin-lead", "fin-modeler", "fin-analyst", "fin-auditor",
+    "expert", "expert-scout"
 )
 $PackagedCommands = @(
     "ship-feature", "build-feature", "continue-feature", "yolo", "patch",

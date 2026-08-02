@@ -59,6 +59,9 @@ jobs:
       - name: Check canonical boilerplate blocks identical
         run: node scripts/skailr/check-blocks.mjs
 
+      - name: Doctor — whole-installation health check
+        run: node scripts/skailr/doctor.mjs
+
       - name: Check Intair seam intact
         run: node scripts/skailr/check-intair-seam.mjs
 
