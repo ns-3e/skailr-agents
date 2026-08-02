@@ -10,3 +10,10 @@ if [[ -f "$MAP" ]]; then
     exit 1
   }
 fi
+# Whole-installation health check (read-only, FAIL vs SKIP aware)
+if [[ -f "$ROOT/scripts/skailr/doctor.mjs" ]]; then
+  node "$ROOT/scripts/skailr/doctor.mjs" || {
+    echo "skailr: doctor found a broken installation" >&2
+    exit 1
+  }
+fi
