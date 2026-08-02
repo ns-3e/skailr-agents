@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.9.1] — 2026-08-02
+
+### Fixed
+
+- **npm tarball was shipping this repo's own runtime/dogfood state.** `package.json`'s `files` field listed `".claude"` (and other directories) wholesale — npm includes a listed directory verbatim from disk and **bypasses `.gitignore` entirely** when `files` is present, so every gitignored working file sitting in the checkout (this repo's own `research.md`, `spec.md`, `ledger.md`, contracts, workstream reports, `.claude/settings.local.json`, the full `.claude/experts` dogfood roster) rode along in 1.9.0 — 284 files / 1.7 MB unpacked, most of it internal history no consumer should receive. `files` now lists exact paths mirroring what `install.sh` actually copies (207 files / 1.2 MB, verified against the installer's own copy list). `doctor.mjs` gained a pack-repo-only "npm tarball contents" check — runs `npm pack --dry-run --json` and fails on any `.claude/tmp/**`, `.claude/repo/**`, `.claude/experts/**`, `.claude/settings.local.json`, or non-template `.claude/program/**` path — so this class cannot ship silently again (verified: passes on the fix, fails with the exact leaked paths on the reverted config)
+
 ## [1.9.0] — 2026-08-02
 
 ### Added

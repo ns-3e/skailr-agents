@@ -219,6 +219,30 @@ function main() {
     if (r.missing) report("SKIP", "canonical blocks", "check-blocks.mjs absent");
     else report(r.status === 0 ? "PASS" : "FAIL", "canonical blocks", r.out.trim().split("\n").pop());
 
+    // 7d'. npm tarball must never carry this repo's own runtime/dogfood state.
+    // "files" in package.json includes listed directories VERBATIM FROM DISK and
+    // bypasses .gitignore entirely — a directory entry there (e.g. ".claude") silently
+    // repacks whatever gitignored working files happen to sit in the checkout
+    // (research.md, ledger.md, contracts, workstream reports, settings.local.json …).
+    // This shipped once; never again.
+    const DISALLOWED_IN_TARBALL = [
+      /^\.claude\/tmp\//,
+      /^\.claude\/repo\//,
+      /^\.claude\/experts\//,
+      /^\.claude\/settings\.local\.json$/,
+      /^\.claude\/program\/(?!channels\/(PROTOCOL|program|feature)\.md$|schemas\/)/,
+    ];
+    if (existsSync(join(root, "package.json")) && existsSync(join(root, "install.sh"))) {
+      const r = spawnSync("npm", ["pack", "--dry-run", "--json"], { cwd: root, encoding: "utf8" });
+      try {
+        const files = JSON.parse(r.stdout)[0].files.map((f) => f.path);
+        const leaked = files.filter((f) => DISALLOWED_IN_TARBALL.some((re) => re.test(f)));
+        report(leaked.length ? "FAIL" : "PASS", "npm tarball contents", leaked.length ? `leaked: ${leaked.slice(0, 5).join(", ")}` : `${files.length} files, no runtime/dogfood state`);
+      } catch {
+        report("SKIP", "npm tarball contents", "npm pack --dry-run --json unavailable");
+      }
+    }
+
     // 7e'. Plugin manifests: both JSONs must parse, names must agree, and every
     // configured plugin command path must exist — a broken manifest fails at the
     // user's `claude plugin install`, far from this repo.

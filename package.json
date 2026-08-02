@@ -1,6 +1,6 @@
 {
   "name": "skailr-agents",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 roles, contracts, channels, and script gates",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
@@ -23,7 +23,17 @@
     "skailr-agents": "bin/skailr.mjs"
   },
   "files": [
-    ".claude",
+    ".claude/agents",
+    ".claude/commands",
+    ".claude/skills",
+    ".claude/teams/registry.md",
+    ".claude/program/channels/PROTOCOL.md",
+    ".claude/program/channels/program.md",
+    ".claude/program/channels/feature.md",
+    ".claude/program/schemas",
+    ".claude/settings.skailr.json",
+    ".claude/model-routing.json",
+    ".claude/intake.md",
     ".claude-plugin",
     ".cursor",
     "plugin",
