@@ -1,89 +1,59 @@
 # skailr-agents
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![npm](https://img.shields.io/badge/npm-skailr--agents-cb3837)](https://www.npmjs.com/package/skailr-agents)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-docs-1f1f1f)](https://docs.anthropic.com/en/docs/claude-code)
 [![Cursor](https://img.shields.io/badge/Cursor-docs-6e7781)](https://cursor.com/docs)
-[![Cursor Agent](https://img.shields.io/badge/Cursor%20Agent-GitHub-181717)](https://github.com/cursoragent)
 
 ![skailr-agents hero image](./assets/Skailr-hero.png)
 
-**A multi-agent operating model for Claude Code and Cursor.** Install it into a repo; Claude Code (or Cursor) runs the agents. Skailr adds org structure: plan before build, single-job roles, a visible message board, frozen contracts, and mechanical script gates.
+**A multi-agent operating model for Claude Code and Cursor.** You install it into a repo; Claude Code (or Cursor) runs the agents. Skailr adds the org structure agents are missing: plan before build, single-job roles, a visible message board, frozen contracts, and mechanical script gates.
 
-skailr-agents comes out of [Smith | Advanced Systems](https://advsys.io) (advsys.io), the research and development lab behind the project. For more info, see [skailr.io](https://skailr.io).
+It is not a framework. There is no runtime, no daemon, no graph engine — just markdown roles, contracts, and Node script gates that version with your repo.
 
-You do not need prior knowledge of skailr. Install once. **Plain chat is auto-routed** ([docs/INTAKE.md](docs/INTAKE.md)); or run a slash command explicitly.
-
-| You want to… | Use | Commands |
-| ------------ | --- | -------- |
-| **Ask a question** (no code change) | Intake → expert (exact-one band) or researcher | Plain chat; Task `expert` advise or `researcher` ask mode |
-| **Map an existing repo** (brownfield baseline, backlog) | Map-repo | `/map-repo` — [docs/MAP_REPO.md](docs/MAP_REPO.md) — or plain chat |
-| **Small fix / tweak** (keep lineage/docs true) | Patch (YOLO-style) | `/patch` — or plain chat |
-| **Build a whole app / MVP / many parts / unclear scope** (gated) | Program tier | `/discover` → `/plan-program` → `/build-program` |
-| **Build a whole app** as fast as possible (no gates) | Program YOLO | `/yolo-program` — [docs/YOLO.md](docs/YOLO.md) |
-| Ship **one** cohesive feature (with approval gates) | Workstream | `/ship-feature` → `/continue-feature` → `/build-feature` |
-| Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` — [docs/YOLO.md](docs/YOLO.md) |
-| Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
-| **Give the agents depth in your domain** (a project-local expert roster) | Experts | `/mint-expert`. Guide: [docs/experts.md](docs/experts.md) |
-| **Write to or read from Intair** (a graph an agent or operator calls on purpose, in a given step) | Intair client seam | Reference guide: [docs/intair-seam.md](docs/intair-seam.md) |
-
-**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will **not** break a whole product into workstreams. For a greenfield app or multi-part initiative, use **`/discover`…`/build-program`** or **`/yolo-program`**. On an unfamiliar existing codebase, run **`/map-repo`** first ([docs/MAP_REPO.md](docs/MAP_REPO.md)). Plain chat follows the same rules via intake ([docs/INTAKE.md](docs/INTAKE.md)).
+Built by [Smith | Advanced Systems](https://advsys.io), the research and development lab behind the project. More at [skailr.io](https://skailr.io).
 
 ---
 
-## Quick start
+## Install (30 seconds)
 
-### 0. What you need
+### 1. Get the pack into your project
 
-- A project directory (empty git repo is fine; skailr does not scaffold your stack)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI (`claude` on your PATH), **or** [Cursor](https://cursor.com/docs)
-- Node.js 18+ only if you want the mechanical gates (`scripts/skailr/*.mjs`) — optional for first runs
-
-### 1. Create or open a project
+<details>
+<summary><strong>npx</strong> — fastest (Node ≥ 18, cross-platform)</summary>
 
 ```bash
-mkdir my-app && cd my-app
-git init
-# optional: scaffold your stack (npm create, cargo init, etc.)
+cd my-app
+npx skailr-agents                 # install into the current directory
+npx skailr-agents . --claude-only # skip the Cursor mirror
 ```
 
-### 2. Install Claude Code (skip if you already have it)
+</details>
 
-```bash
-curl -fsSL https://claude.ai/install.sh | bash
-# or: npm install -g @anthropic-ai/claude-code
-```
-
-Log in on first run when prompted.
-
-### 3. Install skailr-agents into the project
-
-Fastest — via npx (Node ≥ 18; runs the same installers cross-platform):
-
-```bash
-npx skailr-agents            # install into the current directory
-npx skailr-agents . --claude-only
-```
-
-Or as a Claude Code plugin (adds `/skailr-agents:install` and `/skailr-agents:doctor`; the install command bootstraps the full pack into whatever project you run it in):
+<details>
+<summary><strong>Claude Code plugin</strong> — managed install, updates via the marketplace</summary>
 
 ```bash
 claude plugin marketplace add ns-3e/skailr-agents
 claude plugin install skailr-agents@skailr
-# then, inside any project session:
-#   /skailr-agents:install
 ```
 
-Or clone-and-run:
+Then, inside any project session:
+
+```
+/skailr-agents:install
+```
+
+The plugin bootstraps the full pack into that project (same installers, doctor-verified) and adds `/skailr-agents:doctor` for health checks. Day-to-day work uses the project-local commands below.
+
+</details>
+
+<details>
+<summary><strong>Clone and run</strong> — no npm, no plugin</summary>
 
 ```bash
 git clone https://github.com/ns-3e/skailr-agents.git /tmp/skailr-agents
 /tmp/skailr-agents/install.sh "$(pwd)" --claude-only
-```
-
-Or from a local clone of this repo:
-
-```bash
-./install.sh /path/to/my-app --claude-only
 ```
 
 Windows (PowerShell):
@@ -93,29 +63,92 @@ git clone https://github.com/ns-3e/skailr-agents.git $env:TEMP\skailr-agents
 & "$env:TEMP\skailr-agents\install.ps1" -TargetPath (Get-Location) -ClaudeOnly
 ```
 
-Commit the pack so teammates get the same agents:
+Omit `--claude-only` to also install the Cursor mirror; `--cursor-only` for Cursor alone.
+
+</details>
+
+Every channel runs the same idempotent installers. They never touch `.claude/experts/` (your minted expert roster survives every upgrade), and re-running never wipes runtime state. Details: [Install details](#install-details).
+
+### 2. Commit the pack
 
 ```bash
 git add .claude CLAUDE.md scripts/skailr .gitignore
 git commit -m "Add skailr-agents operating model"
 ```
 
-After `/map-repo` confirms a baseline, also commit `.claude/repo/` (orientation, ownership draft, backlog) so the map is shared.
+Teammates who pull get the same agents, same gates, same routing.
 
-Omit `--claude-only` to also install the Cursor mirror; use `--cursor-only` for Cursor alone. More: [Install details](#install-details).
-
-### 4. Start Claude Code in the project
+### 3. Start Claude Code and just talk
 
 ```bash
-cd /path/to/my-app
 claude
 ```
 
-Slash commands from the pack are available (`/map-repo`, `/discover`, `/yolo-program`, `/ship-feature`, `/yolo`, `/patch`, …). Plain chat is routed by `CLAUDE.md` ([docs/INTAKE.md](docs/INTAKE.md)).
+That's it. **Plain chat is auto-routed** ([docs/INTAKE.md](docs/INTAKE.md)) — a question goes to the researcher, a small fix to `/patch`, a feature to `/yolo`, a whole app to `/yolo-program`. Or run any slash command yourself (`/map-repo`, `/discover`, `/ship-feature`, …).
+
+On an existing codebase, baseline first:
+
+```
+/map-repo
+```
 
 ---
 
-### Path: Existing repo (brownfield)
+## Why this exists
+
+Single agents are asked to plan, architect, build, test, and validate in one pass. Large projects then fail the way large human projects fail: unclear scope, overlapping ownership, silent interface drift, and coordination buried in one long chat.
+
+If agents fail on large work, the model may not be the problem. **The operating model** might be.
+
+### #1: One agent, wearing every hat
+
+You ask for an app. The agent starts typing code before anyone agreed what "done" means. Halfway through, it's re-deciding the data model inside a component file.
+
+**The fix: plan first, then specialize.** Skailr runs a plan layer before any build — discovery until *you* confirm the brief, decomposition into workstreams with owned files, then execution by single-job roles (researcher, story-writer, architect, engineers, verifier, validator — each does one thing). For a whole product: `/discover` → `/plan-program` → `/build-program`. For one feature: `/ship-feature`. No gates wanted? `/yolo-program` and `/yolo` run the same pipelines with decisions auto-made and logged ([docs/YOLO.md](docs/YOLO.md)).
+
+### #2: Coordination buried in one long chat
+
+When one context window holds the plan, the code, the questions, and the answers, nothing is inspectable and nothing survives the session.
+
+**The fix: a message board, not a chat.** Agents coordinate through append-only markdown channels ([PROTOCOL.md](.claude/program/channels/PROTOCOL.md)). A blocked agent posts one typed message (`question`, `blocker`, `contract-change`), addresses `@agent` / `@team` / `@human`, and ends its turn. The orchestrator routes. `@human` halts for you; unrelated workstreams keep running. Everything is on disk, in git, readable after the fact.
+
+### #3: Parallel agents, no seams
+
+Two agents touch the same file, or team B builds against an interface team A quietly changed an hour ago. Integration day becomes archaeology.
+
+**The fix: frozen contracts and mechanical gates.** Ownership globs must be disjoint — a script checks, not a promise. Cross-team interfaces freeze at plan approval; consumers build against stubs; only the program-architect can change a frozen contract, with your approval of the blast radius. Workstreams stamp `built-against: <contract>@<version>` and the integration verifier fails the composition if anyone built against a stale interface. Script gates (`scripts/skailr/*.mjs`) run in every mode — YOLO skips *human* gates, never mechanical ones.
+
+### #4: "Done" that isn't done
+
+An agent reports success; nobody ran the tests. A validator "reviews" by reading the report the builder wrote.
+
+**The fix: evidence, adversarially checked.** The e2e-verifier must paste the real test-runner output — typed totals are a claim, not evidence. The validator is a separate adversarial role: it walks every acceptance criterion into an AC-by-AC verdict table, re-runs the ownership scan against the final diff, and hunts quiet skips (`TODO`, `.skip`, stubbed returns) before anything is called shippable. `node scripts/skailr/doctor.mjs` health-checks the whole installation; `node scripts/skailr/status.mjs` shows any in-flight run in one view.
+
+---
+
+## What do I run?
+
+| You want to… | Use | Commands |
+| ------------ | --- | -------- |
+| **Ask a question** (no code change) | Intake → expert (exact-one band) or researcher | Plain chat |
+| **Map an existing repo** (brownfield baseline, backlog) | Map-repo | `/map-repo` — [docs/MAP_REPO.md](docs/MAP_REPO.md) |
+| **Small fix / tweak** (keep lineage/docs true) | Patch (YOLO-style) | `/patch` — or plain chat |
+| **Build a whole app / MVP / many parts** (gated) | Program tier | `/discover` → `/plan-program` → `/build-program` |
+| **Build a whole app** as fast as possible (no gates) | Program YOLO | `/yolo-program` — [docs/YOLO.md](docs/YOLO.md) |
+| Ship **one** cohesive feature (with approval gates) | Workstream | `/ship-feature` → `/continue-feature` → `/build-feature` |
+| Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` |
+| Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
+| **Give the agents depth in your domain** (project-local expert roster) | Experts | `/mint-expert` — [docs/experts.md](docs/experts.md) |
+| **Write to or read from Intair** (a graph an agent or operator calls on purpose) | Intair client seam | [docs/intair-seam.md](docs/intair-seam.md) |
+
+**Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will not break a whole product into workstreams — that's `/discover`…`/build-program` or `/yolo-program`. On an unfamiliar existing codebase, run `/map-repo` first. Plain chat follows the same rules via intake ([docs/INTAKE.md](docs/INTAKE.md)).
+
+---
+
+## The paths, end to end
+
+<details>
+<summary><strong>Existing repo (brownfield)</strong> — <code>/map-repo</code></summary>
 
 Install into a non-empty project, then baseline before shipping:
 
@@ -125,288 +158,154 @@ Install into a non-empty project, then baseline before shipping:
 
 Optional focus: `/map-repo auth and public UI`.
 
-Claude maps the tree, drafts ownership, assesses gaps, and presents a backlog. **Confirm** the baseline (human gate). Then pick a backlog item → `/patch` / `/yolo`, or charter a larger initiative → `/discover` / `/yolo-program`. Full notes: [docs/MAP_REPO.md](docs/MAP_REPO.md).
+Claude maps the tree, drafts ownership, assesses gaps, and presents a backlog. **Confirm** the baseline (human gate). Then pick a backlog item → `/patch` / `/yolo`, or charter a larger initiative → `/discover` / `/yolo-program`. After confirmation, commit `.claude/repo/` (orientation, ownership draft, backlog) so the map is shared. Full notes: [docs/MAP_REPO.md](docs/MAP_REPO.md).
 
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/map-repo` | Orientation, draft ownership, findings, backlog; confirm before build | **Brownfield onboarding / tech lead repo audit** |
+</details>
 
----
+<details>
+<summary><strong>Whole app, gated</strong> — <code>/discover</code> → <code>/plan-program</code> → <code>/build-program</code></summary>
 
-### Path A — Whole app / many parts / unclear scope (program tier)
-
-Use this for a greenfield product, an MVP with several subsystems, or anything too big for one story.
-
-#### Path A1 — Gated (recommended when product decisions matter)
-
-**Step 1 — Discover (shared understanding)**
-
-Paste the product vision:
+**Step 1 — Discover.** Paste the product vision:
 
 ```
 /discover I want a billing SaaS: orgs, invoices, email reminders 3 days before due,
 customer portal to pay, and an admin dashboard. Stack preference: TypeScript.
 ```
 
-Claude runs discovery (program-architect). Answer clarifying questions until you confirm a shared brief written to `.claude/program/brief.md`.
+Answer clarifying questions until you confirm a shared brief (`.claude/program/brief.md`). **Do not skip confirmation** — wrong assumptions here fan out across every workstream.
 
-**Do not skip confirmation.** Wrong assumptions here fan out across every workstream.
+**Step 2 — Plan.** `/plan-program` produces workstreams, a shared kernel, frozen interface contracts, and a dependency DAG under `.claude/program/`. Approve to **freeze** contracts.
 
-**Step 2 — Plan (decompose + freeze contracts)**
+**Step 3 — Build.** `/build-program` executes: foundation/kernel → parallel workstream teams (engineering runs a MECE feature queue; each feature gets the full feature pipeline + ticket board) → integration (real against real) → program validation against the original brief → release documentation.
 
-```
-/plan-program
-```
+**Resume:** `/continue-program` picks up from `.claude/program/ledger.md` at the first incomplete phase — sessions, usage limits, and restarts don't lose work. Finished programs auto-archive to `.claude/program/archive/<ts>-<slug>/` so the next initiative starts clean.
 
-You get workstreams, a shared kernel, frozen interface contracts, and a dependency DAG in `.claude/program/`. Review and approve to **freeze** contracts. Downstream teams will build against those contracts (and stubs) in parallel.
+</details>
 
-**Step 3 — Build**
-
-```
-/build-program
-```
-
-Typical flow:
-
-1. Foundation / shared kernel
-2. Parallel workstream teams (eng: skill `run-feature-queue` over MECE features; each feature runs the feature pipeline + ticket board)
-3. Integration (real against real)
-4. Program validation against the original brief
-5. Release documentation
-
-State lives under `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`, channels) so you can resume across sessions. Prefer a clean working tree before build.
-
-**Resume later:** `/continue-program` when a session stopped mid-program (including Claude Code usage limits). Incomplete runs are never auto-archived. When a program finishes (`ledger` `status: complete`), skill `archive-program-state` moves live `.claude/program/` runtime into `archive/<ts>-<slug>/` automatically so the next `/discover` or `/yolo-program` starts clean. Engineering ticket handoffs live under `.claude/program/workstreams/<ws>/features/<slug>/handoff/` and are continued automatically.
-
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/discover` | Clarify the initiative until you confirm `.claude/program/brief.md` | **VP kickoff / discovery** — leadership signs the charter before anyone plans workstreams |
-| `/plan-program` | Workstreams, shared kernel, frozen contracts, execution DAG | **Program planning + interface freeze** — org design and approved seams before parallel delivery |
-| `/build-program` | Run the approved DAG (foundation → teams → integrate → validate → docs) | **Program delivery** — execute the signed plan |
-| `/continue-program` | Resume from `.claude/program/ledger.md` at the first incomplete phase | **Resume mid-initiative** — pick up after a pause (no re-charter) |
-
-#### Path A2 — YOLO (one shot, no approval gates)
-
-Same end-to-end program pipeline, but brief/plan freezes and mid-build escalations are auto-decided:
+<details>
+<summary><strong>Whole app, no gates</strong> — <code>/yolo-program</code></summary>
 
 ```
 /yolo-program Billing SaaS: orgs, invoices, email reminders 3 days before due,
 customer portal to pay, admin dashboard. Prefer TypeScript.
 ```
 
-Read the final **Assumptions made** and any orchestrator decisions carefully — those replace discovery/plan gates. Full notes: [docs/YOLO.md](docs/YOLO.md).
+Same end-to-end program pipeline; brief/plan freezes and mid-build escalations are auto-decided and logged. Read the final **Assumptions made** and orchestrator decisions carefully — they replace your sign-offs. Full notes: [docs/YOLO.md](docs/YOLO.md).
 
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/yolo-program` | Full program pipeline with no human approval gates | **Same program delivery without approval gates** — founder/autonomous mode; assumptions replace sign-offs |
+</details>
 
----
-
-### Path B — One feature (gated)
-
-Use when the ask is one cohesive change (e.g. “remind by email 3 days before due”) inside an existing or already-scaffolded app.
+<details>
+<summary><strong>One feature, gated</strong> — <code>/ship-feature</code> → <code>/continue-feature</code> → <code>/build-feature</code></summary>
 
 ```
 /ship-feature Users should get an email reminder 3 days before an invoice is due
 ```
 
-What happens:
-
 1. **Researcher** maps the repo (or notes greenfield).
-2. **Story-writer** drafts acceptance criteria → you approve (or edit) the story.
-3. Run `/continue-feature` after story approval → **architect** writes the tech spec.
-4. Approve the spec, then:
+2. **Story-writer** drafts acceptance criteria → you approve the story.
+3. `/continue-feature` → **architect** writes the tech spec + ticket board → you approve.
+4. `/build-feature` → ticket workers build in parallel → E2E verification → adversarial validation → docs.
 
-```
-/build-feature
-```
+Artifacts live in `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `progress.md`, reports); runtime state is gitignored. **Resume:** `/continue-feature` from `.claude/tmp/progress.md`. Next feature: run `/ship-feature` with a **new** request — only then are stale tmp files archived.
 
-Backend + frontend engineers run in parallel → E2E verification → adversarial validation → docs.
+</details>
 
-Artifacts: `.claude/tmp/` (`request.md`, `research.md`, `story.md`, `spec.md`, `board.md`, `tickets/`, `progress.md`, reports). Runtime state is gitignored.
-
-**Resume later:** `/continue-feature` when a session stopped mid-feature (including Claude Code usage limits). Incomplete runs are not archived. Mid-build, engineers may also write a handoff under `.claude/tmp/handoff/` and yield a fresh Task; resume continues from that file automatically.
-
-**Next single features:** run `/ship-feature …` with a **new** request (different from `request.md`). Only then are stale tmp files archived.
-
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/ship-feature` | Research → story → spec with approval gates | **Gated feature intake** — stakeholder sign-off before build |
-| `/continue-feature` | Resume from `.claude/tmp/progress.md` at the first incomplete phase | **Resume mid-feature** — after story/spec approval or session interrupt |
-| `/build-feature` | Ticket-board (or classic BE∥FE) build → E2E → validation → docs against the approved spec | **Approved-spec delivery** — ship what was signed off |
-
----
-
-### Path C — One feature, no gates (YOLO)
+<details>
+<summary><strong>One feature, no gates</strong> — <code>/yolo</code> · <strong>Small fix</strong> — <code>/patch</code></summary>
 
 ```
 /yolo Users should get an email reminder 3 days before an invoice is due
 ```
 
-Same pipeline as Path B, but story/spec approvals are skipped. Read the final **Assumptions made** section carefully. If usage limits stop the run mid-way, `/continue-feature` (or `/yolo` with no new prompt) picks up from `.claude/tmp/progress.md`. For a **whole app** one-shot, use Path A2 (`/yolo-program`) instead — `/yolo` will not decompose into workstreams. Full notes: [docs/YOLO.md](docs/YOLO.md).
-
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/yolo` | Full feature pipeline with no human approval gates | **Same feature delivery without approval gates** |
-
----
-
-### Path C2 — Small fix (patch, no gates)
+Same feature pipeline, story/spec approvals skipped. Read the final **Assumptions made**. Interrupted? `/continue-feature` (or `/yolo` with no new prompt) resumes.
 
 ```
 /patch Fix the invoice due-date timezone bug on the reminder job
 ```
 
-Bounded change via owning engineers; syncs ledger/ownership/contracts/docs (skill `sync-lineage`). YOLO-style — no human gates; contract seams auto-decided and logged. Plain chat with a small-fix ask routes here automatically ([docs/INTAKE.md](docs/INTAKE.md)). Too large → use `/yolo` or `/yolo-program`.
+Bounded change via the owning engineers; syncs ledger/ownership/contracts/docs (skill `sync-lineage`). Plain chat with a small-fix ask routes here automatically. Too large → `/yolo` or `/yolo-program`.
 
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/patch` | Bounded fix; sync lineage/contracts/docs; no human gates | **Hotfix / small change request** — no change board |
+</details>
 
----
+<details>
+<summary><strong>Many concurrent initiatives</strong> — portfolio tier</summary>
 
-### Path D — Many concurrent initiatives (portfolio)
+Use when you are running several large bets at once. Portfolio sits above programs the way a CEO/PMO sits above VPs: clarify the mandate (`/discover-portfolio`), decompose into initiatives and conflict surfaces (`/plan-portfolio`), then monitor exceptions only (`/status-portfolio`). It never writes product code. After planning, run per-initiative program commands; `/status-portfolio` points at `/continue-program` for blocked programs.
 
-Use when you are running **several large bets at once** (not one program). Portfolio sits above programs the way a CEO/PMO sits above VPs: clarify the mandate, decompose into initiatives, then monitor exceptions — it does **not** write product code.
+</details>
 
-```
-/discover-portfolio <portfolio description>
-/plan-portfolio
-/status-portfolio
-```
-
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/discover-portfolio` | Clarify multi-initiative intent until you confirm `.claude/portfolio/brief.md` | **CEO / exec strategy offsite** — agree the company-level mandate before anyone plans initiatives |
-| `/plan-portfolio` | Split the brief into initiatives, programs, shared constraints, and conflict surfaces; on approval, open `.claude/portfolio/ledger.md` | **Portfolio / PMO planning** — roadmap into owned initiatives; flag where teams will collide (shared APIs, brand, compliance) |
-| `/status-portfolio` | Roll up initiative traffic lights + open exceptions only; recommend CEO actions | **CEO / exec status review** — red/yellow/green dashboard and exception inbox, not a deep dive into every project |
-
-The agent behind discovery and planning is `portfolio-architect` (CEO-counterpart). Status uses PM patterns (`pm-lead` / `status-reporter`) so routine green work stays off your plate.
-
-After `/plan-portfolio`, run **per-initiative** program commands (`/discover` → `/plan-program` → `/build-program`, or `/yolo-program`). `/status-portfolio` only monitors and points at `/continue-program` for blocked programs.
+**After any run:** review the validator verdict, assumptions (YOLO), and channel board; commit your app code as usual. Don't commit `.claude/tmp/` or most `.claude/program/` runtime (the installer's gitignore covers it). **Do** commit `.claude/repo/` after a confirmed `/map-repo` baseline.
 
 ---
 
-### After you finish
+## How it works
 
-| Path | What to review |
-| ---- | -------------- |
-| Portfolio | Brief, plan, ledger under `.claude/portfolio/`; exception rollup from `/status-portfolio` |
-| Program (gated or YOLO) | Brief, plan, contracts, validator verdict, assumptions (YOLO), channel board under `.claude/program/` |
-| Feature (gated or YOLO) | Validator verdict, `.claude/tmp/` reports, assumptions (YOLO) |
+Tiers nest, each with durable on-disk state and a resume command:
 
-Then commit your app code as usual. Do **not** commit `.claude/tmp/` or most of `.claude/program/` runtime state (installer gitignore covers this). **Do** commit `.claude/repo/` after a confirmed `/map-repo` baseline.
-
----
-
-## Mental model (zero prior knowledge)
-
-skailr is **not** an agent framework (no LangGraph-style runtime). Claude Code / Cursor already run agents. This pack is the **operating model** on top:
-
-1. **Plan first** — deconstruct before anyone builds.
-2. **Specialize** — each agent has one job.
-3. **Disclose just in time** — teams load only when routed.
-4. **Coordinate in the open** — markdown channels, not private side chats.
-5. **Freeze interfaces** — parallel teams build against contracts; changing a frozen contract normally needs your approval (YOLO program mode auto-decides and logs it).
-
-Tiers nest: **portfolio** (many initiatives — CEO/PMO layer) → **program** (one large initiative — VP-owned) → **workstream** (team + ownership + contracts) → **features** (MECE shippable outcomes) → **ticket board** (AC build packets under each feature). Full slash-command → business mapping: [Command reference](#command-reference).
-
-**Claude Code vs Cursor.** `.claude/` is the source of truth. `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
-
----
-
-## Command reference
-
-Every slash command mapped to a business role. Paths above tell the story; this table is the lookup.
-
-| Command | What it does | Business equivalent |
-| ------- | ------------ | ------------------- |
-| `/discover-portfolio` | Confirm portfolio brief (`.claude/portfolio/brief.md`) | **CEO / exec strategy offsite** — company-level mandate |
-| `/plan-portfolio` | Initiatives, programs, conflict surfaces; open portfolio ledger | **Portfolio / PMO planning** — roadmap and collision surfaces |
-| `/status-portfolio` | Traffic lights + exception inbox rollup | **CEO / exec status review** — exceptions only |
-| `/discover` | Confirm program brief (`.claude/program/brief.md`) | **VP kickoff / discovery** — sign the charter |
-| `/map-repo` | Confirm brownfield baseline (`.claude/repo/`) | **Brownfield onboarding / tech lead repo audit** |
-| `/plan-program` | Workstreams, frozen contracts, execution DAG | **Program planning + interface freeze** |
-| `/build-program` | Execute approved program DAG | **Program delivery** |
-| `/continue-program` | Resume from program ledger | **Resume mid-initiative** |
-| `/yolo-program` | Full program pipeline, no approval gates | **Program delivery without approval gates** |
-| `/ship-feature` | Research → story → spec with gates | **Gated feature intake** |
-| `/continue-feature` | Resume from feature progress | **Resume mid-feature** |
-| `/build-feature` | Build → E2E → validate → docs | **Approved-spec delivery** |
-| `/yolo` | Full feature pipeline, no approval gates | **Feature delivery without approval gates** |
-| `/patch` | Bounded fix; sync lineage/docs | **Hotfix / small change request** |
-| `/mint-expert` | Mint or curate a project domain expert (`.claude/experts/`) | **Hiring a domain specialist** |
-
----
-
-## Why this exists
-
-Single agents are asked to plan, architect, build, test, and validate in one pass. Large projects still fail the way large human projects fail: unclear scope, overlapping ownership, silent interface drift, and coordination buried in one long chat.
-
-If agents fail on large work, the model may not be the problem. **The operating model** might be.
-
----
-
-## Five capabilities
-
+**Portfolio** (many initiatives — CEO/PMO layer) → **program** (one large initiative — VP-owned) → **workstream** (team + ownership + contracts) → **feature** (MECE shippable outcome) → **ticket board** (AC build packets).
 
 | Capability | What it means |
 | ---------- | ------------- |
-| **Hierarchy** | Plan layer first; then teams execute. Brownfield: `/map-repo` before build. Program: `/discover` → `/plan-program` → `/build-program` (or `/yolo-program`). Feature: `/ship-feature` → `/build-feature` (or `/yolo`). |
-| **Division of labor** | Single-job agents (research, story, architecture, engineers, verify, validate, document) plus domain teams (content, legal, PM, design, marketing, finance). |
+| **Hierarchy** | Plan layer first; then teams execute. Brownfield baselines before build. |
+| **Division of labor** | Single-job agents plus domain teams (content, legal, PM, design, marketing, finance). |
 | **Progressive disclosure** | Thin registry → team lead → workers. Unused domains cost almost nothing. |
-| **Message board** | Append-only channels under `.claude/program/channels/` (or `.claude/tmp/channels/` for a feature). |
-| **Frozen contracts** | Cross-team seams freeze after plan approval; only the program-architect changes them after you approve blast radius. |
+| **Message board** | Append-only channels under `.claude/program/channels/` (feature runs: `$ARTIFACT_ROOT/channels/`). |
+| **Frozen contracts** | Cross-team seams freeze after plan approval; only the program-architect changes them, gated on your approval. |
 
+**Claude Code vs Cursor:** `.claude/` is the source of truth; `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
 
----
+<details>
+<summary><strong>Program tier deep dive</strong> — conflict design, roles, channels, docs phase</summary>
 
-## Program tier (deep dive)
+**How conflict is designed out:**
 
-When a request is long, ambiguous, or too big for one team, the program tier runs first — like a VP overseeing simultaneous project teams.
-
-### How conflict is designed out
-
-- **Spatial (two teams, same file):** ownership must be disjoint; shared paths belong in the frozen kernel.
-- **Temporal (Team B needs Team A's output):** contract-first. A freezes an interface; B builds against a stub in parallel; they integrate at the end.
+- **Spatial** (two teams, same file): ownership must be disjoint; shared paths belong in the frozen kernel.
+- **Temporal** (Team B needs Team A's output): contract-first. A freezes an interface; B builds against a stub in parallel; they integrate at the end. Workstreams stamp `built-against: <contract>@<version>`; `check-contracts.mjs --consumed` fails stale consumers.
 - **Change control:** only the program-architect changes a frozen contract, and only after your approval.
-
-### Program roles
 
 | Agent | Writes code? | Purpose |
 | ----- | ------------ | ------- |
 | program-architect | No | Discovery; decomposition; owns all cross-team contracts |
-| integration-verifier | Tests only | Proves independently-built workstreams compose |
+| integration-verifier | Tests only | Proves independently-built workstreams compose (real against real, no stubs) |
 | program-validator | No | Final sign-off against the original brief |
-| program-documenter | Docs only | Changelog, API refs, runbooks from the diff |
+| program-documenter | Docs only | Changelog, API refs, runbooks from the **diff**, not the plan |
 
-Persistent state: `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`).
+Persistent state: `.claude/program/` (`brief.md`, `plan.md`, `contracts/`, `ledger.md`, channels). Seeded channel example: [program.md](.claude/program/channels/program.md).
 
-### Channels: the agent message board
+</details>
 
-Agents coordinate through an append-only board at `.claude/program/channels/` (`.claude/tmp/channels/` for a single feature). It is a **board, not a chat**: agents run to completion and cannot wait for a live reply.
+<details>
+<summary><strong>Feature pipeline deep dive</strong> — roles and the ticket board</summary>
 
-- A blocked agent posts one typed message (`question`, `blocker`, `contract-change`, …), addresses `@agent` / `@team` / `@architect` / `@human`, and **ends its turn**.
-- The orchestrator **routes**: scans `status: open`, dispatches the addressee, re-dispatches the blocked agent with the answer.
-- `@human` and `contract-change` **halt** for you; unrelated workstreams keep running.
+**Path:** researcher → story-writer → architect (spec + `ui-spec.md` when UI + ticket board) → frontier ticket workers (backend / frontend / optional data / research / decide) → e2e-verifier → validator (Pass 4 UX when FE ships) → program-documenter.
 
-Full protocol: [PROTOCOL.md](.claude/program/channels/PROTOCOL.md). Seeded example: [program.md](.claude/program/channels/program.md).
+| Agent | Writes code? | Scope | Purpose |
+| ----- | ------------ | ----- | ------- |
+| researcher | No | Read-only | Maps what exists; also resolves `research` tickets |
+| story-writer | Story doc | n/a | Testable acceptance criteria |
+| architect | Spec + board + ui-spec | n/a | Data model, API, ownership split, tickets |
+| backend-engineer | Yes | Ticket or backend globs | Migrations, services, handlers, unit tests |
+| frontend-engineer | Yes | Ticket or frontend globs | UI, state, API client; UX checklist |
+| data-engineer | Yes | Ticket or data globs | ETL/ELT, schemas (optional) |
+| e2e-verifier | Tests only | Tests | User-perspective proof, runner output pasted verbatim |
+| validator | No | Read-only | AC-by-AC verdicts, security, quiet skips, out-of-scope-write scan, UX Pass 4 |
 
-### Documentation as a pipeline phase
+**Ticket board:** after `spec.md`, the architect mints `$ARTIFACT_ROOT/board.md` + `tickets/` (standalone `ARTIFACT_ROOT` is `.claude/tmp`; nested program features use `workstreams/<ws>/features/<slug>`). Tickets carry acceptance criteria, ownership globs, and `blocked_by` edges; the orchestrator claims frontier tickets and dispatches small workers (`ticket-status.mjs --root $ARTIFACT_ROOT`). Channels coordinate blockers; they never assign work.
 
-`program-documenter` runs after validation. It documents the **diff**, not the plan; supports **create** and **reconcile** modes. Engineers can leave `DOC:` anchors.
+User-visible UI follows skill `apply-ux-quality` (story UX ACs, architect-minted `ui-spec.md`, frontend checklist, validator Pass 4). The design *team* is not required on every feature; craft still is.
 
----
+**Gates (gated path):** after story; after spec; then unattended build. YOLO skips the human gates; script gates always run.
 
-## Domain teams and just-in-time disclosure
+</details>
 
-The program tier is domain-agnostic. Engineering is one team; content, legal, PM, design, marketing, and finance plug in as siblings.
+<details>
+<summary><strong>Domain teams</strong> — content, legal, PM, design, marketing, finance</summary>
 
-**Built today:** engineering, **content**, **legal/compliance**, **PM/delivery**, **design**, **marketing**, **finance**, plus program/portfolio agents. Agent definitions live under `.claude/agents/<team-or-tier>/` (`engineering/`, `program/`, `portfolio/`, `content/`, `legal/`, `pm/`, `design/`, `marketing/`, `finance/`).
+The program tier is domain-agnostic; engineering is one team among siblings. Disclosure is just-in-time:
 
 1. **Tier 1: registry** (`.claude/teams/registry.md`) — name, capability, `route-when`.
 2. **Tier 2: team lead** — loaded only when a workstream routes there.
-3. **Tier 3: workers + domain reference** — loaded as the lead dispatches them.
+3. **Tier 3: workers** — loaded as the lead dispatches them.
 
 | Team | Owns | Verifier means |
 | ---- | ---- | -------------- |
@@ -418,60 +317,72 @@ The program tier is domain-agnostic. Engineering is one team; content, legal, PM
 | marketing | channels / segments | message + measurement alignment |
 | finance | worksheets / models | numbers reconcile + assumptions traced |
 
-### Domain pipelines (built)
+Pipelines: content-lead → strategist → writer → editor · legal-lead → analyst → compliance-reviewer → legal-validator · pm-lead → planner → risk-analyst → status-reporter · design-lead → strategist → designer → design-reviewer · mkt-lead → strategist → channel-planner → mkt-analyst · fin-lead → analyst → modeler → fin-auditor.
 
-- **Content:** `content-lead` → strategist → writer → editor. Never ship false claims or generic AI prose.
-- **Legal:** `legal-lead` → analyst → compliance-reviewer → legal-validator. Skill: `trace-requirement`.
-- **PM:** `pm-lead` → planner → risk-analyst → status-reporter. Skill: `compile-status-digest`.
-- **Design:** `design-lead` → strategist → designer → design-reviewer. Markdown specs/handoffs; no Figma required. Craft kernel: skill `apply-ux-quality` (principles, anti-AI layouts, checklist). Three ship-blockers: inaccessible, off-system, craft-failed.
-- **Marketing:** `mkt-lead` → strategist → channel-planner → mkt-analyst.
-- **Finance:** `fin-lead` → analyst → modeler → fin-auditor. Skill: `reconcile-model`.
+Cross-domain demo: [examples/launch-kit/](examples/launch-kit/). To add a domain: create `.claude/agents/<prefix>/`, register a sharp `route-when`, set `status: built`.
 
-Cross-domain demo: [examples/launch-kit/](examples/launch-kit/). To add another domain: create `.claude/agents/<prefix>/`, add a sharp `route-when` in the registry, set `status: built`.
+</details>
 
----
+<details>
+<summary><strong>Project domain experts</strong> — optional, project-local depth</summary>
 
-## Project domain experts (optional)
-
-Teams are process roles and stay generic on purpose. A **minted expert** is the other axis: project-local depth in one vertical, stored as a cited markdown profile under `.claude/experts/` and consulted by the roles that were already going to run.
+Teams are process roles and stay generic on purpose. A **minted expert** is the other axis: cited, project-local depth in one vertical, stored under `.claude/experts/` and consulted by the roles that were already going to run.
 
 ```
 /mint-expert invoice dunning and payment retries
 ```
 
-- **Experts are not a team.** They are never routed a workstream and never appear in an ownership map. They advise, co-author as scoped input, and gate as evidence a sign-off role cites.
-- **Every claim cites a source.** Profiles carry both industry and repo depth, and `scripts/skailr/check-experts.mjs` validates each one; an invalid profile never reaches the roster.
-- **Soft by default.** A fresh expert is `provisional` and can never block. Promotion to `established` needs explicit human action.
-- **The mechanism ships; the roster is yours.** `install.sh` never touches `.claude/experts/`, so an upgrade leaves your roster byte-identical. A missing roster is an empty consult result, not a reason to skip auto-mint evaluation (skill `consult-or-mint`).
+- **Experts are not a team** — never routed a workstream, never in an ownership map. They advise, co-author as scoped input, and gate as evidence a sign-off role cites.
+- **Every claim cites a source**; `scripts/skailr/check-experts.mjs` validates every profile before it reaches the roster.
+- **Soft by default** — a fresh expert is `provisional` and can never block. Promotion needs explicit human action.
+- **The mechanism ships; the roster is yours** — installers never touch `.claude/experts/`.
 
-Plain chat routes a question to an expert only when **exactly one** band covers it; zero or two matches fall through to the researcher. Full guide: [docs/experts.md](docs/experts.md).
+Plain chat routes a question to an expert only when **exactly one** band covers it; zero or two-plus matches fall through to the researcher. Full guide: [docs/experts.md](docs/experts.md).
+
+</details>
 
 ---
 
-## Workstream tier (feature pipeline)
+## Command reference
 
-One feature in → validated implementation out. Standalone via `/ship-feature` / `/yolo`. Under a program, each **engineering** workstream is decomposed into MECE **features** in `plan.md`; skill `run-feature-queue` runs this pipeline **once per feature** (serial within the workstream) under `.claude/program/workstreams/<ws>/features/<slug>/`.
+| Command | What it does | Business equivalent |
+| ------- | ------------ | ------------------- |
+| `/discover-portfolio` | Confirm portfolio brief (`.claude/portfolio/brief.md`) | **CEO / exec strategy offsite** |
+| `/plan-portfolio` | Initiatives, programs, conflict surfaces; open portfolio ledger | **Portfolio / PMO planning** |
+| `/status-portfolio` | Traffic lights + exception inbox rollup | **CEO / exec status review** |
+| `/discover` | Confirm program brief (`.claude/program/brief.md`) | **VP kickoff / discovery** |
+| `/map-repo` | Confirm brownfield baseline (`.claude/repo/`) | **Brownfield onboarding / repo audit** |
+| `/plan-program` | Workstreams, frozen contracts, execution DAG | **Program planning + interface freeze** |
+| `/build-program` | Execute approved program DAG | **Program delivery** |
+| `/continue-program` | Resume from program ledger | **Resume mid-initiative** |
+| `/yolo-program` | Full program pipeline, no approval gates | **Program delivery without approval gates** |
+| `/ship-feature` | Research → story → spec with gates | **Gated feature intake** |
+| `/continue-feature` | Resume from feature progress | **Resume mid-feature** |
+| `/build-feature` | Build → E2E → validate → docs | **Approved-spec delivery** |
+| `/yolo` | Full feature pipeline, no approval gates | **Feature delivery without approval gates** |
+| `/patch` | Bounded fix; sync lineage/docs | **Hotfix / small change request** |
+| `/mint-expert` | Mint or curate a project domain expert | **Hiring a domain specialist** |
 
-**Path:** researcher → story-writer → architect (spec + `ui-spec.md` when UI + ticket board) → frontier ticket workers (backend / frontend / optional data / research / decide) → e2e-verifier → validator (Pass 4 UX when FE ships) → program-documenter.
+---
 
-User-visible UI follows skill `apply-ux-quality`: story UX-outcome ACs, architect-minted `ui-spec.md`, frontend checklist, validator Pass 4. Design team is **not** required on every feature; craft still is.
+## Operate and tune
 
-### Ticket board (Phase 4)
+- **Run status** — `node scripts/skailr/status.mjs`: program phase + feature cursors, active feature, ticket frontier, channel inbox with message age, blockers. Read-only; `--json` for tooling.
+- **Health check** — `node scripts/skailr/doctor.mjs`: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence (plus pack-repo-only checks). Exit 1 on any FAIL; `--json` for tooling.
+- **Model routing** — trade cost vs quality per role ([docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md)):
 
-After the architect writes `spec.md`, it mints a local markdown **board** (`$ARTIFACT_ROOT/board.md`) and **tickets** (`$ARTIFACT_ROOT/tickets/`). Standalone `ARTIFACT_ROOT` is `.claude/tmp`; nested program features use `workstreams/<ws>/features/<slug>`. Each ticket carries acceptance criteria, ownership globs, and optional `blocked_by` edges (same board only). The orchestrator claims frontier tickets and dispatches small workers with ticket + spec context (skill `run-ticket-board`; script `ticket-status.mjs --root $ARTIFACT_ROOT`). Refer to tickets by **title** in narration. Channels still coordinate blockers; they do not assign work. Features are not tickets; cross-feature order uses plan.md `Depends-on`.
+```bash
+node scripts/skailr/apply-model-routing.mjs --profile economy   # haiku digests, sonnet drafts, opus judgment
+node scripts/skailr/apply-model-routing.mjs --profile balanced  # default (committed frontmatter)
+node scripts/skailr/apply-model-routing.mjs --profile quality   # prefer opus
+npm run models:check
+```
 
-| Agent | Writes code? | Scope | Purpose |
-| ----- | ------------ | ----- | ------- |
-| researcher | No | Read-only | Maps what exists; also resolves `research` tickets |
-| story-writer | Story doc | n/a | Testable acceptance criteria |
-| architect | Spec + board + ui-spec | n/a | Data model, API, ownership split, mint tickets, interaction/visual spec when UI |
-| backend-engineer | Yes | Ticket or backend globs | Migrations, services, handlers, unit tests |
-| frontend-engineer | Yes | Ticket or frontend globs | UI, state, API client; UX checklist |
-| data-engineer | Yes | Ticket or data globs | ETL/ELT, schemas (optional) |
-| e2e-verifier | Tests only | Tests | User-perspective proof |
-| validator | No | Read-only | Misses, skips, security gaps, UX Pass 4 when FE |
+In the default `balanced` profile, worker roles run on Sonnet against an Opus-authored spec; architect, planners, verifiers, and validators stay on Opus.
 
-**Gates (gated path):** after story; after spec. Then unattended build. YOLO skips the human gates; script gates still run.
+- Add repo-specific conventions to each agent's Standards section.
+- If your repo doesn't split backend/frontend, redefine engineers along your real seam — the pattern is **disjoint ownership**, not the names.
+- Back boundaries with CI that fails PRs whose backend commits touch frontend paths. Prompt scoping is a convention, not a hard sandbox.
 
 ---
 
@@ -479,71 +390,44 @@ After the architect writes `spec.md`, it mints a local markdown **board** (`$ART
 
 The installer copies `.claude/` and `.cursor/` into your project, creates `.claude/tmp/`, `.claude/program/`, and `.claude/repo/`, and appends ignore rules if missing. Idempotent; safe to re-run.
 
-```bash
-./install.sh /path/to/your-project
-```
-
 ### Upgrading an existing install
 
-There is no separate update command. To push a newer skailr pack into a project that already has skailr, pull or clone this repo and re-run the installer against that project:
-
-```bash
-./install.sh /path/to/your-project
-# or: ./install.sh /path/to/your-project --claude-only
-```
-
-Re-install **does not wipe** portfolio, program, feature, or repo runtime state. Directories are created if missing; existing contents are left alone:
+There is no separate update command — re-run any install channel (`npx skailr-agents`, `/skailr-agents:install`, or `./install.sh /path/to/project`) against the project. Re-install **does not wipe** runtime state:
 
 | Preserved | Overwritten (pack files) |
 | --------- | ------------------------ |
 | `.claude/portfolio/` | Agents, commands, skills, teams registry |
 | `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`, intake, settings, model-routing |
-| `.claude/tmp/` feature artifacts | Program schemas + channel templates (`PROTOCOL.md`, `program.md`, `feature.md`) |
-| `.claude/repo/` map-repo baseline | Cursor rules/commands (allowlisted) and `scripts/skailr/` |
+| `.claude/tmp/` feature artifacts | Program schemas + channel templates |
+| `.claude/repo/` map-repo baseline | Cursor rules/commands and `scripts/skailr/` |
 | `.claude/experts/` (asserted byte-identical) | |
 
-Local edits to pack files in the consumer repo are replaced on upgrade. Commit the refreshed pack paths afterward; leave gitignored runtime under `.claude/tmp/` and most of `.claude/program/` uncommitted.
-
-Manual (Claude Code only):
-
-```bash
-cp -r .claude /path/to/your-repo/
-mkdir -p /path/to/your-repo/.claude/tmp /path/to/your-repo/.claude/program
-```
-
-Commit `.claude/agents/`, `.claude/commands/`, `.claude/teams/`, `.claude/intake.md`, root `CLAUDE.md`, and tracked channel templates under `.claude/program/channels/`. After `/map-repo`, also commit `.claude/repo/`. Ignore runtime state under `.claude/tmp/` and most of `.claude/program/` (see `.gitignore`). Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
+Local edits to pack files in a consumer repo are replaced on upgrade. Commit the refreshed pack paths afterward. Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
 
 ### Enforcement fixtures (optional)
 
 ```bash
 node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
 node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
-node scripts/skailr/feature-status.mjs --json
 node scripts/skailr/check-ownership.mjs --map examples/launch-kit/ownership.json --map-only
 node scripts/skailr/check-contracts.mjs --dir examples/launch-kit/contracts
 node scripts/skailr/check-intair-seam.mjs
 ```
 
-See `examples/parallel-api/`, `examples/launch-kit/`, and [docs/intair-seam.md](docs/intair-seam.md).
+See `examples/parallel-api/` and `examples/launch-kit/`.
 
 ---
 
-## Quickstart: Skailr + Intair
+## Skailr + Intair (optional): persistent memory and graph reasoning
 
-Get Skailr's multi-agent pipelines running with Intair providing persistent memory and graph reasoning. From zero to your first memory-backed build in ~10 minutes.
+[Intair](https://github.com/ns-3e/intair-ontology) is a self-hosted knowledge graph service that gives Skailr agents persistent, cross-session memory and graph reasoning. When configured, agents write what they learn (discoveries, decisions, outcomes) and query prior knowledge before acting. When not configured, all agents behave exactly as today. The seam is deliberately thin: no command, skill, or hook in this pack calls Intair on its own — an agent or operator consults the reference guide ([docs/intair-seam.md](docs/intair-seam.md)) and makes each call deliberately.
 
-### What you need
+<details>
+<summary><strong>Quickstart</strong> — zero to memory-backed build in ~10 minutes</summary>
 
-- Docker + Docker Compose (for Intair)
-- Claude Code (`claude` on your PATH) — [install guide](https://docs.anthropic.com/en/docs/claude-code)
-- An Anthropic API key — **or** set `LLM_PROVIDER=none` in Intair's `.env` to use graph tools only, with no LLM costs
-- Node.js 18+ (optional — only needed if you want Skailr's script enforcement gates)
+**What you need:** Docker + Docker Compose, Claude Code, an Anthropic API key (**or** `LLM_PROVIDER=none` in Intair's `.env` for graph tools only, no LLM costs), Node 18+ (optional, for script gates).
 
----
-
-### Step 1 — Start Intair
-
-Intair is a self-hosted knowledge graph service. It runs alongside your project and gives agents a place to write and query knowledge between sessions.
+**Step 1 — Start Intair**
 
 ```bash
 git clone https://github.com/ns-3e/intair-ontology.git
@@ -555,10 +439,8 @@ Edit `.env` — set at minimum:
 
 ```bash
 NEO4J_PASSWORD=yourpassword      # any strong password
-ANTHROPIC_API_KEY=sk-ant-...     # or set LLM_PROVIDER=none to skip LLM costs entirely
+ANTHROPIC_API_KEY=sk-ant-...     # or LLM_PROVIDER=none
 ```
-
-Start the stack:
 
 ```bash
 docker compose up -d --wait
@@ -566,32 +448,16 @@ curl http://localhost:8000/api/v1/health
 # {"status":"ok","store":"neo4j","node_count":0,"edge_count":0}
 ```
 
-Intair is now running at `http://localhost:8000`. To open the operator UI (graph visualizer + reasoning console):
+Optional operator UI (graph visualizer + reasoning console):
 
 ```bash
 cd web && cp .env.example .env && npm install && npm run dev
 # → http://localhost:5173
 ```
 
----
+**Step 2 — Install Skailr into your project** (any channel from [Install](#install-30-seconds)).
 
-### Step 2 — Install Skailr into your project
-
-```bash
-mkdir my-app && cd my-app
-git init
-
-# Install skailr-agents
-git clone https://github.com/ns-3e/skailr-agents.git /tmp/skailr-agents
-/tmp/skailr-agents/install.sh "$(pwd)" --claude-only
-git add .claude && git commit -m "Add skailr-agents"
-```
-
----
-
-### Step 3 — Wire Skailr to Intair
-
-Add Intair as an MCP server in your project's `.claude/settings.json`:
+**Step 3 — Wire Skailr to Intair.** Add to your project's `.claude/settings.json`:
 
 ```json
 {
@@ -604,86 +470,23 @@ Add Intair as an MCP server in your project's `.claude/settings.json`:
 }
 ```
 
-Done. Skailr agents detect Intair automatically at the start of each run via `intair_get_schema`. If Intair is not reachable, agents fall back silently — nothing breaks.
-
----
-
-### Step 4 — Run a Skailr command
-
-```bash
-cd my-app && claude
-```
-
-```
-/yolo add a hello-world CLI command that prints the current date
-```
-
-What happens behind the scenes:
-- **Researcher** pulls prior knowledge from Intair before reading the repo
-- **Architect** records key technical decisions as `Decision` nodes
-- **Engineers** record their agent runs as `Agent` nodes and completions as `Outcome` nodes
-- **Validator** records the final sign-off
-
----
-
-### Step 5 — Inspect the graph
-
-Open the Intair UI at `http://localhost:5173` → **Graph** page. You will see nodes written by each agent (operational layer: `Agent`, `Task`, `Decision`, `Outcome`; context layer: `Observation`).
-
-Click any node to see full attribution — who wrote it, when, and on what basis. Go to **Reasoning** and ask *"What decisions were made in the last build?"* to query across everything that was written.
-
-On subsequent runs, agents pull this accumulated knowledge before acting — each run starts smarter than the last.
-
----
-
-### Running without an LLM key
-
-Set `LLM_PROVIDER=none` in Intair's `.env`. All graph read/write and schema tools work normally. Only the natural-language reasoning tool (`intair_ask`) is disabled. All Skailr agent memory writes function exactly as described above.
-
----
-
-## Intair Ontology integration (optional)
-
-[Intair](https://github.com/ns-3e/intair-ontology) is a self-hosted knowledge graph service that gives Skailr agents persistent, cross-session memory and graph reasoning. When configured, agents automatically write what they learn (discoveries, decisions, outcomes) and query prior knowledge before acting. When not configured, all agents behave exactly as today.
-
-### Setup
-
-**1. Run Intair**
-
-```bash
-git clone https://github.com/ns-3e/intair-ontology.git
-cd intair-ontology
-cp .env.example .env   # set NEO4J_PASSWORD and ANTHROPIC_API_KEY (or NVIDIA_API_KEY)
-docker compose up -d
-```
-
-Intair starts at `http://localhost:8000`.
-
-**2. Configure Skailr to use Intair**
-
-Add to your project's `.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "intair": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp/"
-    }
-  }
-}
-```
-
-Or set the env var for REST-only mode (used by script-based agents):
+Or set env vars for REST-only mode (used by script-based agents):
 
 ```bash
 export INTAIR_BASE_URL=http://localhost:8000
-export INTAIR_API_TOKEN=   # leave empty for dev/no-auth mode
+export INTAIR_API_TOKEN=   # empty for dev/no-auth mode
 ```
 
-**3. That's it.** Skailr agents detect Intair automatically. No changes to existing commands or workflows.
+Skailr agents detect Intair at the start of each run via `intair_get_schema`. If Intair is not reachable, agents fall back silently — nothing breaks.
 
-### What gets written
+**Step 4 — Run a Skailr command** (`/yolo add a hello-world CLI command that prints the current date`). Behind the scenes: the researcher pulls prior knowledge before reading the repo; the architect records key decisions as `Decision` nodes; engineers record `Agent` and `Outcome` nodes; the validator records the final sign-off.
+
+**Step 5 — Inspect the graph.** Open `http://localhost:5173` → **Graph**. Click any node for full attribution — who wrote it, when, on what basis. Ask the **Reasoning** console *"What decisions were made in the last build?"*. Subsequent runs pull this knowledge before acting — each run starts smarter than the last.
+
+</details>
+
+<details>
+<summary><strong>What gets written</strong></summary>
 
 | Agent | Writes to Intair |
 |-------|-----------------|
@@ -694,28 +497,9 @@ export INTAIR_API_TOKEN=   # leave empty for dev/no-auth mode
 | e2e-verifier / validator | `Outcome` node (pass or fail) |
 | program-architect | `Team` nodes (workstreams), `Contract` nodes (frozen contracts) |
 
-All writes are best-effort. Intair being unavailable never fails an agent run.
+All writes are best-effort. Intair being unavailable never fails an agent run. With `LLM_PROVIDER=none`, all graph read/write and schema tools work normally; only the natural-language reasoning tool (`intair_ask`) is disabled.
 
----
-
-## Tuning
-
-- **Run status** — `node scripts/skailr/status.mjs` shows the in-flight run in one view: program phase + feature cursors, active feature and its next phase, ticket-board counts and frontier, channel inbox with message age, ledger blockers. Read-only; `--json` for tooling.
-- **Health check** — `node scripts/skailr/doctor.mjs` validates the whole installation in one read-only pass: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence, and (in the pack repo) version consistency, manifest paths, installer-array parity, and canonical-block identity. Exit 1 on any FAIL; `--json` for tooling.
-- **Model routing** — switch profiles to trade cost vs quality. See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md).
-- **Intair seam**: reference documentation for calling Intair (MCP tools and their REST equivalents, write attribution, propose-only schema evolution, concept map). No command, skill, or hook in this pack calls Intair; an agent or operator consults the guide and makes the call deliberately. See [docs/intair-seam.md](docs/intair-seam.md).
-
-```bash
-node scripts/skailr/apply-model-routing.mjs --profile economy   # haiku digests, sonnet drafts, opus judgment
-node scripts/skailr/apply-model-routing.mjs --profile balanced # default (committed frontmatter)
-node scripts/skailr/apply-model-routing.mjs --profile quality  # prefer opus
-npm run models:check
-```
-
-- Or hand-edit `model:` in agent frontmatter (then keep `model-routing.json` in sync). In the default `balanced` profile, worker roles (researcher, story-writer, and the backend/frontend engineers) run on Sonnet against an Opus-authored spec; architect, planners, verifiers, and validators stay on Opus. Use the `quality` profile to put engineers back on Opus.
-- Add repo-specific conventions to each agent's Standards section.
-- If your repo does not split backend/frontend, redefine engineers along your real seam. The pattern is **disjoint ownership**, not the names.
-- Back boundaries with CI that fails PRs whose backend commits touch frontend paths. Prompt scoping is a convention, not a hard sandbox.
+</details>
 
 ---
 
@@ -723,31 +507,19 @@ npm run models:check
 
 ### Is skailr-agents an agent framework?
 
-No. Frameworks (LangGraph, CrewAI, AutoGen, …) provide a runtime. skailr is an **operating model**: roles, hierarchy, contracts, channels, script gates — Claude Code / Cursor remain the runtime.
+No. Frameworks (LangGraph, CrewAI, AutoGen, …) provide a runtime. Skailr is an **operating model**: roles, hierarchy, contracts, channels, script gates — Claude Code / Cursor remain the runtime.
 
 ### Can I build my entire initial app with `/ship-feature`?
 
-No. `/ship-feature` and `/yolo` produce **one** story and **one** build (plus that feature’s ticket board). They do not create a multi-story backlog or loop features. Use **Path A1** (`/discover` → `/plan-program` → `/build-program`) or **Path A2** (`/yolo-program`) for a whole app or multi-part initiative. Program planning cuts workstreams, then MECE **features** inside each workstream; each eng feature still runs the feature pipeline + tickets.
-
-### When should I use `/ship-feature` vs `/yolo` vs `/patch` vs `/map-repo` vs `/discover` vs `/yolo-program`?
-
-See the [Command reference](#command-reference) for every command’s business equivalent. Quick chooser:
-
-- **Existing unfamiliar repo** → `/map-repo` ([docs/MAP_REPO.md](docs/MAP_REPO.md))
-- **Hotfix / small tweak** → `/patch` ([docs/INTAKE.md](docs/INTAKE.md))
-- **One feature, keep approvals** → `/ship-feature` → `/continue-feature` → `/build-feature`
-- **One feature, no gates** → `/yolo` ([docs/YOLO.md](docs/YOLO.md)); resume with `/continue-feature`
-- **Whole app / many parts, keep approvals** → `/discover` → `/plan-program` → `/build-program`; resume with `/continue-program`
-- **Whole app, no gates** → `/yolo-program` ([docs/YOLO.md](docs/YOLO.md))
-- **Many concurrent initiatives** → `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` (CEO/PMO layer)
+No. `/ship-feature` and `/yolo` produce **one** story and **one** build. For a whole app or multi-part initiative, use `/discover` → `/plan-program` → `/build-program` or `/yolo-program` — program planning cuts workstreams, then MECE features inside each; each engineering feature still runs the full feature pipeline + tickets.
 
 ### What happens if I just chat (no slash command)?
 
-Intake routes the ask: questions → researcher ask mode; brownfield baseline → `/map-repo`; small changes → `/patch`; one feature → `/yolo`; whole app → `/yolo-program`. Slash commands still win. Details: [docs/INTAKE.md](docs/INTAKE.md).
+Intake routes the ask: questions → researcher; brownfield baseline → `/map-repo`; small changes → `/patch`; one feature → `/yolo`; whole app → `/yolo-program`. Slash commands always win. On an unmapped non-trivial repo, intake offers `/map-repo` first in one sentence; asks naming three-plus separable capabilities get a one-sentence `/yolo-program` confirmation. Details: [docs/INTAKE.md](docs/INTAKE.md).
 
 ### Do agents talk to each other directly?
 
-Via markdown channels: an agent posts and ends its turn; the **orchestrator** routes to the addressee and re-dispatches with the answer. See [PROTOCOL.md](.claude/program/channels/PROTOCOL.md).
+Via markdown channels: an agent posts and ends its turn; the orchestrator routes to the addressee and re-dispatches with the answer. See [PROTOCOL.md](.claude/program/channels/PROTOCOL.md).
 
 ### What happens if a frozen contract is wrong?
 
@@ -755,11 +527,11 @@ The team posts `type: contract-change` to `@architect` and stops. The program-ar
 
 ### Can I add my own domain team?
 
-Yes. Mirror a built domain team under `.claude/agents/<prefix>/`, register a sharp `route-when` in [registry.md](.claude/teams/registry.md), set `status: built`. Design, marketing, and finance are already built as references alongside content.
+Yes. Mirror a built domain team under `.claude/agents/<prefix>/`, register a sharp `route-when` in [registry.md](.claude/teams/registry.md), set `status: built`.
 
 ### Do agents clean up build caches / worktrees?
 
-Yes, when a run finishes successfully. For **programs**, skill `archive-program-state` first moves live `.claude/program/` runtime into `archive/<ts>-<slug>/`. Then skill `cleanup-scoped-artifacts` + `scripts/skailr/cleanup-scoped.mjs` purge allowlisted caches (`target/`, `node_modules/`, `.venv/`, …) **only inside the current agent worktree** under `.claude/worktrees/<id>/`, then retire that worktree. Shared main-checkout caches are left alone (purge is a no-op there). Incomplete `/continue-*` runs never archive or retire. See [docs/YOLO.md](docs/YOLO.md#scoped-worktree-cleanup).
+Yes, when a run finishes successfully. Programs archive live runtime first (skill `archive-program-state`), then `cleanup-scoped.mjs` purges allowlisted caches **only inside the agent's own worktree** under `.claude/worktrees/<id>/`. Shared main-checkout caches are left alone. Incomplete runs never archive or retire. See [docs/YOLO.md](docs/YOLO.md#scoped-worktree-cleanup).
 
 ### Does this work only for software engineering?
 
@@ -769,7 +541,7 @@ No. Engineering, content, legal, PM, design, marketing, and finance are built; n
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Release/publishing flow (maintainers): [PUBLISH.md](PUBLISH.md).
 
 ## Trademarks
 
