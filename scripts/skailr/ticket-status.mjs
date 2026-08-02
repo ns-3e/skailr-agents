@@ -47,6 +47,8 @@ function minimatch(path, pattern) {
   return p === g || p.startsWith(g.replace(/\/$/, "") + "/");
 }
 
+const UNSUPPORTED_GLOB = /[{}?[\]]/;
+
 function globsOverlap(a, b) {
   return a === b || minimatch(a, b) || minimatch(b, a);
 }
@@ -187,6 +189,14 @@ function validateDag(tickets) {
     }
     for (const dep of t.blocked_by || []) {
       if (!map.has(dep)) errors.push(`${t.id}: blocked_by unknown ${dep}`);
+    }
+    for (const g of t.ownership || []) {
+      // The built-in matcher supports only literal prefixes, "*", and "**".
+      // Braces/?/[] would be matched as literals — silently missing real overlaps —
+      // so reject them outright rather than misread an ownership expression.
+      if (UNSUPPORTED_GLOB.test(g)) {
+        errors.push(`${t.id}: unsupported glob syntax "${g}" (supported: literal prefixes, "*", "**")`);
+      }
     }
   }
   // Cycle detection

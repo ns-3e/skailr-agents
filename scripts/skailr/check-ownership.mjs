@@ -6,7 +6,7 @@
  *   node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md
  */
 import { readFileSync, existsSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 
 function minimatch(path, pattern) {
@@ -117,6 +117,23 @@ function main() {
     process.exit(1);
   }
 
+  // The built-in matcher supports only literal prefixes, "*", and "**". Braces/?/[]
+  // would be treated as literals — overlaps missed, real paths reported unowned — so
+  // reject unsupported syntax loudly instead of silently misreading the map.
+  const UNSUPPORTED_GLOB = /[{}?[\]]/;
+  const badGlobs = [];
+  for (const o of map.owners) {
+    for (const g of o.units || []) if (UNSUPPORTED_GLOB.test(g)) badGlobs.push(`${o.id}: ${g}`);
+  }
+  for (const g of map.kernel?.globs || []) if (UNSUPPORTED_GLOB.test(g)) badGlobs.push(`kernel: ${g}`);
+  if (badGlobs.length) {
+    console.error(
+      "Unsupported glob syntax (supported: literal prefixes, \"*\", \"**\"):\n" +
+        badGlobs.map((b) => `  ${b}`).join("\n"),
+    );
+    process.exit(1);
+  }
+
   const collisions = findCollisions(map.owners);
   if (collisions.length) {
     console.error(collisions.join("\n"));
@@ -135,14 +152,19 @@ function main() {
   } else {
     const base = args.base || map.baseRef || "HEAD";
     try {
-      const out = execSync(`git diff --name-only ${base}`, { encoding: "utf8" });
+      const out = execFileSync("git", ["diff", "--name-only", base], { encoding: "utf8" });
       paths = out.split("\n").map((l) => l.trim()).filter(Boolean);
     } catch {
       try {
-        const out = execSync("git diff --name-only", { encoding: "utf8" });
+        const out = execFileSync("git", ["diff", "--name-only"], { encoding: "utf8" });
         paths = out.split("\n").map((l) => l.trim()).filter(Boolean);
       } catch {
-        paths = [];
+        // Fail closed: a gate that cannot observe the diff must not report success.
+        console.error(
+          `ERROR: could not obtain changed paths from git (base=${base}); ` +
+            "refusing to pass with 0 paths. Supply paths via --paths-file if git is unavailable.",
+        );
+        process.exit(1);
       }
     }
   }
