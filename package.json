@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Multi-agent operating model for Claude Code and Cursor — roles, contracts, channels, and script gates",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
