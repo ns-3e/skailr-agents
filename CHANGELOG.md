@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- `validate-channels.mjs`: resolved/answered messages leave the inbox regardless of type or addressee — fresh installs no longer report the seeded worked example as `inbox=2`, and `--strict-inbox` can pass after a contract-change is resolved (audit F-3)
+- `validate-channels.mjs`: a `### MSG-` heading that fails to parse (e.g. missing `---` separator) is now a validation error instead of silently vanishing from routing and validation (audit F-4)
 - `check-intair-seam.mjs` AC-8 no longer fails the shipped repo: command/skill mentions of Intair are allowed when (and only when) they route through skill `call-intair`; bare coupling and auto-trigger phrasing still fail (audit F-1)
 
 ## [1.7.0] — 2026-08-02

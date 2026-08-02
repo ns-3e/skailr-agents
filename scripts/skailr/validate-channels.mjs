@@ -52,6 +52,14 @@ function parseFile(path, text) {
     if (!body) errors.push(`${path} ${id}: empty body`);
     messages.push({ id, ...fields, body, file: path });
   }
+  // A heading that exists in the raw text but did not parse (e.g. missing the `---`
+  // separator) would otherwise vanish silently — invisible to routing AND validation.
+  const rawHeadings = (text.match(/^### MSG-\d+/gm) || []).length;
+  if (rawHeadings !== messages.length) {
+    errors.push(
+      `${path}: ${rawHeadings} "### MSG-" heading(s) but only ${messages.length} parsed — malformed message block (check the \`---\` separator and header lines)`,
+    );
+  }
   return { messages, errors };
 }
 
@@ -73,12 +81,17 @@ function main() {
     errors = errors.concat(r.errors);
   }
 
+  // Resolved/answered messages leave the inbox regardless of type or addressee —
+  // otherwise every contract-change (including the seeded worked example) is a
+  // phantom inbox item forever and --strict-inbox can never pass again.
+  const settled = (m) => m.status === "resolved" || m.status === "answered";
   const inbox = all.filter(
     (m) =>
-      m.status === "open" ||
-      m.status === "blocked-on-human" ||
-      m.type === "contract-change" ||
-      (m.to && m.to.includes("@human")),
+      !settled(m) &&
+      (m.status === "open" ||
+        m.status === "blocked-on-human" ||
+        m.type === "contract-change" ||
+        (m.to && m.to.includes("@human"))),
   );
 
   if (errors.length) {
