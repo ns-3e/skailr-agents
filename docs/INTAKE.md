@@ -22,6 +22,8 @@ Authoritative source: [`.claude/intake.md`](../.claude/intake.md). Detailed heur
 
 **Slash commands always win.** Incomplete feature/program/map-repo runs resume via `/continue-feature` / `/continue-program` / `/map-repo` (or re-enter YOLO with no new prompt) — not a fresh patch. Plain chat never mints; use [`/mint-expert`](experts.md) to add or curate an expert.
 
+Two tie-breakers before a build row: a build ask on a non-trivial repo with no `.claude/repo/orientation.md` gets a one-sentence `/map-repo` offer first (build immediately if declined); an ask naming three or more separable capabilities is program-shaped — confirm `/yolo-program` before `/yolo`.
+
 Plain-chat auto-build uses **YOLO** paths only (plus `/map-repo` for brownfield baseline). For human gates on product initiatives, invoke `/ship-feature` or `/discover` → `/plan-program` → `/build-program` explicitly.
 
 **Business roles (intake routes):** `/map-repo` = brownfield onboarding / tech lead repo audit; `/patch` = hotfix / small change request; `/yolo` = feature delivery without approval gates; `/yolo-program` = program delivery without approval gates (VP initiative, ungated); `/mint-expert` = hiring a domain specialist. Full mapping: [README Command reference](../README.md#command-reference). Experts guide: [experts.md](experts.md).

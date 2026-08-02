@@ -23,6 +23,11 @@ For detailed heuristics, follow skill `route-intake`.
 
 Gated alternatives (`/ship-feature`, `/discover`…) exist when the user asks for gates explicitly; plain-chat auto-build uses YOLO paths only. `/map-repo` is the brownfield baseline path (confirm gate; no auto-build).
 
+Two tie-breakers before committing to a build row:
+
+- **Unmapped brownfield.** Build ask (`/patch`-, `/yolo`-, or `/yolo-program`-shaped) + an existing non-trivial codebase + no `.claude/repo/orientation.md` → offer `/map-repo` first in one sentence ("this repo has no skailr baseline — map it first, or build cold?"). Build immediately if declined; never auto-run `/map-repo`.
+- **Multi-feature phrased as one.** An ask naming **three or more separable capabilities** (distinct user-facing outcomes that could ship independently) is program-shaped even when phrased as one feature — confirm `/yolo-program` in one sentence before falling back to `/yolo`.
+
 ## Expert advisory routing (brief)
 
 Some projects keep a small roster of minted domain experts under `.claude/experts/`. Routing reads **only** the Roster table in `.claude/experts/registry.md`; never open a profile to decide routing.
