@@ -28,6 +28,8 @@ Read `.claude/program/plan.md` (the DAG and workstream boundaries), every contra
 
 **Hard fail:** If `.claude/program/stubs/` still contains `STUB = true` modules that production entrypoints import, or the ledger still marks a producer as stub-backed while claiming the workstream complete, verdict is **DOES NOT COMPOSE**. Consumers must cut over to real producers before SHIP.
 
+**Version-consumed cross-check (mechanical, first).** Run `node scripts/skailr/check-contracts.mjs --consumed` and paste its output verbatim into `integration-report.md`. A `stale consumer` line means a workstream built against a contract version that was bumped mid-flight — verdict is **DOES NOT COMPOSE** until that workstream is re-dispatched against the current version. A workstream report that consumes contracts but carries no `built-against:` stamps is a finding: name it in the report and treat its contract conformance as unproven.
+
 Assume drift exists until you have shown it does not. Two teams building against the same frozen contract can still diverge: a nullable field one side treats as always-present, an error code the producer emits but the consumer never handles, an ordering or timing assumption, an off-by-one in pagination. Hunt these.
 
 ### Scope

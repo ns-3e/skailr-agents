@@ -3,7 +3,7 @@
  * check-contracts.mjs — validate contract frontmatter, freeze status, DAG acyclicity hints.
  * Usage: node scripts/skailr/check-contracts.mjs [--dir .claude/program/contracts] [--ledger .claude/program/ledger.md]
  */
-import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 function parseFrontmatter(text) {
@@ -38,6 +38,21 @@ function parseArgs(argv) {
     if (argv[i] === "--dir") out.dir = argv[++i];
     else if (argv[i] === "--ledger") out.ledger = argv[++i];
     else if (argv[i] === "--plan") out.plan = argv[++i];
+    else if (argv[i] === "--consumed") {
+      // optional value; defaults to the workstreams tree
+      const next = argv[i + 1];
+      out.consumed = next && !next.startsWith("--") ? argv[++i] : ".claude/program/workstreams";
+    }
+  }
+  return out;
+}
+
+function walkMd(dir) {
+  const out = [];
+  for (const f of readdirSync(dir)) {
+    const p = join(dir, f);
+    if (statSync(p).isDirectory()) out.push(...walkMd(p));
+    else if (f.endsWith(".md")) out.push(p);
   }
   return out;
 }
@@ -104,11 +119,37 @@ function main() {
     }
   }
 
+  // --consumed: cross-check `built-against: <id>@<version>` stamps in workstream
+  // reports against the current contract versions. A consumer stamped with a stale
+  // version was built against an interface that has since been bumped.
+  let stamps = 0;
+  if (args.consumed) {
+    const consumedDir = resolve(args.consumed);
+    const byId = new Map(contracts.map((c) => [String(c.id), c]));
+    if (existsSync(consumedDir)) {
+      for (const f of walkMd(consumedDir)) {
+        const text = readFileSync(f, "utf8");
+        for (const m of text.matchAll(/^built-against:\s*([a-z0-9-]+)@(\S+)\s*$/gm)) {
+          stamps++;
+          const [, id, version] = m;
+          const c = byId.get(id);
+          if (!c) errors.push(`${f}: built-against unknown contract ${id}`);
+          else if (String(c.version) !== version) {
+            errors.push(`${f}: stale consumer — built against ${id}@${version}, current is ${id}@${c.version}`);
+          }
+        }
+      }
+    }
+  }
+
   if (errors.length) {
     console.error(errors.join("\n"));
     process.exit(1);
   }
-  console.log(`OK: ${contracts.length} contract(s) checked`);
+  console.log(
+    `OK: ${contracts.length} contract(s) checked` +
+      (args.consumed ? `; ${stamps} built-against stamp(s) verified` : ""),
+  );
 }
 
 main();

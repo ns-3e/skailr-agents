@@ -63,7 +63,13 @@ On mid-build `YIELD:`: re-dispatch per `write-handoff-and-yield` under `$ARTIFAC
 
 7. **Repeat** until every feature row for this workstream is `complete`.
 
-8. **WS rollup:** write `.claude/program/workstreams/<ws>/<ws>-report.md` summarizing features shipped, open risks, and contract producers delivered. Mark the workstream done in the ledger Notes / phase tracking.
+8. **WS rollup:** write `.claude/program/workstreams/<ws>/<ws>-report.md` summarizing features shipped, open risks, and contract producers delivered. For **every frozen contract this workstream consumed**, add one line per contract at the top of the report body, exactly:
+
+   ```
+   built-against: <contract-id>@<version>
+   ```
+
+   (the version read from the contract file at build time). Then run `node scripts/skailr/check-contracts.mjs --consumed` — a `stale consumer` error means a contract was bumped mid-flight and this workstream must be re-dispatched against the new version before the ledger marks it done. Mark the workstream done in the ledger Notes / phase tracking only after this passes.
 
 ## Resume
 
