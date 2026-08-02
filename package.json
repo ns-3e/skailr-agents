@@ -10,6 +10,7 @@
     "check:agent-tools": "node scripts/skailr/check-agent-tools.mjs",
     "check:blocks": "node scripts/skailr/check-blocks.mjs",
     "doctor": "node scripts/skailr/doctor.mjs",
+    "status": "node scripts/skailr/status.mjs",
     "check:intair": "node scripts/skailr/check-intair-seam.mjs",
     "ledger:status": "node scripts/skailr/ledger-status.mjs",
     "models:apply": "node scripts/skailr/apply-model-routing.mjs",

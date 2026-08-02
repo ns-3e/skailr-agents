@@ -117,7 +117,10 @@ function main() {
   let next = null;
   for (const name of ORDER) {
     const row = phases.find((p) => p.phase === name);
-    if (!row || row.status !== "complete") {
+    // "done" and "complete" are both terminal — archive-program.mjs and the shipped
+    // example ledger use "done"; treating it as incomplete made `next` point at
+    // A_kernel on a finished program, which /continue-program reads as a resume target.
+    if (!row || (row.status !== "complete" && row.status !== "done")) {
       next = name;
       break;
     }

@@ -682,6 +682,7 @@ All writes are best-effort. Intair being unavailable never fails an agent run.
 
 ## Tuning
 
+- **Run status** — `node scripts/skailr/status.mjs` shows the in-flight run in one view: program phase + feature cursors, active feature and its next phase, ticket-board counts and frontier, channel inbox with message age, ledger blockers. Read-only; `--json` for tooling.
 - **Health check** — `node scripts/skailr/doctor.mjs` validates the whole installation in one read-only pass: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence, and (in the pack repo) version consistency, manifest paths, installer-array parity, and canonical-block identity. Exit 1 on any FAIL; `--json` for tooling.
 - **Model routing** — switch profiles to trade cost vs quality. See [docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md).
 - **Intair seam**: reference documentation for calling Intair (MCP tools and their REST equivalents, write attribution, propose-only schema evolution, concept map). No command, skill, or hook in this pack calls Intair; an agent or operator consults the guide and makes the call deliberately. See [docs/intair-seam.md](docs/intair-seam.md).

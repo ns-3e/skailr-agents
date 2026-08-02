@@ -11,6 +11,14 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- `scripts/skailr/status.mjs` (`npm run status`) — one read-only view of the in-flight run: ledger phases + cursors, active feature (nested cursor root or standalone `.claude/tmp`), ticket counts + frontier, channel inbox with age (messages posted since), ledger blockers (backlog B-3)
+
+### Fixed
+
+- `ledger-status.mjs` treats `done` as terminal alongside `complete` — a finished ledger using `done` rows (as `archive-program.mjs` and the shipped example do) no longer reports `next: A_kernel`, which `/continue-program` reads as a resume target
+
+### Added
+
 - **Contract-version-consumed stamps** — workstream rollups now record `built-against: <contract-id>@<version>` per consumed frozen contract (skill `run-feature-queue`), `check-contracts.mjs --consumed` cross-checks stamps against current contract versions and fails on stale consumers, and `integration-verifier` runs the cross-check first and pastes its output — a mid-flight contract bump can no longer leave a consumer silently built against the old interface (backlog B-8)
 - `scripts/skailr/doctor.mjs` (`npm run doctor`, in CI) — one-shot read-only health check for a skailr installation: core files, agents (name=filename, no flat files), skill/script references resolve, delegated validators (model routing, agent tools, experts, contracts, channels), mirror presence; pack-repo-only: version consistency, manifest paths, installer-array ↔ mirror parity, canonical blocks. Distinguishes FAIL from SKIP so "all green" can no longer mean "nothing ran" (backlog B-1)
 - `scripts/skailr/check-blocks.mjs` (`npm run check:blocks`, in CI) — canonical-boilerplate byte-identity lint: the blocks deliberately repeated across agent files (tone, task-return, artifact-root, context-handoff, cleanup-before-done) must stay identical across carriers; role-specific extensions after a block are allowed, deliberate variants are excluded in the manifest (backlog B-2)
