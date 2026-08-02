@@ -120,43 +120,20 @@ jobs:
           node scripts/skailr/validate-channels.mjs --dir examples/parallel-api/channels
           node scripts/skailr/emit-stubs.mjs --dir examples/parallel-api/contracts --out /tmp/skailr-stubs
           node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
-          # ticket board smoke
+          # ticket board smoke (printf, not heredocs — column-0 heredoc bodies
+          # terminate a YAML block scalar and killed this workflow file entirely)
           TB=$(mktemp -d)
           mkdir -p "$TB/tickets"
-          cat > "$TB/board.md" <<'EOF'
-# Board: CI
-
-## Destination
-x
-
-## Done
-
-## Not yet specified
-
-## Out of scope
-
-## Tickets
-
-| ID | Title | Role | Status | Blocked by |
-|----|-------|------|--------|------------|
-| T-001 | A | backend | open | |
-EOF
-          cat > "$TB/tickets/T-001-a.md" <<'EOF'
----
-id: T-001
-title: A
-role: backend
-status: open
-acs: [AC-1]
-blocked_by: []
-ownership:
-  - src/a/**
----
-
-# Ticket: A
-
-## Resolution
-EOF
+          printf '%s\n' \
+            '# Board: CI' '' '## Destination' 'x' '' '## Done' '' \
+            '## Not yet specified' '' '## Out of scope' '' '## Tickets' '' \
+            '| ID | Title | Role | Status | Blocked by |' \
+            '|----|-------|------|--------|------------|' \
+            '| T-001 | A | backend | open | |' > "$TB/board.md"
+          printf '%s\n' \
+            '---' 'id: T-001' 'title: A' 'role: backend' 'status: open' \
+            'acs: [AC-1]' 'blocked_by: []' 'ownership:' '  - src/a/**' '---' \
+            '' '# Ticket: A' '' '## Resolution' > "$TB/tickets/T-001-a.md"
           node scripts/skailr/ticket-status.mjs validate --root "$TB"
           node scripts/skailr/ticket-status.mjs claim --id T-001 --root "$TB"
           node scripts/skailr/ticket-status.mjs resolve --id T-001 --gist "done" --root "$TB"

@@ -216,6 +216,34 @@ function main() {
     const r = runNode(root, "check-blocks.mjs", ["--root", root]);
     if (r.missing) report("SKIP", "canonical blocks", "check-blocks.mjs absent");
     else report(r.status === 0 ? "PASS" : "FAIL", "canonical blocks", r.out.trim().split("\n").pop());
+
+    // 7e. Workflow block scalars: a column-0 line inside a `run: |` block terminates
+    // the YAML scalar and kills the whole workflow at GitHub's parser — zero jobs run,
+    // and nothing local notices (this exact failure shipped once, silently, for days).
+    const wfDir = join(root, ".github/workflows");
+    const wfErrors = [];
+    if (existsSync(wfDir)) {
+      for (const wf of readdirSync(wfDir).filter((f) => /\.ya?ml$/.test(f))) {
+        const lines = readFileSync(join(wfDir, wf), "utf8").split("\n");
+        let scalarIndent = -1;
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (scalarIndent >= 0) {
+            if (line.trim() === "") continue;
+            const indent = line.match(/^ */)[0].length;
+            if (indent > scalarIndent) continue;
+            if (indent === 0) {
+              wfErrors.push(`${wf}:${i + 1} column-0 line inside a run:| block ("${line.slice(0, 40)}")`);
+              continue; // keep scanning; report every offender
+            }
+            scalarIndent = -1; // dedented to a shallower key — scalar ended legally
+          }
+          const m = line.match(/^(\s*)run:\s*\|/);
+          if (m) scalarIndent = m[1].length;
+        }
+      }
+      report(wfErrors.length ? "FAIL" : "PASS", "workflow scalars", wfErrors.length ? wfErrors.slice(0, 3).join("; ") : "no column-0 lines inside run:| blocks");
+    }
   }
 
   // ---- Output ----

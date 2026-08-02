@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- CI workflow was un-parseable since 2026-07-31 (`3399d14`): heredoc bodies at column 0 inside a `run: |` block terminate the YAML scalar, so GitHub created zero jobs and every push failed in 0s. The ticket-board fixture now uses indentation-safe `printf`; `doctor.mjs` gained a pack-repo check that fails on any column-0 line inside a workflow `run: |` block so this class cannot ship silently again
+
 ## [1.8.0] — 2026-08-02
 
 ### Fixed
