@@ -43,14 +43,14 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 
 Create `.claude/tmp/` if it does not exist.
 
-1. If `.claude/tmp/progress.md` exists, run `node scripts/skailr/feature-status.mjs --json` (skill `resume-from-feature-progress`).
+1. If `$ARTIFACT_ROOT/progress.md` exists, run `node scripts/skailr/feature-status.mjs --progress $ARTIFACT_ROOT/progress.md --root $ARTIFACT_ROOT --json` (skill `resume-from-feature-progress`).
 2. **Resume** (do **not** archive) when incomplete and `$ARGUMENTS` is empty, matches `request.md`, or the user asked to continue after a session break / usage limits. Jump to `next`; keep channels.
 3. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user says start over. Archive to `.claude/tmp/archive/<timestamp>/`.
 
 On a fresh start:
 
-- Write the raw request verbatim to `.claude/tmp/request.md`.
-- Write `.claude/tmp/mode.md` with a single line: `gated`.
+- Write the raw request verbatim to `$ARTIFACT_ROOT/request.md`.
+- Write `$ARTIFACT_ROOT/mode.md` with a single line: `gated`.
 - Seed `.claude/tmp/progress.md` from `.claude/program/schemas/feature-progress.template.md` (`mode: gated`, `status: researching`).
 
 **Checkpoint rule:** after each phase’s artifact + checks succeed, mark that phase `complete` in `progress.md` **before** the next step. Usage limits can kill the session; progress is how `/continue-feature` resumes.
@@ -75,7 +75,7 @@ Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-co
 
 Invoke the `story-writer` subagent. It reads `research.md` and the request, and writes `.claude/tmp/story.md`.
 
-**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. It writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`**. If its input names a must-have or domain failure mode the story missed, re-invoke `story-writer` once with that file in context before you present the story at Gate 1, and show the expert's contribution to the user there. A `no-expert` return is a skip, not a retry.
+**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: $ARTIFACT_ROOT/story.md`. It writes `$ARTIFACT_ROOT/expert-<slug>.md` and **never edits `story.md`**. If its input names a must-have or domain failure mode the story missed, re-invoke `story-writer` once with that file in context before you present the story at Gate 1, and show the expert's contribution to the user there. A `no-expert` return is a skip, not a retry.
 
 Checkpoint: `story` → complete (story written; awaiting human approval — leave frontmatter `status: story`).
 
@@ -96,13 +96,13 @@ If the user comes back with changes, re-invoke `story-writer` with their feedbac
 
 Normally reached via `/continue-feature` after Gate 1. If you are continuing in-session after approval: invoke the `architect` subagent. It reads `research.md` and `story.md`, writes `.claude/tmp/spec.md`, and mints `.claude/tmp/board.md` + `.claude/tmp/tickets/`.
 
-**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md` so `.claude/tmp/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
+**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: $ARTIFACT_ROOT/story.md` so `$ARTIFACT_ROOT/expert-<slug>.md` reflects the *approved* story, then tell the architect to read it as required input.
 
 When it returns, verify before showing the user:
 1. The BACKEND and FRONTEND ownership globs are **disjoint** — no path matches both. If they overlap, send it back to the architect to resolve ownership.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
-4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
+4. If `$ARTIFACT_ROOT/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
 5. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once.
 6. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
 

@@ -44,22 +44,22 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 
 ### Setup (new vs resume)
 
-Create `.claude/tmp/` if it does not exist.
+Create `$ARTIFACT_ROOT` if it does not exist.
 
-1. If `.claude/tmp/progress.md` exists, run `node scripts/skailr/feature-status.mjs --json`.
+1. If `$ARTIFACT_ROOT/progress.md` exists, run `node scripts/skailr/feature-status.mjs --progress $ARTIFACT_ROOT/progress.md --root $ARTIFACT_ROOT --json`.
 2. **Resume** (do **not** archive) when the run is incomplete (`complete: false`) and either:
    - `$ARGUMENTS` is empty, or
-   - `$ARGUMENTS` matches the text in `.claude/tmp/request.md` (trim whitespace), or
+   - `$ARGUMENTS` matches the text in `$ARTIFACT_ROOT/request.md` (trim whitespace), or
    - the user said to continue / resume after usage limits
 3. On resume: keep channels; read `mode.md` (expect `yolo`); jump to the phase named by `next` (continue ticket frontier if board exists; else only missing build slices if `partialBuild` is set; pass any `handoffs` into those Tasks). Skip finished phases.
 4. **Archive and start fresh** only when `$ARGUMENTS` is non-empty and differs from `request.md`, or the user explicitly says start over. Archive to `.claude/tmp/archive/<timestamp>/`.
 
 On a fresh start:
 
-- Write the raw request verbatim to `.claude/tmp/request.md`.
-- Write `.claude/tmp/mode.md` with a single line: `yolo`.
-- Seed `.claude/tmp/progress.md` from `.claude/program/schemas/feature-progress.template.md` (set `mode: yolo`, `status: researching`, feature slug, `updated` ISO timestamp).
-- Initialize channels: ensure `.claude/tmp/channels/` exists with `PROTOCOL.md` and a `feature.md` board.
+- Write the raw request verbatim to `$ARTIFACT_ROOT/request.md`.
+- Write `$ARTIFACT_ROOT/mode.md` with a single line: `yolo`.
+- Seed `$ARTIFACT_ROOT/progress.md` from `.claude/program/schemas/feature-progress.template.md` (set `mode: yolo`, `status: researching`, feature slug, `updated` ISO timestamp).
+- Initialize channels: ensure `$ARTIFACT_ROOT/channels/` exists with `PROTOCOL.md` and a `feature.md` board.
 
 ### Checkpoint rule
 
@@ -95,7 +95,7 @@ Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-co
 
 Invoke the `story-writer` subagent. It writes `.claude/tmp/story.md`.
 
-**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`. Concurrent dispatch keeps expert consultation off the critical path. The expert writes `.claude/tmp/expert-<slug>.md` and **never edits `story.md`** — that boundary is what keeps ownership disjoint. If its input lands with a must-have or failure mode the story missed, re-invoke `story-writer` once with the file path in context. Any expert dispatch that returns `no-expert` is a skip, not a retry.
+**Expert co-author (when carry-forward `matched:` is non-empty).** In the *same message*, dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: $ARTIFACT_ROOT/story.md`. Concurrent dispatch keeps expert consultation off the critical path. The expert writes `$ARTIFACT_ROOT/expert-<slug>.md` and **never edits `story.md`** — that boundary is what keeps ownership disjoint. If its input lands with a must-have or failure mode the story missed, re-invoke `story-writer` once with the file path in context. Any expert dispatch that returns `no-expert` is a skip, not a retry.
 
 Instruct it that this is YOLO mode: it must **not** leave blocking Open Questions for a human. Every open question becomes an **Assumed** answer with a one-line rationale.
 
@@ -107,15 +107,15 @@ Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print 
 
 ### Phase 3 — Spec (auto-approve)
 
-**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: .claude/tmp/story.md`, refreshing `.claude/tmp/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
+**Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: $ARTIFACT_ROOT/story.md`, refreshing `$ARTIFACT_ROOT/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
 
 Invoke the `architect` subagent. It writes `.claude/tmp/spec.md` **and** mints `.claude/tmp/board.md` + `.claude/tmp/tickets/` (Process step 9).
 
 Verify before continuing:
-1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
+1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has request shape, response shape, and error cases.
-4. If `.claude/tmp/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
+4. If `$ARTIFACT_ROOT/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
 5. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once. (If mint is missing entirely, continue with classic BE∥FE fallback in Phase 4.)
 6. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
 
@@ -136,7 +136,7 @@ Set `build` to `in_progress` in progress.md.
 When the board is complete (or both classic slices return, after draining yield loops):
 - Mark Tickets / Build slice rows complete when reports exist and no handoffs remain for those tickets/slices.
 - Run `git diff --name-only` and verify no file was touched by two concurrent writers. Merge hazard → stop and report (hard abort, not a human gate).
-- **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json`). Non-zero → halt.
+- **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` (or `--map $ARTIFACT_ROOT/ownership.json`). Non-zero → halt.
 - **Channel router** (skill `route-channels`). Run `node scripts/skailr/validate-channels.mjs --tmp`. For open messages, route and re-dispatch as usual. Apply YOLO rules above for `@human` / `contract-change`.
 - Run the full test suite, lint, and typecheck. If red, re-invoke the responsible engineer once. Do not hand a red tree to the verifier if one retry can fix it.
 
@@ -150,7 +150,7 @@ Checkpoint: `verify` → complete.
 
 ### Phase 6 — Validation
 
-**Expert gate (when progress Notes `matched:` is non-empty).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`. If `matched: none`, skip with **no user-facing mention** (do not say “no experts registry”).
+**Expert gate (when progress Notes `matched:` is non-empty).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `$ARTIFACT_ROOT/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`. If `matched: none`, skip with **no user-facing mention** (do not say “no experts registry”).
 
 Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory`, which is the shipped default and the only case v1 exercises.
 

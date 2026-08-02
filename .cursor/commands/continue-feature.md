@@ -41,9 +41,9 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 
 ### Preflight
 
-1. Run `node scripts/skailr/feature-status.mjs --json` (skill `resume-from-feature-progress`). If no progress file but artifacts exist, seed `progress.md` from `.claude/program/schemas/feature-progress.template.md` and mark phases complete based on which artifacts exist (`research.md`, `story.md`, `spec.md`, reports).
-2. Read `.claude/tmp/mode.md` (and progress frontmatter `mode`) — `yolo` or `gated`.
-3. Confirm `.claude/tmp/request.md` exists. Do not reset channels under `.claude/tmp/channels/`.
+1. Run `node scripts/skailr/feature-status.mjs --progress $ARTIFACT_ROOT/progress.md --root $ARTIFACT_ROOT --json` (skill `resume-from-feature-progress`). If no progress file but artifacts exist, seed `progress.md` from `.claude/program/schemas/feature-progress.template.md` and mark phases complete based on which artifacts exist (`research.md`, `story.md`, `spec.md`, reports).
+2. Read `$ARTIFACT_ROOT/mode.md` (and progress frontmatter `mode`) — `yolo` or `gated`.
+3. Confirm `$ARTIFACT_ROOT/request.md` exists. Do not reset channels under `$ARTIFACT_ROOT/channels/`.
 4. If the user provided story/spec feedback in `$ARGUMENTS` and you are still before build, apply it by re-invoking the relevant agent first.
 
 If `complete: true`, report status and stop.
@@ -66,7 +66,7 @@ If `mode` is `yolo`, resume YOLO orchestration from `next` with **no human gates
 Invoke the `architect` subagent. It reads `research.md` and `story.md`, writes `.claude/tmp/spec.md`, and mints `.claude/tmp/board.md` + `.claude/tmp/tickets/`.
 
 When it returns, verify before showing the user:
-1. The BACKEND and FRONTEND ownership globs are **disjoint** — prefer `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md`. If they overlap, send it back to the architect.
+1. The BACKEND and FRONTEND ownership globs are **disjoint** — prefer `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md`. If they overlap, send it back to the architect.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has a fully specified request shape, response shape, and error cases.
 4. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once.

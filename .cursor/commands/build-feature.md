@@ -45,7 +45,7 @@ Confirm `.claude/tmp/spec.md` exists and the user has approved it (or `mode.md` 
 
 If FRONTEND ownership is non-empty and `$ARTIFACT_ROOT/ui-spec.md` is missing (and `spec.md` does not state `N/A: no user-visible UI`), halt and tell the user to re-run architect / `/continue-feature` — do not build UI without a ui-spec.
 
-Run `node scripts/skailr/feature-status.mjs --json` (skill `resume-from-feature-progress`). If `progress.md` is missing, seed it from the template with research/story/spec marked complete and `mode` from `mode.md`. Pick up at `next` — do not redo finished phases. Do **not** archive an incomplete run.
+Run `node scripts/skailr/feature-status.mjs --progress $ARTIFACT_ROOT/progress.md --root $ARTIFACT_ROOT --json` (skill `resume-from-feature-progress`). If `progress.md` is missing, seed it from the template with research/story/spec marked complete and `mode` from `mode.md`. Pick up at `next` — do not redo finished phases. Do **not** archive an incomplete run.
 
 Create the feature branch if one does not exist: `feature/<slug-from-story-title>`.
 
@@ -72,7 +72,7 @@ Set `build` to `in_progress`.
 When the board is complete (or both classic slices return, after draining yield loops):
 - Mark Tickets / Build slice rows complete only when final reports exist and no handoff remains.
 - Run `git diff --name-only` yourself and verify no file was touched by two concurrent writers. If one was, that is a merge hazard — stop and report it rather than proceeding.
-- **Script gate — ownership:** run `node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md` (or `--map .claude/tmp/ownership.json` if present). Non-zero exit → halt.
+- **Script gate — ownership:** run `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` (or `--map $ARTIFACT_ROOT/ownership.json` if present). Non-zero exit → halt.
 - **Run the channel router** (skill `route-channels`). Also run `node scripts/skailr/validate-channels.mjs --tmp`. Scan `.claude/tmp/channels/feature.md` for `status: open` messages. Route each to its addressee, collect the answer, and re-dispatch any engineer that ended its turn waiting. If a message is `type: contract-change` or addressed to `@human` — here that means the spec's contract looks wrong, or an AC cannot be satisfied — **halt and surface it to the user** rather than letting the verifier discover it downstream (unless `mode.md` is `yolo`, then auto-decide per YOLO rules). Do not auto-change the spec's contract in gated mode.
 - Run the full test suite, lint, and typecheck. If the tree is red, re-invoke the responsible engineer once with the failures. Do not hand a red tree to the verifier.
 
@@ -88,7 +88,7 @@ Checkpoint: `verify` → complete.
 
 ### Phase 6 — Validation
 
-**Expert gate (only if progress Notes Experts `matched:` is non-empty — read that note, not “does registry exist?”).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `.claude/tmp/expert-verdict-<slug>.md`. If `matched: none`, skip with **no user-facing mention**.
+**Expert gate (only if progress Notes Experts `matched:` is non-empty — read that note, not “does registry exist?”).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `$ARTIFACT_ROOT/expert-verdict-<slug>.md`. If `matched: none`, skip with **no user-facing mention**.
 
 Authority is computed, never chosen: `binding` requires **all three** of `gate_mode: hard` in `.claude/experts/config.json`, the profile's `gate: hard`, and `maturity: established`. Otherwise `advisory` — the shipped default.
 

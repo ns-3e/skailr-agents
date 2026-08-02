@@ -15,8 +15,10 @@ After each parallel step in `/build-feature` or `/build-program`.
 
 ```bash
 node scripts/skailr/validate-channels.mjs --dir .claude/program/channels
-# feature:
+# standalone feature:
 node scripts/skailr/validate-channels.mjs --tmp
+# nested program feature (ARTIFACT_ROOT=.claude/program/workstreams/<ws>/features/<slug>):
+node scripts/skailr/validate-channels.mjs --dir $ARTIFACT_ROOT/channels
 ```
 
 2. For each `status: open` message in seq order:

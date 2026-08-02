@@ -11,13 +11,15 @@ After any parallel write step (engineers, workstreams) and before plan approval 
 
 ## Procedure
 
-1. Prefer `.claude/program/ownership.json` (program) or `.claude/tmp/ownership.json` (feature).
+1. Prefer `.claude/program/ownership.json` (program) or `$ARTIFACT_ROOT/ownership.json` (feature; `.claude/tmp` standalone).
 2. Run:
 
 ```bash
 node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json
-# or
-node scripts/skailr/check-ownership.mjs --from-spec .claude/tmp/spec.md
+# or, feature-scoped (standalone ARTIFACT_ROOT=.claude/tmp; nested = workstreams/<ws>/features/<slug>):
+node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md
+# or, when the architect emitted a board-level map:
+node scripts/skailr/check-ownership.mjs --map $ARTIFACT_ROOT/ownership.json
 ```
 
 3. Non-zero exit → **halt**. Do not advance the phase. Report violations to the user or owning team.
