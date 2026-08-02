@@ -66,19 +66,30 @@ function main() {
   mkdirSync(resolve(args.outDir), { recursive: true });
   const files = readdirSync(dir);
   let n = 0;
+  const withSidecar = new Set();
   for (const f of files) {
     const id = basename(f).replace(/\.(openapi\.ya?ml|schema\.json|md)$/i, "");
     if (f.endsWith(".openapi.yaml") || f.endsWith(".openapi.yml")) {
       const stub = stubFromOpenApi(id, readFileSync(join(dir, f), "utf8"));
       writeFileSync(join(args.outDir, `${id}.stub.js`), stub);
+      withSidecar.add(id);
       n++;
     } else if (f.endsWith(".schema.json")) {
       const stub = stubFromJsonSchema(id, readFileSync(join(dir, f), "utf8"));
       writeFileSync(join(args.outDir, `${id}.stub.js`), stub);
+      withSidecar.add(id);
       n++;
     }
   }
+  // Name what was skipped — "emitted 0" must be distinguishable from "nothing to do".
+  const skipped = files
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => basename(f).replace(/\.md$/i, ""))
+    .filter((id) => !withSidecar.has(id));
   console.log(`OK: emitted ${n} stub(s) → ${args.outDir}`);
+  if (skipped.length) {
+    console.log(`  no sidecar (no stub emitted): ${skipped.join(", ")}`);
+  }
 }
 
 main();

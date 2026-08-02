@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- `check-contracts.mjs`: contract `status` is validated strictly against `draft|frozen|superseded` — any value containing `|` previously bypassed validation entirely (templates live under `schemas/`, which the script never scans, so the carve-out protected nothing) (audit F-7)
+- `emit-stubs.mjs`: contracts with no OpenAPI/JSON-Schema sidecar are now named in the output instead of being silently uncounted — `emitted 0` is distinguishable from "nothing to do" (audit F-12)
 - `check-ownership.mjs`: git diff is invoked with an argument vector (`execFileSync`) instead of string interpolation — a `--base`/`baseRef` with spaces or metacharacters can no longer break or inject; when the diff cannot be obtained at all the gate now exits 1 instead of reporting `OK … 0 path(s) checked` (audit F-5)
 - `check-ownership.mjs` / `ticket-status.mjs`: ownership globs using unsupported syntax (`{}`, `?`, `[]`) are rejected loudly instead of being matched as literals, which silently missed overlaps and misreported real paths as unowned (audit F-6)
 - `validate-channels.mjs`: resolved/answered messages leave the inbox regardless of type or addressee — fresh installs no longer report the seeded worked example as `inbox=2`, and `--strict-inbox` can pass after a contract-change is resolved (audit F-3)

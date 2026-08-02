@@ -63,13 +63,10 @@ function main() {
     if (!fm.id) errors.push(`${f}: missing id`);
     if (!fm.version) errors.push(`${f}: missing version`);
     if (!fm.status) errors.push(`${f}: missing status`);
-    else if (!["draft", "frozen", "superseded"].includes(String(fm.status).split("|")[0].trim())) {
-      // allow template "draft | frozen | superseded" only in schemas templates
-      if (String(fm.status).includes("|")) {
-        // template file — skip strict
-      } else {
-        errors.push(`${f}: invalid status ${fm.status}`);
-      }
+    else if (!["draft", "frozen", "superseded"].includes(String(fm.status).trim())) {
+      // Templates live under schemas/, which this script never scans — no carve-out.
+      // Any status containing "|" previously bypassed validation entirely.
+      errors.push(`${f}: invalid status ${fm.status}`);
     }
     contracts.push({ file: f, ...fm });
   }
