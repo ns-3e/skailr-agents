@@ -231,6 +231,7 @@ function main() {
       /^\.claude\/experts\//,
       /^\.claude\/settings\.local\.json$/,
       /^\.claude\/program\/(?!channels\/(PROTOCOL|program|feature)\.md$|schemas\/)/,
+      /^docs\/audits\//, // local audit working papers — gitignored, never shipped
     ];
     if (existsSync(join(root, "package.json")) && existsSync(join(root, "install.sh"))) {
       const r = spawnSync("npm", ["pack", "--dry-run", "--json"], { cwd: root, encoding: "utf8" });

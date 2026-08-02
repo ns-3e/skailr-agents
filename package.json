@@ -43,7 +43,12 @@
     "install.ps1",
     "manifest.json",
     "CLAUDE.md",
-    "docs"
+    "docs/INTAKE.md",
+    "docs/MAP_REPO.md",
+    "docs/MODEL_ROUTING.md",
+    "docs/YOLO.md",
+    "docs/experts.md",
+    "docs/intair-seam.md"
   ],
   "repository": {
     "type": "git",
