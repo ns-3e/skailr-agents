@@ -291,7 +291,20 @@ function checkAc8(guide, skill) {
   const scanned = [...walk(".claude/commands"), ...walk(".claude/skills", [skillDir])];
   for (const path of scanned) {
     const text = read(path);
-    if (text && /intair/i.test(text)) fail("AC-8", `${path} mentions Intair; no existing command or skill may couple to it`);
+    if (!text || !/intair/i.test(text)) continue;
+    // Deliberate wiring that routes through skill `call-intair` is the one allowed
+    // coupling (e.g. /map-repo Phase 5, /mint-expert optional Outcome). Anything else
+    // still fails, and even allowed files must stay free of auto-trigger phrasing.
+    if (!text.includes("call-intair")) {
+      fail("AC-8", `${path} mentions Intair without routing through skill call-intair; no other coupling is allowed`);
+      continue;
+    }
+    for (const [i, line] of text.split("\n").entries()) {
+      const hit = AUTO_TRIGGER.find((p) => line.toLowerCase().includes(p));
+      if (!hit) continue;
+      if (NEGATION.test(line)) continue;
+      fail("AC-8", `${path}:${i + 1} reads as an auto-trigger instruction ("${hit}")`);
+    }
   }
 
   if (!guide.includes(DELIBERATE)) fail("AC-8", `${GUIDE} is missing the deliberate-invocation statement`);

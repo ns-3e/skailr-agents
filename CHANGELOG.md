@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- `check-intair-seam.mjs` AC-8 no longer fails the shipped repo: command/skill mentions of Intair are allowed when (and only when) they route through skill `call-intair`; bare coupling and auto-trigger phrasing still fail (audit F-1)
+
 ## [1.7.0] — 2026-08-02
 
 ### Added
