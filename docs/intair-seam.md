@@ -1,5 +1,7 @@
 # skailr ↔ Intair seam
 
+**This is the reference for the one optional integration skailr has: a knowledge graph agents can read and write on purpose.** Its structure is deliberately rigid — this document is the client side of frozen contracts, validated by `scripts/skailr/check-intair-seam.mjs`.
+
 skailr agents are **clients** of an Intair-hosted graph service that exposes one backend behind two faces: a REST API and an MCP tool surface. There is **no live runtime coupling** between this pack and Intair, so every call documented here is one an agent or operator makes deliberately, and every other skailr capability keeps working with Intair absent.
 
 ## Chooser

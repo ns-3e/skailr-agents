@@ -6,6 +6,9 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- **docs/ refreshed in the README's structure** — INTAKE, MAP_REPO, MODEL_ROUTING, YOLO, and experts now open with a problem-framed value line and usage within seconds, then narrative, then reference (long tails in `<details>`); every fact, table, and command preserved; `experts.md`'s consult-modes table corrected to the post-audit `$ARTIFACT_ROOT/expert-*.md` paths (was pre-F-10 `.claude/tmp/`); `intair-seam.md` intentionally kept structural (it is the client side of frozen contracts pinned by `check-intair-seam.mjs`) with only a framing sentence added. Seam gate, doctor, and a full cross-doc link+anchor sweep verified green
+- `docs/audits/` is gitignored local working papers — untracked from git and excluded from the npm tarball (`files` now names the six shipped docs explicitly; doctor's tarball guard rejects `docs/audits/**`)
+
 - **README restructured** (777 → 548 lines, no factual content dropped): install-first flow with all three channels (npx, Claude Code plugin, clone-and-run) as collapsible sections within 30 seconds of the top; "Why this exists" rewritten as four problem→fix sections (one agent/every hat → plan-first specialization; chat-buried coordination → message board; seamless parallelism → frozen contracts + mechanical gates; unverified "done" → evidence-required adversarial validation); path walkthroughs and deep dives (program tier, feature pipeline, domain teams, experts, Intair quickstart) folded into `<details>` blocks; quick-chooser, command-reference, and upgrade tables kept intact. All `docs/*.md` links and the intair-seam README requirements verified green (`check-intair-seam.mjs`, doctor)
 
 ### Added

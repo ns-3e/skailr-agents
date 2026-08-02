@@ -1,33 +1,25 @@
 # Model routing
 
-Skailr does not call models itself — Claude Code and Cursor do. This pack ships a **role → model profile map** so you can optimize token usage and stretch rate limits without inventing a new agent runtime.
+**Every role on the biggest model burns budget; every role on the cheapest fails gates.** Skailr ships a role → model profile map so each agent runs on the model its job actually needs — without inventing a new runtime. Skailr never calls models itself; Claude Code and Cursor do.
 
-## Quick start
+## Switch profiles (10 seconds)
 
-Default profile is **`balanced`** (matches the committed agent `model:` frontmatter).
+Default is **`balanced`** (matches the committed agent `model:` frontmatter).
 
 ```bash
-# Switch profile and patch .claude/agents/**/model: frontmatter
-node scripts/skailr/apply-model-routing.mjs --profile economy
-
-# Verify agents match the active profile (CI uses this)
-node scripts/skailr/apply-model-routing.mjs --check
+node scripts/skailr/apply-model-routing.mjs --profile economy   # stretch limits
+node scripts/skailr/apply-model-routing.mjs --profile quality   # prefer opus
+node scripts/skailr/apply-model-routing.mjs --check             # verify (CI runs this)
 # or: npm run models:check
 ```
 
-Pack maintainers after applying a profile:
+Pack maintainers run `./scripts/remirror.sh` after applying a profile. Installed projects only need the apply script — Claude Code reads agent frontmatter; Cursor reads `.cursor/model-routing.md` and the Model note on each rule.
 
-```bash
-./scripts/remirror.sh
-```
-
-Installed projects only need `apply-model-routing.mjs` — Claude Code reads agent frontmatter; Cursor reads `.cursor/model-routing.md` (copied at install) and the Model notes on each rule.
-
-## Profiles
+## The profiles
 
 | Profile | Intent |
 | ------- | ------ |
-| `balanced` | Current defaults: worker roles that execute against an Opus-authored spec — research/story **and** the backend/frontend engineers, plus `content-writer`, `designer`, `fin-modeler` — on Sonnet; architect, leads, planners (`pm-planner`, `channel-planner`), verifiers, and validators on Opus. `data-engineer` stays Opus (schema reasoning often lacks a full upstream spec) |
+| `balanced` | Worker roles that execute against an Opus-authored spec — research/story **and** the backend/frontend engineers, plus `content-writer`, `designer`, `fin-modeler` — on Sonnet; architect, leads, planners (`pm-planner`, `channel-planner`), verifiers, and validators on Opus. `data-engineer` stays Opus (schema reasoning often lacks a full upstream spec) |
 | `economy` | Digests (`status-reporter`, `risk-analyst`) and templated workers (`legal-analyst`; planners drop to Haiku in this profile only) → Haiku; writers/docs → Sonnet; engineers and hard-judgment roles stay Opus |
 | `quality` | Almost everything Opus; only `status-reporter` stays Sonnet |
 
@@ -48,31 +40,32 @@ remirror.sh ──► .cursor/rules/*.mdc  +  .cursor/model-routing.md
 Orchestrators (skill route-models) resolve model per Task dispatch
 ```
 
-- **Claude Code:** named agents use their frontmatter `model:`. Keep frontmatter in sync with the active profile via the apply script.
+- **Claude Code:** named agents use their frontmatter `model:`. Keep it in sync with the active profile via the apply script.
 - **Cursor:** remirror injects `**Model (Cursor Task):** …` into each rule and generates `.cursor/model-routing.md`. Pass that model on Task / Background Agent dispatch.
 
-## Orchestrator rules (skill `route-models`)
+Before every subagent Task, orchestrators (skill `route-models`):
 
-Before every subagent Task:
-
-1. Resolve the role’s model from the active profile.
+1. Resolve the role's model from the active profile.
 2. **Downgrade** one tier for thin channel answers / pure digests (never below Haiku; never for `protected` roles).
 3. **Escalate once** on quality-gate retry (thin research, ownership overlap, failed e2e, DO NOT SHIP / SHIP WITH FIXES).
 4. **Log** one line to `.claude/tmp/model-usage.md` (feature) or `.claude/program/model-usage.md` (program).
 
-YOLO commands still honor the active profile and escalate-on-retry.
+YOLO commands honor the active profile and escalate-on-retry like everything else.
 
-## Token usage vs rate limits
+## Spending the savings where they matter
 
-- **Cheaper models** (economy profile) stretch usage limits on digests and drafting roles.
-- **Smaller context** still matters more than model choice for long programs: keep JIT disclosure (registry → lead → workers), pass only the channel thread when routing answers, and prefer “read path X” over pasting full artifacts into every re-dispatch.
-- Keep **validators and contract owners on Opus** even in economy — cheap failures there cost more rebuild tokens than they save.
+- **Cheaper models** (economy) stretch usage limits on digests and drafting roles.
+- **Smaller context beats cheaper models** on long programs: keep JIT disclosure (registry → lead → workers), pass only the channel thread when routing answers, and prefer "read path X" over pasting artifacts into every re-dispatch.
+- Keep **validators and contract owners on Opus** even in economy — a cheap failure there costs more rebuild tokens than it saves.
 
-## Adding an agent
+<details>
+<summary><strong>Adding an agent</strong> (pack maintainers)</summary>
 
-1. Add the agent under `.claude/agents/<team-or-tier>/` (e.g. `engineering/`, `content/`, `design/`, `marketing/`, `finance/`). No flat files at agents root.
-2. Add its name to **every** profile’s `roles` map in `model-routing.json`.
-3. Run `npm run models:check` (or `apply-model-routing.mjs --check`).
+1. Add the agent under `.claude/agents/<team-or-tier>/` (no flat files at agents root).
+2. Add its name to **every** profile's `roles` map in `model-routing.json`.
+3. Run `npm run models:check`.
 4. Run `./scripts/remirror.sh`.
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+</details>
