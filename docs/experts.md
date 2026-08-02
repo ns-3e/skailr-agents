@@ -175,7 +175,7 @@ It checks 21 numbered rules, including: the schema tag; slug pattern, uniqueness
 
 Warnings do not block: a `route_when` under 30 characters, a cited path that changed since `last_reviewed.against_sha`, a profile `provisional` for over 90 days, and a roster above `roster_cap`.
 
-**What it does not check:** `route-when` band overlap, between two experts or between an expert and a team. Textual overlap is not mechanically decidable, so nothing here protects a caller from misrouting. Sharp bands are the only defense.
+**What it does not check:** `route-when` band overlap, between two experts or between an expert and a team. Textual overlap is not mechanically decidable (an LLM-in-a-gate would make a script gate nondeterministic), so this is a **deliberate non-check**: the intake-side ambiguity guard — zero or two-plus matches both mean "no expert route" — is the operational backstop, and sharp bands at mint/curate time are the only defense.
 
 Regeneration is deterministic and never runs on a failed roster, so a broken profile cannot corrupt the routing view. Safe to wire as a `Stop` hook, but only without `--strict`, so a soft cap warning never fails an ordinary turn.
 

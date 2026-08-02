@@ -2,8 +2,16 @@
 
 Source: `docs/audits/2026-08-02-audit.md`. Sequenced in recommended order. Effort:
 S (<½ day) / M (1–2 days) / L (multi-day). Every entry lists the invariant(s) it
-touches; none violates one. Items requiring a human decision are at the bottom and are
-**not** implemented.
+touches; none violates one.
+
+**Status (2026-08-02, second pass — recommended approaches approved):**
+DONE: B-1 (`doctor.mjs`, in CI; its parity check immediately caught install.ps1
+missing the expert/expert-scout rules), B-2 (`check-blocks.mjs`, in CI), B-7
+(archive leftovers reporting), B-8 (built-against stamps + `--consumed` gate +
+integration-verifier wiring). H-1/H-3 confirmed as implemented; H-2 resolved in favor
+of B-10's mechanical whole-thread moves; H-4 closed as a documented deliberate
+non-check (`docs/experts.md`). BLOCKED: B-4 (no PowerShell available on this machine;
+do not land unverified). OPEN: B-3, B-5, B-6, B-9, B-10, B-11, B-12, B-13.
 
 ---
 
