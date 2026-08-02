@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- `archive-program.mjs` no longer labels a no-ledger run `complete=true` — dry-run/report now say `ledger=no-ledger (archiving as leftovers)`, and skill `archive-program-state` documents the rule (pre-freeze kills are leftovers, archived not deleted) (audit F-13 / backlog B-7)
+
 ### Added
 
 - CI now runs `check-intair-seam.mjs`, `check-experts.mjs`, a version-consistency check (package.json = manifest.json = latest CHANGELOG cut), and a mirror-freshness check (`remirror.sh` must reproduce the committed tree) — the four gaps that let audit findings F-1 and F-2 rot undetected (audit F-14)

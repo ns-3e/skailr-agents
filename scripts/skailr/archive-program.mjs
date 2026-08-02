@@ -210,14 +210,18 @@ function main() {
   let fm = {};
   let ledgerText = "";
   let complete = false;
+  let ledgerState = "incomplete";
   if (existsSync(ledgerAbs)) {
     ledgerText = readFileSync(ledgerAbs, "utf8");
     fm = parseFrontmatter(ledgerText);
     complete = ledgerComplete(fm, ledgerText);
+    ledgerState = complete ? "complete" : "incomplete";
   } else {
-    // No ledger but live files: treat as leftovers from a finished/abandoned run.
-    // Allow archive without --force (safety net for next-start).
+    // No ledger but live files: pre-freeze leftovers (the ledger is only seeded at
+    // contract freeze) or an abandoned run. Archiving preserves everything, so allow
+    // it without --force — but report it honestly, never as "complete".
     complete = true;
+    ledgerState = "no-ledger (archiving as leftovers)";
   }
 
   if (!complete && !force) {
@@ -232,7 +236,7 @@ function main() {
 
   if (dryRun) {
     console.log(
-      `archive-program: dry-run → ${destRel} (force=${force} complete=${complete})`,
+      `archive-program: dry-run → ${destRel} (force=${force} ledger=${ledgerState})`,
     );
     for (const it of items) {
       console.log(`archive-program: would move ${it.rel}`);

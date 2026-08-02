@@ -32,6 +32,7 @@ node scripts/skailr/archive-program.mjs --force
 3. Re-seeds an empty `channels/program.md`. Leaves `schemas/`, `channels/PROTOCOL.md`, `channels/feature.md`, `.gitkeep`, and existing `archive/` in place.
 4. Exits 0 with `noop` when nothing live to archive.
 5. Refuses incomplete ledgers unless `--force`.
+6. **No ledger + live files** (e.g. a run killed before contract freeze — the ledger is only seeded at freeze): archives without `--force` as `ledger=no-ledger (archiving as leftovers)`. Nothing is deleted; the leftovers land in `archive/` like any other run.
 
 ## Completion order
 
