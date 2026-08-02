@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **npm / npx install channel** — `npx skailr-agents [target-dir] [--claude-only|--cursor-only]` runs the real installers (`install.sh` on POSIX, `install.ps1` on Windows) via a thin `bin/skailr.mjs` wrapper; `package.json` is now publishable (bin, files whitelist, repository/license/keywords metadata). Verified end-to-end from a packed tarball: full install, doctor green in the target, `.claude/experts/` untouched, flag passthrough
+
 ### Fixed
 
 - CI workflow was un-parseable since 2026-07-31 (`3399d14`): heredoc bodies at column 0 inside a `run: |` block terminate the YAML scalar, so GitHub created zero jobs and every push failed in 0s. The ticket-board fixture now uses indentation-safe `printf`; `doctor.mjs` gained a pack-repo check that fails on any column-0 line inside a workflow `run: |` block so this class cannot ship silently again

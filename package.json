@@ -1,8 +1,7 @@
 {
   "name": "skailr-agents",
-  "private": true,
   "version": "1.8.0",
-  "description": "Multi-agent operating model for Claude Code and Cursor — roles, contracts, channels, and script gates",
+  "description": "Multi-agent operating model for Claude Code and Cursor \u2014 roles, contracts, channels, and script gates",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
     "check:contracts": "node scripts/skailr/check-contracts.mjs",
@@ -19,5 +18,32 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "bin": {
+    "skailr-agents": "bin/skailr.mjs"
+  },
+  "files": [
+    ".claude",
+    ".cursor",
+    "scripts",
+    "bin",
+    "install.sh",
+    "install.ps1",
+    "manifest.json",
+    "CLAUDE.md",
+    "docs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ns-3e/skailr-agents.git"
+  },
+  "homepage": "https://skailr.io",
+  "keywords": [
+    "claude-code",
+    "cursor",
+    "agents",
+    "multi-agent",
+    "operating-model",
+    "orchestration"
+  ]
 }
