@@ -1,0 +1,56 @@
+name: Publish to npm (bootstrap — first release only)
+
+# npm Trusted Publishing (OIDC, see publish-npm.yml) can only be configured for a
+# package that already exists on the registry — the "Trusted Publisher" settings
+# page has nothing to attach to for a name that has never been published. This
+# workflow exists ONLY to create that first published version via a classic
+# token, so the real first publish still never happens on anyone's laptop.
+#
+# One-time setup: add a repo secret NPM_TOKEN — a Granular Access Token from
+# https://www.npmjs.com/settings/<you>/tokens with "Read and write" on this
+# package (or "All packages", since it doesn't exist yet) and "Bypass 2FA for
+# write actions" enabled (npm requires one or the other to publish at all).
+#
+# After this workflow succeeds once:
+#   1. Go to the package's Settings -> Trusted Publisher on npmjs.com and
+#      configure it per PUBLISH.md.
+#   2. Delete the NPM_TOKEN secret (Settings -> Secrets and variables -> Actions).
+#   3. Never run this workflow again — publish-npm.yml (OIDC, tag-triggered)
+#      handles every release from here on.
+#
+# Manual dispatch only: this must never fire on a tag push, so a stale token
+# left in secrets can't silently republish something OIDC should be handling.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Refuse to run if the package already exists on npm
+        run: |
+          set -e
+          name=$(node -p "require('./package.json').name")
+          if npm view "$name" version >/dev/null 2>&1; then
+            echo "FAIL: $name is already published — this bootstrap workflow is for the first release only. Use the vX.Y.Z tag + publish-npm.yml (OIDC) instead."
+            exit 1
+          fi
+          echo "$name has no published versions yet; proceeding with bootstrap publish."
+
+      - run: npm install
+      - run: npm run doctor
+
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

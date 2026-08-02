@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Both publish channels moved to GitHub Actions — no local `npm publish` or manual plugin distribution again.** `.github/workflows/publish-npm.yml` publishes to npm on a `vX.Y.Z` tag push via **Trusted Publishing (OIDC)** — no `NPM_TOKEN` secret stored or needed, per [npm's CI/CD guidance](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow). Since Trusted Publishing can only be configured for a package that already exists on the registry, `.github/workflows/publish-npm-bootstrap.yml` (manual `workflow_dispatch` only, refuses to run if the package already exists) handles the one unavoidable first publish via a temporary token, documented as a one-time step in `PUBLISH.md`. `.github/workflows/publish-plugin.yml` validates `.claude-plugin/*.json` with `claude plugin validate . --strict` and cuts the matching GitHub Release from the tag's `CHANGELOG.md` section — Claude Code plugins have no registry, so this repo's own marketplace file *is* the publish target and validate+release is the equivalent gate. All three workflows verify the tag matches the version in `package.json`/`plugin.json` and run `doctor.mjs` before doing anything else.
+- **`actionlint` gates every workflow file in CI**, pinned to v1.7.12 via the official download script (not the mutable `main` ref) — verified it would have caught the `3399d14` YAML break (F-CI) at its exact line on day one. Zero findings across all four workflow files; the one pre-existing shellcheck info-level false positive (`` `story.md` `` inside a single-quoted `grep -F` pattern — backticks there are not command substitution) is suppressed with an inline `# shellcheck disable=SC2016`.
+
 ## [1.9.1] — 2026-08-02
 
 ### Fixed

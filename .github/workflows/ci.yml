@@ -15,6 +15,11 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Lint all workflow files (would have caught the 3399d14 YAML break on day one)
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+
       - name: Check agent name frontmatter matches filename
         run: |
           set -e
@@ -39,6 +44,7 @@ jobs:
             echo "FAIL: channel protocol must live in PROTOCOL.md only (not inlined in agents)"
             exit 1
           fi
+          # shellcheck disable=SC2016  # literal grep -F pattern; the backticks are not command substitution
           if grep -RsnF 'full contents of `story.md`' .claude/commands; then
             echo "FAIL: commands must not paste full story.md into chat"
             exit 1

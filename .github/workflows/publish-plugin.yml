@@ -1,0 +1,70 @@
+name: Publish Claude Code plugin
+
+# Claude Code plugins have no registry upload step: this repo IS the marketplace
+# (.claude-plugin/marketplace.json, source: "./"), and users install with
+#   claude plugin marketplace add ns-3e/skailr-agents
+#   claude plugin install skailr-agents@skailr
+# "Publishing" is therefore: validate the manifests mechanically, then cut the
+# GitHub Release that documents what shipped. Pushing main is what users actually
+# pull; this workflow is the gate + the release, not an upload.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write # to create the GitHub Release
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Verify tag matches plugin.json version
+        run: |
+          set -e
+          tag="${GITHUB_REF_NAME#v}"
+          plg=$(node -p "require('./.claude-plugin/plugin.json').version")
+          echo "tag=$tag plugin.json=$plg"
+          if [ "$tag" != "$plg" ]; then
+            echo "FAIL: tag v$tag does not match .claude-plugin/plugin.json version $plg"
+            exit 1
+          fi
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate plugin + marketplace manifests (strict)
+        run: claude plugin validate . --strict
+
+      - name: Doctor — whole-installation health check
+        run: node scripts/skailr/doctor.mjs
+
+      - name: Extract this version's changelog section
+        run: |
+          awk '
+            /^## \[Unreleased\]/ { next }
+            /^## \[/ {
+              if (found) exit
+              found = 1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md > /tmp/release-notes.md
+          cat /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file /tmp/release-notes.md \
+            --verify-tag || echo "Release already exists for ${GITHUB_REF_NAME}, skipping"
