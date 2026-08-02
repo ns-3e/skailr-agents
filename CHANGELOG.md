@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- **Claude Code plugin channel** — `.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json` make this repo its own marketplace: `claude plugin marketplace add ns-3e/skailr-agents` then `claude plugin install skailr-agents@skailr`; the plugin exposes `/skailr-agents:install` (bootstraps the full pack into the project via the real installers, then doctor-verifies) and `/skailr-agents:doctor`. `claude plugin validate .` passes; `doctor.mjs` validates the manifests and CI's version-consistency gate now covers `plugin.json` (four versions move together)
 - **npm / npx install channel** — `npx skailr-agents [target-dir] [--claude-only|--cursor-only]` runs the real installers (`install.sh` on POSIX, `install.ps1` on Windows) via a thin `bin/skailr.mjs` wrapper; `package.json` is now publishable (bin, files whitelist, repository/license/keywords metadata). Verified end-to-end from a packed tarball: full install, doctor green in the target, `.claude/experts/` untouched, flag passthrough
 
 ### Fixed

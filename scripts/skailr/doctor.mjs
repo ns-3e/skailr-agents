@@ -159,8 +159,10 @@ function main() {
       const man = JSON.parse(readFileSync(join(root, "manifest.json"), "utf8")).version;
       const logM = readFileSync(join(root, "CHANGELOG.md"), "utf8").match(/^## \[(\d+\.\d+\.\d+)\]/m);
       const log = logM ? logM[1] : "none";
-      if (pkg === man && pkg === log) report("PASS", "versions", `package=manifest=changelog=${pkg}`);
-      else report("FAIL", "versions", `package=${pkg} manifest=${man} changelog=${log}`);
+      const plgPath = join(root, ".claude-plugin/plugin.json");
+      const plg = existsSync(plgPath) ? JSON.parse(readFileSync(plgPath, "utf8")).version : pkg;
+      if (pkg === man && pkg === log && pkg === plg) report("PASS", "versions", `package=manifest=plugin=changelog=${pkg}`);
+      else report("FAIL", "versions", `package=${pkg} manifest=${man} plugin=${plg} changelog=${log}`);
     } catch (e) {
       report("FAIL", "versions", String(e.message || e));
     }
@@ -216,6 +218,30 @@ function main() {
     const r = runNode(root, "check-blocks.mjs", ["--root", root]);
     if (r.missing) report("SKIP", "canonical blocks", "check-blocks.mjs absent");
     else report(r.status === 0 ? "PASS" : "FAIL", "canonical blocks", r.out.trim().split("\n").pop());
+
+    // 7e'. Plugin manifests: both JSONs must parse, names must agree, and every
+    // configured plugin command path must exist — a broken manifest fails at the
+    // user's `claude plugin install`, far from this repo.
+    const pluginPath = join(root, ".claude-plugin/plugin.json");
+    const marketPath = join(root, ".claude-plugin/marketplace.json");
+    if (existsSync(pluginPath) || existsSync(marketPath)) {
+      const perrs = [];
+      try {
+        const plugin = JSON.parse(readFileSync(pluginPath, "utf8"));
+        if (!plugin.name) perrs.push("plugin.json missing name");
+        for (const c of [].concat(plugin.commands || [])) {
+          if (!c.startsWith("./")) perrs.push(`plugin.json command path must start with ./: ${c}`);
+          else if (!existsSync(join(root, c))) perrs.push(`plugin.json command path missing: ${c}`);
+        }
+        const market = JSON.parse(readFileSync(marketPath, "utf8"));
+        if (!market.name) perrs.push("marketplace.json missing name");
+        const entry = (market.plugins || []).find((p) => p.name === plugin.name);
+        if (!entry) perrs.push(`marketplace.json has no entry named ${plugin.name}`);
+      } catch (e) {
+        perrs.push(String(e.message || e));
+      }
+      report(perrs.length ? "FAIL" : "PASS", "plugin manifests", perrs.length ? perrs.join("; ") : "plugin.json + marketplace.json valid and consistent");
+    }
 
     // 7e. Workflow block scalars: a column-0 line inside a `run: |` block terminates
     // the YAML scalar and kills the whole workflow at GitHub's parser — zero jobs run,

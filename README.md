@@ -57,6 +57,24 @@ Log in on first run when prompted.
 
 ### 3. Install skailr-agents into the project
 
+Fastest — via npx (Node ≥ 18; runs the same installers cross-platform):
+
+```bash
+npx skailr-agents            # install into the current directory
+npx skailr-agents . --claude-only
+```
+
+Or as a Claude Code plugin (adds `/skailr-agents:install` and `/skailr-agents:doctor`; the install command bootstraps the full pack into whatever project you run it in):
+
+```bash
+claude plugin marketplace add ns-3e/skailr-agents
+claude plugin install skailr-agents@skailr
+# then, inside any project session:
+#   /skailr-agents:install
+```
+
+Or clone-and-run:
+
 ```bash
 git clone https://github.com/ns-3e/skailr-agents.git /tmp/skailr-agents
 /tmp/skailr-agents/install.sh "$(pwd)" --claude-only

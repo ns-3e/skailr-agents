@@ -24,7 +24,9 @@
   },
   "files": [
     ".claude",
+    ".claude-plugin",
     ".cursor",
+    "plugin",
     "scripts",
     "bin",
     "install.sh",

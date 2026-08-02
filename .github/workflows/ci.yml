@@ -73,10 +73,11 @@ jobs:
           set -e
           pkg=$(node -p "require('./package.json').version")
           man=$(node -p "require('./manifest.json').version")
+          plg=$(node -p "require('./.claude-plugin/plugin.json').version")
           log=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '#[] ')
-          echo "package.json=$pkg manifest.json=$man changelog=$log"
-          if [ "$pkg" != "$man" ] || [ "$pkg" != "$log" ]; then
-            echo "FAIL: versions diverge — cut the release in all three together (see CHANGELOG release-cut note)"
+          echo "package.json=$pkg manifest.json=$man plugin.json=$plg changelog=$log"
+          if [ "$pkg" != "$man" ] || [ "$pkg" != "$log" ] || [ "$pkg" != "$plg" ]; then
+            echo "FAIL: versions diverge — cut the release in all four together (see CHANGELOG release-cut note)"
             exit 1
           fi
 

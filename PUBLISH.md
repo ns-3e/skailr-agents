@@ -1,5 +1,9 @@
 # Publishing checklist
 
+Release cut moves **four** versions together (CI enforces): `package.json`,
+`manifest.json` (regenerated from package.json by `scripts/remirror.sh`),
+`.claude-plugin/plugin.json`, and the newest `CHANGELOG.md` `## [x.y.z]` heading.
+
 After installing the [GitHub CLI](https://cli.github.com/) and committing the release tree:
 
 ```bash
@@ -12,6 +16,27 @@ gh release create v1.6.0 -F CHANGELOG.md --title "v1.6.0 — Domain teams + Inta
 # Optional: verify CI
 gh run list --limit 5
 ```
+
+## npm (npx install channel)
+
+```bash
+npm run doctor                 # must be all-green
+npm pack --dry-run             # sanity: ~280 files incl. .claude/ and .cursor/
+npm publish                    # requires npm login with rights to `skailr-agents`
+# verify: npx skailr-agents@latest "$(mktemp -d)"
+```
+
+## Claude Code plugin channel
+
+Nothing to upload — the marketplace is this repo (`.claude-plugin/marketplace.json`).
+Pushing `main` publishes; users install with:
+
+```bash
+claude plugin marketplace add ns-3e/skailr-agents
+claude plugin install skailr-agents@skailr
+```
+
+Verify after a release: `claude plugin validate .` passes with no errors.
 
 If the remote does not exist yet:
 
