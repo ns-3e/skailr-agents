@@ -62,14 +62,12 @@ names the source it rests on. Anything you could not establish from a source bel
 | doc | <docs/... or a named external document> | <what this source establishes> |
 
 <Same `kind` vocabulary as a profile's `sources` (`repo-path` | `doc` | `url` |
-`intair-node` | `human-brief`), so rows lift directly into the minted profile's frontmatter.
+`human-brief`), so rows lift directly into the minted profile's frontmatter.
 
 Two hard requirements the mint depends on:
   - At least one `url` or `doc` row, or the resulting profile fails validation rule 12.
   - A `hybrid` recommendation needs both an external row and at least one `repo-path` row,
-    or the resulting profile fails validation rule 14.
-An artifact whose only source is `kind: intair-node` cannot authorize a mint: Intair is
-optional, so an expert groundable only through it cannot function offline.>
+    or the resulting profile fails validation rule 14.>
 
 ## What this does not cover
 

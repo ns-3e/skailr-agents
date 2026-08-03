@@ -99,7 +99,6 @@ node scripts/skailr/validate-channels.mjs --dir examples/parallel-api/channels
 node scripts/skailr/emit-stubs.mjs --dir examples/parallel-api/contracts --out /tmp/skailr-stubs
 node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
 node scripts/skailr/feature-status.mjs --json
-node scripts/skailr/check-intair-seam.mjs
 ./install.sh "$(mktemp -d)"
 ```
 

@@ -76,10 +76,6 @@ End with `YIELD: <path>`; do not claim the ticket/slice complete.
 
 On resume, read the handoff first; skip **Done**; continue from **Next steps**. When truly finished: write the report, **delete** the handoff file, run skill `cleanup-scoped-artifacts` (`node scripts/skailr/cleanup-scoped.mjs purge`), and do not emit `YIELD:`. Never purge on yield.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

@@ -76,13 +76,13 @@
         "additionalProperties": true,
         "properties": {
           "kind": {
-            "enum": ["repo-path", "doc", "url", "intair-node", "human-brief"],
-            "description": "repo-path refs must exist on disk. url and doc refs are what make an external claim auditable. intair-node refs are meaningful only when Intair is reachable and must never be an expert's only source."
+            "enum": ["repo-path", "doc", "url", "human-brief"],
+            "description": "repo-path refs must exist on disk. url and doc refs are what make an external claim auditable."
           },
           "ref": {
             "type": "string",
             "minLength": 1,
-            "description": "Repo-relative path, URL, doc identifier, or Intair node id."
+            "description": "Repo-relative path, URL, or doc identifier."
           },
           "note": {
             "type": "string",
@@ -144,19 +144,6 @@
         }
       }
     },
-    "intair": {
-      "type": "object",
-      "description": "Optional. Omit the key entirely when unused: Intair is never a hard dependency of any expert capability.",
-      "required": ["proposals"],
-      "additionalProperties": true,
-      "properties": {
-        "proposals": {
-          "type": "array",
-          "items": { "type": "string", "minLength": 1 },
-          "description": "Ids of additive Intair schema proposals this expert has made. Ids only. The expert proposes; humans approve."
-        }
-      }
-    },
     "supersedes": {
       "type": ["string", "null"],
       "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-expert$",
@@ -171,7 +158,6 @@
       "12: classification external or hybrid requires at least one url or doc source",
       "13: classification external or hybrid requires .claude/experts/research/<slug>.md",
       "14: classification hybrid requires both an internal and an external source set",
-      "15: an expert whose only source kind is intair-node is invalid",
       "16: gate hard requires maturity established",
       "5: slug must equal the profile filename stem",
       "6: slug must be unique across profiles",

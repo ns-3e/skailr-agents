@@ -123,10 +123,6 @@ When `/map-repo` asks for a security / debt / test-gap assessment pass (still re
 2. Grep and sample code for auth gaps, secret handling, missing tests on load-bearing paths, dead code, and obvious inefficiencies.
 3. Return findings to the orchestrator (or append a structured section the orchestrator will merge into `.claude/repo/findings.md`). Do not invent backlog ids; list evidence paths and severity suggestions only.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

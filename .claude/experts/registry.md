@@ -25,15 +25,9 @@ whether any expert covers an ask, without loading a single profile.
 
 | slug | name | classification | maturity | gate | route-when |
 |---|---|---|---|---|---|
-| intair-seam-expert | Intair Seam | internal | provisional | soft | Asks about reading from or writing to Intair, attribution shape, schema proposals, or how a playbook should degrade when Intair is unreachable. |
 | skailr-pack-expert | Skailr Pack | internal | provisional | soft | Asks about how the skailr pack itself is structured, how roles/commands/skills are defined and wired, or how a change reaches Claude Code, Cursor, and consumer installs. |
 
 ## Depth index
-
-### intair-seam-expert
-- industry: knowledge-graph ontology design, attributed provenance, additive schema evolution
-- repo: the 15 MCP tools and their REST equivalents, the attribution envelope, the propose-never-approve rule, the call-intair precondition and skip-and-note idiom, /map-repo Phase 5 as the only current call site
-- profile: `.claude/experts/profiles/intair-seam-expert.md`
 
 ### skailr-pack-expert
 - industry: agent-orchestration frameworks, multi-agent pipeline design, prompt-as-source-of-truth packaging

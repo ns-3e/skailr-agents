@@ -220,7 +220,6 @@ Frontmatter values that are fixed for a mint, not chosen:
 | `last_reviewed.at` | same timestamp as `minted.at` |
 | `last_reviewed.against_sha` | `git rev-parse HEAD`, or `unknown` outside a git repo |
 | `supersedes` | `null`, or the deprecated slug on an explicit supersede |
-| `intair` | omit the key entirely unless Intair proposals exist |
 
 Content requirements, each of which the validator or the consult protocol depends on:
 
@@ -232,9 +231,7 @@ Content requirements, each of which the validator or the consult protocol depend
   `internal`. Dual depth is the point of the whole mechanism.
 - `sources` has at least one entry, each with `kind`, `ref`, and a non-empty `note`. Verify
   every `repo-path` ref exists on disk **before** writing (`test -e`), because a dangling ref
-  fails validation rule 10 and wastes a write-then-delete cycle. Never let `intair-node` be an
-  expert's only source: an expert groundable only through optional infrastructure cannot
-  function offline.
+  fails validation rule 10 and wastes a write-then-delete cycle.
 - All nine body sections present, in template order, prose not tables except `## Sources`.
 - `## Known limits` **non-empty and specific**: what this expert does not know, what it hands
   back, which adjacent bands belong to someone else. An expert claiming no limits is the
@@ -446,14 +443,6 @@ makes an expert eligible to gate bindingly.
   experts leave the roster table and the depth index, and remain in the log as history.
 
 ---
-
-### Optional Intair
-
-Optional and silent when absent. If `intair_get_schema` is available and `INTAIR_BASE_URL` is
-set, follow skill `call-intair` to record the mint as an operational Outcome with
-`actor: mint-expert`, `actor_kind: agent`, `basis: task:mint-<slug>`. If the tool is
-unavailable or returns an error, skip silently: no warning to the user, no failure of the run.
-Nothing in this command is Intair-only.
 
 ### Rules for you as mint operator
 

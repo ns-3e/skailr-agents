@@ -61,10 +61,6 @@ Ambiguity here becomes rework everywhere downstream. Every acceptance criterion 
 7. **Define non-goals** explicitly. What is deliberately out of scope for this story? This is what stops scope creep during the build.
 8. **State the observable outcome.** How would someone confirm this shipped and works, without reading code?
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

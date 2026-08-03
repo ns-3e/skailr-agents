@@ -29,7 +29,7 @@ After YAML frontmatter, the body **must** use these exact H2s in order. Relocate
 1. Task context — role identity (`You are the …`)
 2. Tone context — stance / persona
 3. Background data, documents, and images — inputs to read
-4. Detailed task description & rules — process, prime directive, modes, Intair, channels
+4. Detailed task description & rules — process, prime directive, modes, channels
 5. Examples — few-shots only; else `N/A.`
 6. Conversation history — `N/A.` for static role prompts
 7. Immediate task description or request — do-the-job-now, `$ARGUMENTS`, completion criteria

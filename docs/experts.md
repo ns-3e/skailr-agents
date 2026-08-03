@@ -130,7 +130,7 @@ A **missing** roster directory exits `0` with a skip message — a fresh install
 <details>
 <summary><strong>What the 21 rules cover</strong> — and the one deliberate non-check</summary>
 
-Checks include: the schema tag; slug pattern (`^[a-z0-9]+(-[a-z0-9]+)*-expert$` — the mandatory `-expert` suffix guarantees a mint can never collide with a pack role name), uniqueness, filename match; dual depth; every `repo-path` source exists on disk; the classification requirements above; that no expert is groundable only through Intair (rule 15); that `gate: hard` requires `maturity: established`; all eight required body sections present; `## Known limits` non-empty.
+Checks include: the schema tag; slug pattern (`^[a-z0-9]+(-[a-z0-9]+)*-expert$` — the mandatory `-expert` suffix guarantees a mint can never collide with a pack role name), uniqueness, filename match; dual depth; every `repo-path` source exists on disk; the classification requirements above; that `gate: hard` requires `maturity: established`; all eight required body sections present; `## Known limits` non-empty.
 
 Warnings (never blocking): `route_when` under 30 characters, a cited path changed since `last_reviewed.against_sha`, `provisional` for over 90 days, roster above `roster_cap`.
 
@@ -187,25 +187,19 @@ Unknown keys are ignored. An out-of-enum `gate_mode` or unparseable JSON is a **
 
 Directories are created lazily. `registry.md` is **generated** from profile frontmatter — don't hand-edit its roster table or depth index; the one hand-written region is the append-only log at the bottom.
 
-## Intair is optional
-
-If `intair_get_schema` is available and `INTAIR_BASE_URL` is set, experts ground answers against the graph and record what their band learned. If unreachable, every mode completes fully offline: grounding falls back to profile `sources`, then `.claude/repo/orientation.md` and `findings.md`, then local `docs/`. **No expert capability is Intair-only** — validation rule 15 enforces the floor: a profile whose every source is `kind: intair-node` is invalid. Experts may *propose* additive schema changes; a human approves over REST, and that route is unreachable from any tool an expert holds. See [intair-seam.md](intair-seam.md).
-
 ## Worked example
 
-The two experts actually minted on this repo, both `internal` — depth sourced entirely from paths in this repository. (A `hybrid` mint would add `expert-scout` and a research artifact to the same Step 0–9 procedure.)
+The expert actually minted on this repo, `internal` — depth sourced entirely from paths in this repository. (A `hybrid` mint would add `expert-scout` and a research artifact to the same Step 0–9 procedure.)
 
 ```
 /mint-expert skailr pack internal
-/mint-expert intair seam internal
 ```
 
-Both land `provisional`, `gate: soft` — advising and co-authoring right away, blocking nothing. The regenerated roster:
+It lands `provisional`, `gate: soft` — advising and co-authoring right away, blocking nothing. The regenerated roster:
 
 ```markdown
 | slug | name | classification | maturity | gate | route-when |
 |---|---|---|---|---|---|
-| intair-seam-expert | Intair Seam | internal | provisional | soft | Asks about reading from or writing to Intair, attribution shape, schema proposals, or how a playbook should degrade when Intair is unreachable. |
 | skailr-pack-expert | Skailr Pack | internal | provisional | soft | Asks about how the skailr pack itself is structured, how roles/commands/skills are defined and wired, or how a change reaches Claude Code, Cursor, and consumer installs. |
 ```
 

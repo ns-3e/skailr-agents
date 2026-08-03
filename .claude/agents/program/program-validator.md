@@ -55,10 +55,6 @@ Also check that any `.claude/tmp/expert-<slug>.md` co-author input was dispositi
 
 An expert `pass` on a slice you have not inspected earns nothing.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tmp/channels/` for a single-feature run). Post only if blocked or decision-relevant heads-up; then end turn.

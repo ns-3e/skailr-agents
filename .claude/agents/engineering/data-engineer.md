@@ -108,10 +108,6 @@ Long builds can exhaust the context window. When you hit a Process-step boundary
 
 End with `YIELD: <path>`; do not claim complete. On resume, skip **Done**; when finished write the report, delete the handoff, run skill `cleanup-scoped-artifacts` (`node scripts/skailr/cleanup-scoped.mjs purge`), no `YIELD:`. Never purge on yield.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

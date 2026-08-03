@@ -26,8 +26,7 @@ It does **not** write application code and does **not** open a live program (`br
 3. **Assess** — read-only lenses (researcher security/debt/tests; `design-reviewer` / `content-editor` when UI or public copy exists) → `findings.md`
 4. **Backlog** — ranked items with suggested `/patch`, `/yolo`, or `/yolo-program` → `backlog.md` + draft `map-report.md`
 5. **Confirm** — human gate (like `/discover`); revise or remap if needed
-6. **Intair** (optional) — deliberate writes via skill `call-intair`; skipped with a note when unavailable → `intair-sync.md`. See [intair-seam.md](intair-seam.md)
-7. **Expert auto-mint** (internal, post-confirm) — skill `consult-or-mint` with `trigger: map-repo`. When `auto_mint` is on and a vertical shows enough independent signals, mints **internal** experts into `.claude/experts/` (same procedure as [`/mint-expert`](experts.md)); notifies via heads-up + durable log; never a second gate. An empty roster does not skip mint evaluation
+6. **Expert auto-mint** (internal, post-confirm) — skill `consult-or-mint` with `trigger: map-repo`. When `auto_mint` is on and a vertical shows enough independent signals, mints **internal** experts into `.claude/experts/` (same procedure as [`/mint-expert`](experts.md)); notifies via heads-up + durable log; never a second gate. An empty roster does not skip mint evaluation
 
 Interrupted? Re-enter `/map-repo` (empty args or "continue") — it resumes from `.claude/repo/progress.md`.
 
@@ -43,7 +42,6 @@ Tracked by default — **commit the baseline** so teammates share the same map (
 | `backlog.md` | Ranked issues + lane hints |
 | `map-report.md` | Summary + confirm status |
 | `progress.md` | Phase checklist for resume |
-| `intair-sync.md` | What Intair wrote, or why skipped |
 
 Templates: `.claude/program/schemas/` (`orientation.template.md`, `backlog.template.md`, `map-repo-progress.template.md`, `map-report.template.md`).
 

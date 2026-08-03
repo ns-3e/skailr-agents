@@ -156,10 +156,6 @@ Non-contract issues (a bug inside one team's owned files) never come to you — 
 
 Maintain `.claude/program/ledger.md` as the durable program state so a multi-session effort can resume. Record each workstream's phase, open channel threads (`blocker` / `contract-change`), contract versions in force, and outstanding escalations. Update it at every phase transition. On resume, the ledger is the source of truth for where the program stands.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tmp/channels/` for a single-feature run). Post only if blocked or decision-relevant heads-up; then end turn.

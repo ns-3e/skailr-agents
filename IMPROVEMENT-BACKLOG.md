@@ -50,7 +50,7 @@ edit-one-forget-39 is the pack's most likely future drift. Extraction is off the
 (no include mechanism; generating `.claude/` would invert invariant 2).
 **Change.** `scripts/skailr/check-blocks.mjs`: a manifest of canonical block → expected
 first line + hash → list of carrying files; fails when copies diverge. Add to CI. Blocks:
-tone, task-return, artifact-root, engineering-channels, short-channels, intair-optional,
+tone, task-return, artifact-root, engineering-channels, short-channels,
 handoff, cleanup-before-done, lead-preamble.
 **Files.** New script; CI; CONTRIBUTING note.
 **Invariants.** 2, 5 — preserved (source stays `.claude/`, cost stays zero at runtime).

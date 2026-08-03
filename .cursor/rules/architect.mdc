@@ -69,10 +69,6 @@ The API contract you define is the seam. If it is vague, the backend and fronten
 
    Nested program features: same layout under `$ARTIFACT_ROOT` (never flat `workstreams/<ws>/board.md`).
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.
