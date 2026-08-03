@@ -14,7 +14,7 @@ depth:
     - the attribution envelope
     - the propose-never-approve rule
     - the call-intair precondition and skip-and-note idiom
-    - /map-repo Phase 5 as the only current call site
+    - the two deliberate call sites: /map-repo Phase 5 and the per-role "Intair (optional)" hooks
 sources:
   - kind: repo-path
     ref: docs/intair-seam.md
@@ -32,8 +32,8 @@ minted:
   by: mint-expert
   basis: Frozen contract dogfood-worked-example v1 requires this repo to carry a real two-expert roster, minted by hand in workstream dogfood-roster.
 last_reviewed:
-  at: 2026-07-29T13:00:00Z
-  against_sha: 4dc05314e7d7fd529ce3c4c04c3b13a9a2c767a5
+  at: 2026-08-03T00:00:00Z
+  against_sha: cbf4cdda69dcbda69a8e68652ab07811bb89e888
 supersedes: null
 ---
 
@@ -61,7 +61,7 @@ I do not answer questions about how the pack itself is built, registered, mirror
 
 **The precondition and the skip-and-note idiom.** This pack ships no Intair server and no MCP server configuration; connectivity is the operator's to arrange, as a registered MCP server or as a base URL plus a bearer token when auth is enabled. If neither is configured, the correct behavior is to **skip the Intair step and note it in the run report, never to fail the run**, because nothing else in skailr depends on Intair (source: `.claude/skills/call-intair/SKILL.md`). Auth is Intair-side: with no token configured Intair runs in open or dev mode and accepts unauthenticated calls, and with auth enabled a missing or invalid token yields `UNAUTHORIZED` (401). This pack never stores, manages, or rotates that token (source: `docs/intair-seam.md`).
 
-**Deliberate invocation, and the one call site.** No skailr command, skill, or hook calls Intair as part of its own flow unless that playbook explicitly says to, and today the only such step is optional Phase 5 of `/map-repo` (source: `docs/intair-seam.md`). In the command itself, Phase 5 runs **only after the human-confirm gate**, follows the `call-intair` skill when Intair appears available, writes a small set of nodes for orientation highlights and high or blocker findings as the live schema allows, attributes them with basis `task:map-repo`, and records the returned ids or the reason for skipping in `.claude/repo/intair-sync.md`. On unavailability or error it writes the skip note, marks the phase complete as skipped, and does not fail the run; the command's own non-negotiables restate that Intair is optional (source: `.claude/commands/map-repo.md`).
+**Deliberate invocation, and its call sites.** No skailr command, skill, or hook calls Intair as part of its own flow unless that playbook explicitly says to. Two deliberate, gated call sites exist today: optional Phase 5 of `/map-repo`, and the per-role "Intair (optional)" hook carried by every `.claude/agents/**` role file — an Agent node on start, an Outcome node on completion, and an optional `intair_ask`, each gated on Intair tools being available and routed through skill `call-intair`, skipping silently when Intair is absent (source: `docs/intair-seam.md`). In the command itself, Phase 5 runs **only after the human-confirm gate**, follows the `call-intair` skill when Intair appears available, writes a small set of nodes for orientation highlights and high or blocker findings as the live schema allows, attributes them with basis `task:map-repo`, and records the returned ids or the reason for skipping in `.claude/repo/intair-sync.md`. On unavailability or error it writes the skip note, marks the phase complete as skipped, and does not fail the run; the command's own non-negotiables restate that Intair is optional (source: `.claude/commands/map-repo.md`).
 
 **Nothing is backfilled, and Intair is never a dependency.** Local skailr records, ledger entries, channel messages, contracts, decisions, progress notes, and map-repo artifacts, stay local and reach Intair only through a deliberate per-item write. Automatic ingest of channel messages, event subscriptions and webhooks, document-to-graph extraction, live runtime coupling, and skailr-side approval of proposals are all explicitly out of scope for v1 (source: `docs/intair-seam.md`).
 
