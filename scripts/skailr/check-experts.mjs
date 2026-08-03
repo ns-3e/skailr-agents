@@ -593,11 +593,6 @@ function validateProfile(p, ctx, errors, warnings) {
     push(14, "hybrid sources", "classification 'hybrid' requires an internal source set (repo-path) as well as an external one");
   }
 
-  // 15: an expert groundable only through Intair cannot function offline.
-  if (sources.length && kinds.every((k) => k === "intair-node")) {
-    push(15, "intair-only", "every source is kind 'intair-node'; an expert must be groundable without Intair");
-  }
-
   // 16: hard gates are only for established experts.
   if (fm.gate === "hard" && fm.maturity !== "established") {
     push(16, "gate maturity", `gate 'hard' requires maturity 'established', got '${fm.maturity}'`);

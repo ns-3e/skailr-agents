@@ -86,10 +86,6 @@ Run **only** when the feature diff includes frontend / user-visible UI. Follow s
 
 Record results under `## UX Quality (Pass 4)` in the validation report. Omit the section entirely when there is no user-visible UI in the diff.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

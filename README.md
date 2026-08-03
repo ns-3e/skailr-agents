@@ -139,7 +139,6 @@ An agent reports success; nobody ran the tests. A validator "reviews" by reading
 | Ship **one** feature as fast as possible (no gates) | Feature YOLO | `/yolo` |
 | Run **many** concurrent initiatives | Portfolio | `/discover-portfolio` → `/plan-portfolio` → `/status-portfolio` |
 | **Give the agents depth in your domain** (project-local expert roster) | Experts | `/mint-expert` — [docs/experts.md](docs/experts.md) |
-| **Write to or read from Intair** (a graph an agent or operator calls on purpose) | Intair client seam | [docs/intair-seam.md](docs/intair-seam.md) |
 
 **Important:** `/ship-feature` and `/yolo` are **one feature, one story, one build**. They will not break a whole product into workstreams — that's `/discover`…`/build-program` or `/yolo-program`. On an unfamiliar existing codebase, run `/map-repo` first. Plain chat follows the same rules via intake ([docs/INTAKE.md](docs/INTAKE.md)).
 
@@ -411,95 +410,15 @@ node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.js
 node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
 node scripts/skailr/check-ownership.mjs --map examples/launch-kit/ownership.json --map-only
 node scripts/skailr/check-contracts.mjs --dir examples/launch-kit/contracts
-node scripts/skailr/check-intair-seam.mjs
 ```
 
 See `examples/parallel-api/` and `examples/launch-kit/`.
 
 ---
 
-## Skailr + Intair (optional): persistent memory and graph reasoning
+## Memory and run state
 
-[Intair](https://github.com/ns-3e/intair-ontology) is a self-hosted knowledge graph service that gives Skailr agents persistent, cross-session memory and graph reasoning. When configured, agents write what they learn (discoveries, decisions, outcomes) and query prior knowledge before acting. When not configured, all agents behave exactly as today. The seam is deliberately thin: no command, skill, or hook in this pack calls Intair on its own — an agent or operator consults the reference guide ([docs/intair-seam.md](docs/intair-seam.md)) and makes each call deliberately.
-
-<details>
-<summary><strong>Quickstart</strong> — zero to memory-backed build in ~10 minutes</summary>
-
-**What you need:** Docker + Docker Compose, Claude Code, an Anthropic API key (**or** `LLM_PROVIDER=none` in Intair's `.env` for graph tools only, no LLM costs), Node 18+ (optional, for script gates).
-
-**Step 1 — Start Intair**
-
-```bash
-git clone https://github.com/ns-3e/intair-ontology.git
-cd intair-ontology
-cp .env.example .env
-```
-
-Edit `.env` — set at minimum:
-
-```bash
-NEO4J_PASSWORD=yourpassword      # any strong password
-ANTHROPIC_API_KEY=sk-ant-...     # or LLM_PROVIDER=none
-```
-
-```bash
-docker compose up -d --wait
-curl http://localhost:8000/api/v1/health
-# {"status":"ok","store":"neo4j","node_count":0,"edge_count":0}
-```
-
-Optional operator UI (graph visualizer + reasoning console):
-
-```bash
-cd web && cp .env.example .env && npm install && npm run dev
-# → http://localhost:5173
-```
-
-**Step 2 — Install Skailr into your project** (any channel from [Install](#install-30-seconds)).
-
-**Step 3 — Wire Skailr to Intair.** Add to your project's `.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "intair": {
-      "type": "http",
-      "url": "http://localhost:8000/mcp/"
-    }
-  }
-}
-```
-
-Or set env vars for REST-only mode (used by script-based agents):
-
-```bash
-export INTAIR_BASE_URL=http://localhost:8000
-export INTAIR_API_TOKEN=   # empty for dev/no-auth mode
-```
-
-Skailr agents detect Intair at the start of each run via `intair_get_schema`. If Intair is not reachable, agents fall back silently — nothing breaks.
-
-**Step 4 — Run a Skailr command** (`/yolo add a hello-world CLI command that prints the current date`). Behind the scenes: the researcher pulls prior knowledge before reading the repo; the architect records key decisions as `Decision` nodes; engineers record `Agent` and `Outcome` nodes; the validator records the final sign-off.
-
-**Step 5 — Inspect the graph.** Open `http://localhost:5173` → **Graph**. Click any node for full attribution — who wrote it, when, on what basis. Ask the **Reasoning** console *"What decisions were made in the last build?"*. Subsequent runs pull this knowledge before acting — each run starts smarter than the last.
-
-</details>
-
-<details>
-<summary><strong>What gets written</strong></summary>
-
-| Agent | Writes to Intair |
-|-------|-----------------|
-| researcher | `Observation` nodes (findings), `Task` node (research run) |
-| story-writer | `Task` node (approved story) |
-| architect | `Decision` nodes (key tech decisions), `Agent` node |
-| backend/frontend-engineer | `Agent` node (on start), `Outcome` node (on complete) |
-| e2e-verifier / validator | `Outcome` node (pass or fail) |
-| program-architect | `Team` nodes (workstreams), `Contract` nodes (frozen contracts) |
-
-All writes are best-effort. Intair being unavailable never fails an agent run. With `LLM_PROVIDER=none`, all graph read/write and schema tools work normally; only the natural-language reasoning tool (`intair_ask`) is disabled.
-
-</details>
+Skailr agents track run state and memory purely through plain `.md` files already documented above — the ledger, `progress.md`, ownership maps, the registry, and channel boards. There is no external graph database or service in the loop; that's the whole persistence model, and it works the same whether you're on Claude Code, Cursor, a clean checkout, or CI.
 
 ---
 

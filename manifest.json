@@ -403,13 +403,6 @@
       "cursor_path": null
     },
     {
-      "id": "skill-call-intair",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/call-intair/SKILL.md",
-      "cursor_path": null
-    },
-    {
       "id": "skill-check-ownership",
       "tier": "skill",
       "type": "skill",

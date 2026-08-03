@@ -61,10 +61,6 @@ You may write and modify test files, fixtures, factories, and test configuration
 
 6. **Run the suite.** Repeat any test that fails intermittently at least three times — flakiness is a finding, not noise to be retried away.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md`. Feature-local board: `$ARTIFACT_ROOT/channels/` when present; else program `ws-<name>.md` / `.claude/tmp/channels/` for standalone. Post only if blocked or decision-relevant heads-up; then end turn.

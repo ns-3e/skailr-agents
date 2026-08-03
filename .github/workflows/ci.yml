@@ -68,9 +68,6 @@ jobs:
       - name: Doctor — whole-installation health check
         run: node scripts/skailr/doctor.mjs
 
-      - name: Check Intair seam intact
-        run: node scripts/skailr/check-intair-seam.mjs
-
       - name: Check expert roster valid
         run: node scripts/skailr/check-experts.mjs
 

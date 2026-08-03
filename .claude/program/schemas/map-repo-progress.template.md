@@ -17,7 +17,6 @@ request: .claude/repo/request.md
 | assess | pending | | findings.md |
 | backlog | pending | | backlog.md + map-report.md draft |
 | confirm | pending | | human gate |
-| intair | pending | | intair-sync.md |
 
 ## Notes
 

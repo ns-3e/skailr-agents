@@ -10,12 +10,12 @@ depth:
   repo:                            # >= 1 entry; subsystems or paths this expert knows concretely
     - scripts/
 sources:                           # >= 1 entry; every claim in the body cites one of these
-  - kind: repo-path                # repo-path | doc | url | intair-node | human-brief
+  - kind: repo-path                # repo-path | doc | url | human-brief
     ref: scripts/remirror.sh       # repo-path refs must exist on disk
     note: How pack artifacts reach Claude Code and Cursor.
   - kind: doc
-    ref: docs/intair-seam.md
-    note: The optional-Intair contract this expert must never violate.
+    ref: docs/MAP_REPO.md
+    note: The brownfield baseline flow this expert must never contradict.
 maturity: provisional              # provisional | established | deprecated
 gate: soft                         # none | soft | hard ; hard requires maturity established
 minted:
@@ -25,8 +25,6 @@ minted:
 last_reviewed:
   at: 2026-01-01T00:00:00Z
   against_sha: unknown             # git sha at review time; `unknown` skips staleness detection
-# intair:                          # optional; omit the whole key when unused
-#   proposals: [proposal-id]
 supersedes: null                   # slug of a retired expert this replaces, or null
 ---
 
@@ -62,7 +60,7 @@ prior art. Each claim names the `sources` entry it rests on.>
 | kind | ref | supports |
 |---|---|---|
 | repo-path | scripts/remirror.sh | <what this source supports> |
-| doc | docs/intair-seam.md | <what this source supports> |
+| doc | docs/MAP_REPO.md | <what this source supports> |
 
 <One row per frontmatter `sources` entry, same order. The table mirrors the frontmatter; the
 frontmatter is the source of truth.>

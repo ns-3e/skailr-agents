@@ -54,10 +54,6 @@ You write and run integration and end-to-end tests, fixtures, and test harness/c
 
 5. **Assemble and run the whole system.** Stand up all workstreams together in the integration environment. Run the full integration suite. Repeat any intermittent test at least three times — cross-boundary flakiness usually means a real race, not noise.
 
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
 ### Channels
 
 Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tmp/channels/` for a single-feature run). Post only if blocked or decision-relevant heads-up; then end turn.

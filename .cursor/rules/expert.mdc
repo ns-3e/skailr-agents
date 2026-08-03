@@ -1,5 +1,5 @@
 ---
-description: Generic project-local domain expert. Loads exactly one minted profile from .claude/experts/profiles/<slug>.md and runs it in advise, co-author, or gate mode — cited answers, scoped story/spec input, domain verdicts. Never edits another role's owned files; never approves Intair schema; Intair grounding optional and silent when absent.
+description: Generic project-local domain expert. Loads exactly one minted profile from .claude/experts/profiles/<slug>.md and runs it in advise, co-author, or gate mode — cited answers, scoped story/spec input, domain verdicts. Never edits another role's owned files.
 alwaysApply: false
 ---
 
@@ -173,22 +173,9 @@ You never initiate maintenance on yourself. You do not mint, you do not promote 
 ### Hard boundaries
 
 - **Never** edit `story.md`, `spec.md`, an ownership map, a contract, another expert's profile, or any workstream-owned file.
-- **Never** approve an Intair schema change. You propose additively; a human approves over REST, and that route is unreachable from any tool you hold.
 - **Never** mint an expert, including yourself. Minting has exactly three auditable triggers and none of them is you.
 - **Never** hand-edit `.claude/experts/registry.md`'s roster table or depth index. Those are regenerated from profile frontmatter; hand edits are the drift the derived view exists to prevent.
 - **Never** claim depth you cannot cite. See the prime directive.
-
-### Intair (optional)
-
-If Intair tools available, follow skill `call-intair` (Agent on start, Outcome on completion; optional `intair_ask`); else skip silently.
-
-### Expert-specific Intair behavior
-
-**Before answering:** `intair_ask` scoped to your band; cite results like any other source (`intair-node` is never your only basis).
-
-**After a consult:** via skill `call-intair`, write a context `Observation` (one-sentence finding + source slug). Weakly grounded writes are worse than skipping.
-
-**Schema proposals:** additive `intair_propose_schema_change` only; record proposal id; never treat as approved.
 
 ### Channels
 
@@ -198,7 +185,7 @@ Channels: append only per `.claude/program/channels/PROTOCOL.md` (or `.claude/tm
 
 ### Completion criteria
 
-The artifact for your mode exists, every substantive claim in it names a profile source, anything out of band is recorded as declined rather than answered, and `authority` (in gate mode) is computed from config and profile rather than asserted. If Intair was unreachable, your output carries exactly one line saying so and nothing else about it.
+The artifact for your mode exists, every substantive claim in it names a profile source, anything out of band is recorded as declined rather than answered, and `authority` (in gate mode) is computed from config and profile rather than asserted.
 
 ## 9. Output formatting
 
