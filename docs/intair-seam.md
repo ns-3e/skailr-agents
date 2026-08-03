@@ -34,6 +34,8 @@ Fifteen tools, all `intair_` prefixed, grouped by the operation they serve. Ever
 
 **No MCP tool ever raises.** On failure a tool returns the shared error envelope described in [Errors and failure modes](#errors-and-failure-modes), so treat a returned `error` object as the failure path rather than expecting an exception.
 
+**Auth on the MCP face is identical to REST.** The MCP surface enforces the same bearer-token gate as the REST face, reading the same `INTAIR_API_TOKENS` allowlist on the Intair side. A missing or invalid token yields `UNAUTHORIZED` (401) **before the tool dispatches**. When the allowlist is unset, Intair runs in **open / dev mode** and accepts calls on this face too. See [Auth](#rest-endpoints) under REST for the shared mechanism.
+
 ### Write knowledge / nodes / edges
 
 | Tool | Does |
@@ -47,8 +49,10 @@ Fifteen tools, all `intair_` prefixed, grouped by the operation they serve. Ever
 | ---- | ---- |
 | `intair_get_node` | Fetch one element by id, optionally including superseded revisions |
 | `intair_get_subgraph` | Fetch a bounded neighbourhood around a seed or scope |
-| `intair_query` | Run a read query and get matching elements back |
+| `intair_query` | Run a **read-only** query and get matching elements back (see guardrails below) |
 | `intair_get_schema` | Read the live ontology: layers, node types, edge types, property specs |
+
+`intair_query` (and `POST /query`) is read-only and guarded: write clauses (`CREATE, MERGE, SET, DELETE, DETACH DELETE, REMOVE, DROP, LOAD CSV, CALL`) are rejected **pre-execution** with a `QUERY`-coded error, execution is bounded by `QUERY_TIMEOUT_S` (default 10s), and the result set is capped at `QUERY_MAX_RECORDS` (default 1000, truncated after fetch).
 
 ### Schema proposal (propose only)
 
@@ -151,9 +155,13 @@ Agent attribution is the normal case for a skailr agent write. System attributio
 
 `actor` and `basis` values pass through as **opaque strings**. Unicode, very long values, and unusual characters are Intair's problem to accept or refuse: it applies its own `VALIDATION` and `SCHEMA_VIOLATION` checks. This pack performs no sanitization and imposes no length limit.
 
+**Operator opt-in: `INTAIR_API_IDENTITIES` may override the actor server-side.** By default (env var unset) the caveat above holds and Intair records the `actor`/`actor_kind` you sent. An operator may instead configure `INTAIR_API_IDENTITIES`, which maps a bearer token to a fixed identity that **overrides** the body-supplied `actor`/`actor_kind` server-side, silently discarding whatever the caller sent. This applies to both the MCP and REST faces. Default behavior is unchanged; only an operator's opt-in enables it. Because the recorded actor can differ from what you sent, **read back `attribution.actor` on the response rather than trusting the value you wrote.**
+
 ### Element envelope
 
 Attribution is one field of the element envelope every node and edge carries: `id`, `layer`, `type`, `scope{kind, scope_id}`, `attribution{actor, actor_kind, at, basis}`, `version{rev, supersedes, superseded_by, status}`, `properties`. Edges additionally carry `source_id` and `target_id`.
+
+**Write handles are `id@rev`.** A write tool returns the element's id as an `id@rev` handle (e.g. `node_<hex>@<rev>`). Pass that handle back verbatim as `source_id`, `target_id`, or `supersedes` on a later write and it resolves transparently — **callers never strip the `@rev` suffix.** A handle that resolves to no current element returns `404 NOT_FOUND`, never `500 INTERNAL`.
 
 ## Schema evolution
 
@@ -180,6 +188,8 @@ How skailr vocabulary lands in Intair's three-layer ontology:
 
 **Treat this table as defaults, not a frozen contract.** Intair owns the ontology and may evolve it, so fetch live schema with `intair_get_schema` (`GET /schema`) instead of hardcoding these rows as permanent.
 
+**Backend note (informational).** When the operator runs a neo4j-backed store, `intair_query` (`POST /query`) supports grounded text-to-Cypher and `intair_ask` (`POST /ask`) supports native vector / hybrid recall; both degrade gracefully when no embedding or LLM provider is configured. This is a capability of the operator's chosen backend, not a client-side contract change — the tool and route surface is identical either way, and no caller tool or route selection changes.
+
 Useful operational edges when linking the rows above: `MEMBER_OF` (Agent to Team), `OWNS` (Agent or Team to Task), `PRODUCES` (Task to Outcome), `MADE` (Agent to Decision), `LED_TO` (Decision to Outcome), `DEPENDS_ON` (Task to Task or Contract), `GOVERNS` (Contract to Task or Team), `POSTED_IN` (Agent to Channel), `ABOUT` (operational to semantic or context), `SUPERSEDES` (lineage, any type to any type).
 
 ## Errors and failure modes
@@ -194,20 +204,21 @@ Both faces return the identical envelope. Every non-2xx REST response and every 
 
 | Code | REST status | Means |
 | ---- | ----------- | ----- |
-| `UNAUTHORIZED` | 401 | Auth is enabled and the bearer token is missing or invalid |
+| `UNAUTHORIZED` | 401 | Bearer token missing or invalid; also an ACL-layer denial when `INTAIR_API_IDENTITIES` is configured — inspect `detail.reason` to tell them apart |
 | `NOT_FOUND` | 404 | No such element, scope, proposal, or job |
 | `VALIDATION` | 400 | The request body failed Intair's validation |
 | `SCHEMA_VIOLATION` | 422 | The write does not fit the current ontology, including any non-additive change |
 | `SUBGRAPH_TOO_LARGE` | 413 | The requested subgraph exceeds what Intair will serve in one call |
 | `PROPOSAL_STATE` | 409 | The proposal is already approved or rejected |
 | `QUERY` | 400 | The query could not be parsed or planned |
-| `CONFLICT` | 409 | A concurrent write conflicted |
+| `CONFLICT` | 409 | Reserved in the frozen enum; no write path currently returns it (see below) |
 | `INTERNAL` | 500 | Intair-side fault |
 
 What each awkward situation means for a caller:
 
+- **A `401 UNAUTHORIZED` came back but the token is fine.** When the operator has configured `INTAIR_API_IDENTITIES`, an ACL-layer denial (the mapped identity's layer or scope does not cover the call) reuses `401 UNAUTHORIZED`, distinguished only by `detail.reason == "acl_layer_denied"` (REST also documents `acl_scope_denied`). Status and code alone look identical to a bad or missing token — **inspect `detail.reason` to distinguish an ACL denial from an auth failure.** These are `detail.reason` values, not error codes; the enum stays at nine.
 - **Intair is unreachable or times out.** That surfaces as an ordinary call failure to the calling agent, not a skailr run crash. The agent or operator decides whether to retry, skip, or note the outage. This pack adds no automatic retry and no fallback path.
-- **Two agents or two runs write the same element.** Intair owns conflict resolution and reports `CONFLICT`. This pack invents no locking and no merge behaviour of its own.
+- **Two agents or two runs write the same element.** `CONFLICT` (409) remains declared in the frozen error enum, but no write path currently returns it — Intair runs no optimistic-locking or concurrent-write-detection check today. Each concurrent or duplicate write is independent server-side and gets its own `rev`. This pack invents no locking and no merge behaviour of its own; do not add client-side locking to make `CONFLICT` fire.
 - **The subgraph or query is too big.** `SUBGRAPH_TOO_LARGE` means narrow the scope or split the request. This pack ships no paging wrapper.
 - **The same write goes out twice.** Each call is independent server-side and Intair applies its own `rev` versioning, so a double submit creates another revision. There is no client-side deduplication here. Do not re-issue a write unless a new revision is genuinely intended.
 - **An element you wrote earlier is superseded or soft-deleted.** Elements carry `version{rev, supersedes, superseded_by, status}`, and lineage is fetched explicitly (`intair_get_node` with `include_superseded`). skailr-side records do not track supersession on their own.
@@ -224,7 +235,12 @@ Explicitly **not** part of this seam:
 
 ## Deliberate invocation
 
-Every Intair call is a deliberate step taken by an agent or operator. No existing skailr command, skill, or hook calls Intair as part of its own flow **except** when that command’s playbook explicitly says to (today: optional Phase 5 of [`/map-repo`](MAP_REPO.md) after human confirm). Installing this pack changes nothing about when Intair is contacted unless you run that phase.
+Every Intair call is a deliberate step taken by an agent or operator. No existing skailr command, skill, or hook calls Intair as part of its own flow **except** when that command's or role's playbook explicitly says to, and every such call site is deliberate and gated. Two such call sites exist today:
+
+- optional Phase 5 of [`/map-repo`](MAP_REPO.md), after human confirm; and
+- the per-role **"Intair (optional)"** hook carried by every `.claude/agents/**` role file — an Agent node on start, an Outcome node on completion, and an optional `intair_ask`, each gated on Intair tools being available and routed through skill `call-intair` (the role skips silently when Intair is absent).
+
+This is a factual correction to the previously stated single call site, not a change to any hook's behavior. Installing this pack changes nothing about when Intair is contacted unless you run one of those gated steps.
 
 Two consequences worth stating plainly:
 
