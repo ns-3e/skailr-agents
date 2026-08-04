@@ -58,10 +58,4 @@ jobs:
       - name: Doctor — whole-installation health check (includes tarball-content check)
         run: npm run doctor
 
-      # TEMPORARY: Trusted Publisher (OIDC) is returning 404 on PUT despite the
-      # npmjs.com config appearing correct — falling back to the classic NPM_TOKEN
-      # secret for this one release. Revert to OIDC-only once Trusted Publisher
-      # is confirmed working; see PUBLISH.md.
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
