@@ -68,6 +68,13 @@ Delete `handoff/<id>.md` if present. Workers already ran `cleanup-scoped.mjs pur
 9. Recompute frontier. Graduate fog from board **Not yet specified** into new ticket files when a resolution made a question sharp (create file, then wire `blocked_by`, refresh board Tickets table). Rule mis-scoped tickets `out-of-scope` (update frontmatter + board **Out of scope**; do not add to **Done**). Ticket `blocked_by` may only reference tickets on **this** board — never feature IDs or other roots.
 10. Repeat until `ticket-status` reports `complete: true`.
 
+## Integration & budget discipline
+
+- **Integration ownership.** The board owner integrates and verifies each ticket's work from its completion report (`$ARTIFACT_ROOT/tickets/<id>-report.md`) plus script/gate output — never by raw-ingesting a worker's diff, full file bodies, or transcript.
+- **Single-writer enforcement.** Exactly one ticket owns write access to any given file (ticket ownership globs stay disjoint); tickets claimed and dispatched together (Build loop step 4) never share a write target.
+- **80% budget escalation.** If a dispatched worker's handoff shows `trigger: budget-80pct` with its **Budget checkpoint (80%)** section filled (per `.claude/program/schemas/handoff.template.md`), paired with a `Status: partial` completion report, treat it like a yield but re-dispatch the ticket's remainder to a **fresh** agent seeded by that checkpoint/handoff, per skill `write-handoff-and-yield` — do not keep running the same agent past its budget.
+- **Budget ledger.** Immediately after each dispatched ticket agent's fit test, append one line to `.claude/program/budget-ledger.md` (program runs) or `$ARTIFACT_ROOT/budget-ledger.md` (feature runs) — `role | budget assigned | fit-test estimate | decision | outcome | approx actuals`, per `.claude/program/schemas/budget-ledger.template.md`.
+
 ## Phase complete gates
 
 Same as today’s build end: ownership script (feature `ownership.json` / spec, constrained by program WS globs when nested), channel router, test/lint/typecheck. Mark build slice aggregates complete when no open/claimed tickets remain for that role (`partialRoles` empty for that role).

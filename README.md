@@ -253,6 +253,8 @@ Tiers nest, each with durable on-disk state and a resume command:
 
 **Claude Code vs Cursor:** `.claude/` is the source of truth; `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
 
+**Context budget:** the program → workstream → feature → ticket nesting above is recursive, not fixed at two tiers — any lead whose task doesn't fit a smart-zone context (≤125k tokens, target well under) runs a fit test and decomposes further, along the same contract-seam / single-writer rules that already separate workstreams. Full model, numeric defaults, and the worked example: [docs/CONTEXT_BUDGET.md](docs/CONTEXT_BUDGET.md).
+
 <details>
 <summary><strong>Program tier deep dive</strong> — conflict design, roles, channels, docs phase</summary>
 

@@ -51,6 +51,10 @@ The kernel must exist before any workstream fans out. Dispatch the appropriate e
 
 Read the DAG. Determine the first concurrency group: every workstream whose contract dependencies are now satisfied (by the frozen kernel and any frozen contracts already produced).
 
+**Fit-test before dispatch (mandatory).** Before dispatching each workstream, and before any lead further decomposes its own workstream into worker tasks, the dispatching agent runs skill `fit-test` (`.claude/skills/fit-test/SKILL.md`): estimate against budget (target 80k / soft ceiling 100k / hard ceiling 110k tokens) — estimate > 65% of budget → decompose further; ≤65% → execute as leaf. Record the row in `.claude/program/budget-ledger.md` (`.claude/program/schemas/budget-ledger.template.md`).
+
+**Decomposition rules.** Whenever a workstream or lead splits further, follow: contract-seam splits, MECE units, single-writer file ownership (no two tasks write the same path), ≤7 direct reports per lead, and a ~10k-token minimum task size — below that, do the work inline rather than spawning a sub-agent (spawn overhead eats the gain).
+
 **Dispatch every workstream in a concurrency group at the same time.** For each workstream, disclosure happens in tiers so context stays lean:
 
 - **Tier 2 — load the team lead.** From the workstream's `Team` field in `plan.md`, load *that team's lead agent only* (e.g. `content-lead`). For **engineering** workstreams, follow skill `run-feature-queue` (serial MECE features from `plan.md`; each feature runs the nested feature pipeline + `run-ticket-board` under `.claude/program/workstreams/<ws>/features/<slug>/`). Gated mode uses story/spec approval stops; there is no separate `eng-lead` agent yet. You do not load other teams' agents, and you do not load this team's workers yet. A pure-engineering program never loads a single content, design, marketing, or finance token; a content workstream never loads finance.
@@ -98,6 +102,8 @@ When a team posts a `type: contract-change` message to `@architect` (via the cha
 ### Phase C — Integration
 
 Once all workstreams in the DAG are complete, invoke the `integration-verifier`. It assembles the real system, replaces every stub with the real producer, verifies each frozen contract real-against-real, and drives the cross-boundary journeys from the brief. It may write tests but not application code. Record findings in the ledger. If it reports DOES NOT COMPOSE, the findings name the owning workstream — dispatch that team to fix its own files (or escalate a contract change if the fault is in a contract), then re-integrate.
+
+**Budget discipline for integration + verification.** You (and the `program-architect`, where invoked) treat integration and verification as their own explicitly budgeted step against the same 80k/100k/110k target/soft/hard ceilings — not an unbounded tail folded into Phase B. You never ingest raw diffs, transcripts, or full work product from a workstream directly into your own context: dispatch `integration-verifier` / `program-validator` (which read the real diff themselves) and consume back only their findings plus each team's completion report (~1000-token cap, per `budget-templates` contract).
 
 ### Phase D — Program validation
 

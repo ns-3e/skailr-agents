@@ -17,6 +17,10 @@ description: Serial MECE feature queue for an engineering workstream — seed pe
 - After architect mint / during build: **must** follow skill `run-ticket-board` with `--root $ARTIFACT_ROOT`. Do not skip tickets when a board exists.
 - Ticket `blocked_by` stays same-board only; cross-feature order is Features `Depends-on` only.
 - Mode: gated (`/ship-feature` → `/build-feature` style with human gates) when program mode is not `yolo`; YOLO feature orchestration when `.claude/program/mode.md` is `yolo`.
+- **Integration ownership.** This workstream lead owns integrating and verifying every dispatched agent's work — from each phase's completion report (`story.md`, `spec.md`, ticket reports, `e2e`/`validator` findings) plus script/gate output. Never raw-ingest a worker's diff, full file bodies, or transcript to decide next steps.
+- **Single-writer enforcement.** Exactly one agent/ticket owns write access to any given file across this feature queue (ownership globs stay disjoint); parallel siblings — across features or within a feature's ticket board — never share a write target.
+- **80% budget escalation.** When a dispatched worker's handoff carries `trigger: budget-80pct` with its **Budget checkpoint (80%)** section filled (per `.claude/program/schemas/handoff.template.md`) paired with a `Status: partial` completion report, the lead re-dispatches the remainder to a **fresh** agent seeded by that checkpoint/handoff, per skill `write-handoff-and-yield`. Do not invent a different resume mechanism.
+- **Budget ledger.** Immediately after each dispatched agent's fit test, append one line to `.claude/program/budget-ledger.md` (program runs) or `$ARTIFACT_ROOT/budget-ledger.md` (feature runs) — `role | budget assigned | fit-test estimate | decision | outcome | approx actuals`, per `.claude/program/schemas/budget-ledger.template.md`.
 
 ## Procedure
 

@@ -33,6 +33,7 @@ Before every Task dispatch, follow skill `route-models`: resolve the model from 
 4. Confirm `plan.md` is approved and contracts are frozen (unless still in discovery/planning — then tell the user to use `/discover` or `/plan-program`, or `/yolo-program` to resume a YOLO discovery/plan).
 5. Confirm a clean working tree or dedicated branch `program/<slug>`.
 6. Do **not** reset channels under `.claude/program/channels/` — they are the append-only transcript.
+7. Do **not** reset or truncate `.claude/program/budget-ledger.md` on resume — like `ledger.md` and the channel boards, it is append-only and persists across resumes. Dispatched agents keep appending fit-test rows to it per skill `fit-test` and contract `budget-templates`.
 
 ### Apply decisions first
 

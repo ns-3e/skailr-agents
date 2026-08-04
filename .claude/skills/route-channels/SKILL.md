@@ -26,6 +26,7 @@ node scripts/skailr/validate-channels.mjs --dir $ARTIFACT_ROOT/channels
    - `to: @human` or `type: contract-change` → mark `blocked-on-human`, surface to user, **end turn**
    - else dispatch addressee with only that thread; collect answer; re-dispatch blocked agent
    - When dispatching, follow skill `route-models` including its Task prompt preamble (concision); channel factual lookups may **downgrade** one tier unless the role is `protected`
+   - This covers a worker/sub-agent's `type: contract-change` escalation too (e.g. it hit a token-budget-shape or `fit-test-procedure` question, or any frozen-contract mismatch, it can't resolve locally) — same halt-on-contract-change path above, posted `to: @architect` per `.claude/program/channels/PROTOCOL.md`; do not invent a second mechanism
 4. Repeat until no resolvable opens remain.
 5. After the drain, rotate oversized boards: `node scripts/skailr/rotate-channels.mjs [--dir <channels>]` (default threshold 50 settled messages). It moves **fully-settled threads only**, raw blocks verbatim, to `archive-<board>.md` in the same directory — append-only semantics preserved; open and partially-settled threads never move.
 6. Read `.claude/program/channels/PROTOCOL.md` for format rules.
