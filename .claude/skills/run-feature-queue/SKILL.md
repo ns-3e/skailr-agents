@@ -49,7 +49,7 @@ node scripts/skailr/feature-status.mjs --progress <ARTIFACT_ROOT>/progress.md --
 
 4. **Mark ledger** feature row `in_progress` and set Feature phase to the nested `next` phase.
 
-5. **Dispatch nested feature pipeline** with every Task prepended `ARTIFACT_ROOT=<root>` + `route-models` preamble:
+5. **Dispatch nested feature pipeline** with every Task prepended `ARTIFACT_ROOT=<root>` + `route-models` preamble. Nested dispatch — also follow skill `emit-telemetry`: capture a `span-start` handle immediately before each worker Task and pass it verbatim to `span-end` after it resolves, with `--parent-span-id` = this lead's own `span_id`, `--trace-id`/`--emitter-id` read from the run's `telemetry.json`, and `--agent-role`/`--agent-name` naming the worker (not the lead). Derive `--status` from this phase's own DONE/failure/blocked handling.
 
 | Phase | Action |
 |-------|--------|

@@ -47,7 +47,8 @@
     "docs/MAP_REPO.md",
     "docs/MODEL_ROUTING.md",
     "docs/YOLO.md",
-    "docs/experts.md"
+    "docs/experts.md",
+    "docs/TELEMETRY.md"
   ],
   "repository": {
     "type": "git",

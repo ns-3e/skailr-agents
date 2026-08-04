@@ -452,6 +452,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-emit-telemetry",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/emit-telemetry/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-fit-test",
       "tier": "skill",
       "type": "skill",
@@ -743,6 +750,13 @@
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/expert-research.template.md",
+      "cursor_path": null
+    },
+    {
+      "id": "schema-telemetry-event.schema",
+      "tier": "program",
+      "type": "schema",
+      "claude_path": ".claude/program/schemas/telemetry-event.schema.json",
       "cursor_path": null
     }
   ]

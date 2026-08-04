@@ -25,6 +25,8 @@ N/A.
 
 Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/program/model-usage.md`. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
+Also follow skill `emit-telemetry`: once at run start, mint and persist `trace_id`/`root_span_id` to the run's `telemetry.json` (skip if it already exists — resume case); then capture a `span-start` handle immediately before every Task dispatch and pass it verbatim to `span-end` immediately after that dispatch resolves, deriving `--status` from this command's own success/failure/blocked handling. See the skill for emitter-id, the AC-7 hierarchy tier, and parent_span_id rules.
+
 
 ### Setup
 
