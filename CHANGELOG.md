@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-08-04
+
 ### Changed
 
 - **Intair integration removed.** The optional knowledge-graph seam (`call-intair` skill, `intair-seam-expert`, `docs/intair-seam.md`, the per-role "Intair (optional)" hooks, `check-intair-seam.mjs` CI gate) has been deleted entirely. Persistent memory / run-state tracking is now exclusively via the framework's existing `.md` file mechanisms — ledger, `progress.md`, ownership maps, the registry, and channel boards — which were always the primary mechanism; Intair was a bolt-on never required by any of them.
