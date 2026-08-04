@@ -56,7 +56,7 @@ For each frontier `role: decide` ticket: claim, post `type: blocker` (or questio
 | decide | (channel `@human` — no build agent) |
 
 5. **Task context (paths only):** `ARTIFACT_ROOT=<root>` + ticket path + `spec.md` + board path. Story/research on demand. If a handoff exists at `handoff/<id>.md`, pass it as primary + ticket + spec.
-6. Prepend `route-models` Task prompt preamble. Instruct: implement only this ticket’s ACs + ownership globs; report to `$ARTIFACT_ROOT/tickets/<id>-report.md`; yield to `$ARTIFACT_ROOT/handoff/<id>.md` per `write-handoff-and-yield` (ticket id as slice key).
+6. Prepend `route-models` Task prompt preamble. Instruct: implement only this ticket’s ACs + ownership globs; report to `$ARTIFACT_ROOT/tickets/<id>-report.md`; yield to `$ARTIFACT_ROOT/handoff/<id>.md` per `write-handoff-and-yield` (ticket id as slice key). Nested dispatch — also follow skill `emit-telemetry`: capture a `span-start` handle immediately before each worker Task and pass it verbatim to `span-end` after it resolves, with `--parent-span-id` = this board's own `span_id`, `--trace-id`/`--emitter-id` read from the run's `telemetry.json`, and `--agent-role`/`--agent-name` naming the worker (not the board). Derive `--status` from this step's own DONE/YIELD/failure/blocked handling.
 7. On `YIELD:` — keep ticket `claimed`, re-dispatch same role with handoff + ticket + spec. Cap **5** consecutive yields per ticket, then surface to human.
 8. On `DONE:` — read report; run:
 

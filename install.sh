@@ -110,9 +110,16 @@ install_claude() {
     echo "  + .claude/program/schemas/$(basename "$f")"
   done
 
+  # Copy settings.skailr.json only if absent: it may carry a consumer's telemetry
+  # enable/disable choice (optional `telemetry.enabled` key), which a blind overwrite
+  # on upgrade would silently reset. Preserve consumer intent (AC-26).
   if [[ -f "$SCRIPT_DIR/.claude/settings.skailr.json" ]]; then
-    cp "$SCRIPT_DIR/.claude/settings.skailr.json" "$TARGET/.claude/settings.skailr.json"
-    echo "  + .claude/settings.skailr.json"
+    if [[ -f "$TARGET/.claude/settings.skailr.json" ]]; then
+      echo "  = .claude/settings.skailr.json exists (preserved; consumer telemetry choice kept)"
+    else
+      cp "$SCRIPT_DIR/.claude/settings.skailr.json" "$TARGET/.claude/settings.skailr.json"
+      echo "  + .claude/settings.skailr.json"
+    fi
   fi
 
   if [[ -f "$SCRIPT_DIR/.claude/model-routing.json" ]]; then
@@ -252,6 +259,7 @@ append_gitignore() {
     "!.claude/program/channels/program.md"
     "!.claude/program/channels/feature.md"
     "!.claude/program/schemas/"
+    ".skailr/"
     "node_modules/"
   )
   touch "$gi"

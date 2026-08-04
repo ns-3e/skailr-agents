@@ -307,6 +307,7 @@ for schema in (
     "expert-profile.template.md",
     "expert-registry.template.md",
     "expert-research.template.md",
+    "telemetry-event.schema.json",
 ):
     p = ROOT / ".claude" / "program" / "schemas" / schema
     if not p.exists():

@@ -33,7 +33,7 @@ Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 ```
 
-Also follow skill `route-models` for model selection.
+Also follow skill `route-models` for model selection. Nested dispatch — also follow skill `emit-telemetry`: capture a `span-start` handle immediately before each worker Task and pass it verbatim to `span-end` after it resolves, with `--parent-span-id` = this lead's own `span_id`, `--trace-id`/`--emitter-id` read from the run's `telemetry.json`, and `--agent-role`/`--agent-name` naming the worker (not the lead). Derive `--status` from this lead's own success/failure/blocked handling.
 
 N/A.
 
