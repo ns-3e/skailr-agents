@@ -39,6 +39,14 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 
 
 
+### Context budget & decomposition (fit-test)
+
+Before decomposing intake work or dispatching a subagent (researcher, story-writer, architect, expert), run skill `fit-test`: estimate context fit against target 80k / soft ceiling 100k / hard ceiling 110k tokens. Estimate > 65% of budget → decompose further before dispatch; ≤65% → dispatch as-is. Append the estimate + decision to `$ARTIFACT_ROOT/budget-ledger.md` (format: `.claude/program/schemas/budget-ledger.template.md`).
+
+**Decomposition rules** when a phase must be split across more than one dispatched unit: split along contract seams (frozen ownership/API boundaries); keep units MECE; single-writer per file; cap at ≤7 direct reports per dispatch round; do not spawn a task under ~10k tokens of expected work — fold it into an adjacent unit instead.
+
+**Leads never ingest raw work product.** Your context as orchestrator holds plans, contracts, dispatch packets, and completion reports only — never raw diffs, full subagent-written files, transcripts, or tool logs from dispatched agents. Subagents report back via their completion report (~1000-token cap) and artifact paths; read an artifact directly only when a gate check requires it (e.g. verifying `spec.md` ownership globs), not as a matter of course.
+
 ### Setup (new vs resume)
 
 Create `.claude/tmp/` if it does not exist.

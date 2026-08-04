@@ -31,6 +31,10 @@ On success end with: DONE: <path>[, <path>…]
 
 Do not omit it for engineers or other builders: they stay terse in narration; deliverables remain full and correct. Orchestrators re-read artifacts from disk — chat duplication is waste. Pass **paths** in Task prompts (not file contents); the subagent Reads what it needs.
 
+### Required token-budget field
+
+Every Task dispatch also states a **token budget** — target / soft ceiling / hard ceiling — using the numeric defaults in `.claude/program/contracts/budget-templates.md` (80k / 100k / 110k unless a dispatch packet states otherwise). Shape the dispatch prompt after `.claude/program/schemas/dispatch-packet.template.md` (the canonical 8-field packet: Goal, Acceptance criteria, Frozen contract(s), File allowlist, Token budget, Forbidden scope, Report format, Channel path). **A dispatch without a token-budget field is invalid** per this contract. The dispatched agent runs skill `fit-test` first and records the estimate + execute/decompose decision on the budget ledger before doing any real work.
+
 ## Downgrade (save tokens / rate limits)
 
 Use **one tier below** the role default (tiers: `haiku` → `sonnet` → `opus`; never below `haiku`) when **all** of:

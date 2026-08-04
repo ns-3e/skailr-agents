@@ -452,6 +452,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-fit-test",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/fit-test/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-freeze-contract",
       "tier": "skill",
       "type": "skill",

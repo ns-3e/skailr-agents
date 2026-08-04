@@ -45,6 +45,7 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 2. Read `$ARTIFACT_ROOT/mode.md` (and progress frontmatter `mode`) — `yolo` or `gated`.
 3. Confirm `$ARTIFACT_ROOT/request.md` exists. Do not reset channels under `$ARTIFACT_ROOT/channels/`.
 4. If the user provided story/spec feedback in `$ARGUMENTS` and you are still before build, apply it by re-invoking the relevant agent first.
+5. Do **not** reset or truncate `$ARTIFACT_ROOT/budget-ledger.md` on resume — like `progress.md` and the channel boards, it is append-only and persists across resumes. Dispatched agents keep appending fit-test rows to it per skill `fit-test` and contract `budget-templates`.
 
 If `complete: true`, report status and stop.
 

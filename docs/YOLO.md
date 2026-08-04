@@ -82,7 +82,7 @@ Rules:
 - Do **not** change the request text or say "start over" unless you want a fresh archive.
 - The final report still lists **Assumptions made** and the validator verdict.
 
-**Mid-ticket handoffs:** build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may yield *inside* a build Task when a process-step or tool-round budget hits — they write `$ARTIFACT_ROOT/handoff/<ticket-id>.md`, end with `YIELD: <path>`, and the orchestrator re-dispatches the same role in a fresh Task with that handoff (or `/continue-*` picks it up after a session death). Consecutive yields per ticket are capped at 5. Skills: `write-handoff-and-yield`, `run-ticket-board`, `run-feature-queue`.
+**Mid-ticket handoffs:** build workers (`backend-engineer`, `frontend-engineer`, `data-engineer`) may yield *inside* a build Task when a process-step or tool-round budget hits — or when **~80% of the assigned token budget** is consumed (skill `fit-test`; this trigger applies to any budgeted worker or lead, not just the three build roles, and pairs a partial completion report so the lead can re-dispatch the remainder fresh). They write `$ARTIFACT_ROOT/handoff/<ticket-id>.md`, end with `YIELD: <path>`, and the orchestrator re-dispatches the same role in a fresh Task with that handoff (or `/continue-*` picks it up after a session death). Consecutive yields per ticket are capped at 5. Skills: `write-handoff-and-yield`, `run-ticket-board`, `run-feature-queue`; full context-budget model: [CONTEXT_BUDGET.md](CONTEXT_BUDGET.md).
 
 ## How ambiguity is handled
 

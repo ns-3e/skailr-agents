@@ -5,6 +5,7 @@ role: backend-engineer | frontend-engineer | data-engineer
 workstream: null | <ws-slug>
 yield: <1-based count for this slice/ticket in this run>
 updated: <ISO-8601>
+trigger: tool-round | budget-80pct
 ---
 
 # Handoff: <slice or ticket id>
@@ -47,3 +48,14 @@ Shell/test/migrate commands already executed and their outcome (pass/fail). Do n
 ## Do-not-reread
 
 Large files or docs already digested — resume should trust Done/Decisions instead of re-reading unless verifying a change.
+
+## Budget checkpoint (80%)
+
+Fires in addition to the tool-round trigger, when a worker reaches 80% of its token budget. Optional — omit this section entirely when `trigger: tool-round`.
+
+- Progress: what fraction of Goal is done
+- Decisions: mid-work choices the resume Task must keep (mirror/extend the Decisions section above)
+- Remaining plan: concrete steps left
+- Gotchas: traps the resume Task would otherwise re-discover
+
+Pair with a **partial** completion report (`.claude/program/schemas/completion-report.template.md`, `Status: partial`), not a `YIELD:`-only note — the dispatching lead re-dispatches the remainder as a fresh agent using this handoff plus that report.
