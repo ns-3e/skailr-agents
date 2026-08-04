@@ -90,6 +90,8 @@ Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-co
 
 ### Phase 2 — Plan (auto-approve + freeze)
 
+**Fit-test before decomposition (mandatory).** Before invoking the architect for Job 2, and before the architect (or any later lead) splits scope further, run skill `fit-test` (`.claude/skills/fit-test/SKILL.md`): estimate against budget (target 80k / soft ceiling 100k / hard ceiling 110k tokens) — estimate > 65% of budget → decompose further; ≤65% → execute as leaf. Record the row in `.claude/program/budget-ledger.md` (`.claude/program/schemas/budget-ledger.template.md`). Decomposition rules: contract-seam splits, MECE units, single-writer file ownership, ≤7 direct reports per lead, ~10k-token minimum task size — below that, inline the work instead of spawning a sub-agent.
+
 Invoke `program-architect` for **Job 2 (Decomposition)**. It writes `plan.md`, ownership map, contracts under `.claude/program/contracts/`, and the DAG.
 
 Verify before freezing (same checks as `/plan-program`):
@@ -115,6 +117,8 @@ Follow `/build-program` Phases A–E exactly (foundation → parallel workstream
 - Emit stubs as needed: `node scripts/skailr/emit-stubs.mjs`.
 - Context handoff: honor `YIELD:` and `$ARTIFACT_ROOT/handoff/*.md` per `/build-program` and skills `run-feature-queue` / `write-handoff-and-yield`.
 - Experts: read `matched:` from the plan Experts note (skill `consult-or-mint`); pass co-author input to the routed domain leads and collect gate verdicts before program validation, exactly as `/build-program` specifies. Soft-gate `fail` is a finding plus a heads-up, never a halt. Skip co-author/gate when `matched: none` with **no user-facing mention**.
+- Fit-test + decomposition rules: same as `/build-program` — every dispatching agent runs skill `fit-test` before dispatching a workstream or decomposing further (target 80k / soft ceiling 100k / hard ceiling 110k tokens, decompose if estimate > 65% of budget); splits follow contract-seam, MECE, single-writer, ≤7 direct reports, ~10k-token minimum task size (below → inline, don't spawn). Record each row in `.claude/program/budget-ledger.md`.
+- Integration/verification stays its own budgeted step, same as `/build-program`: you never ingest raw diffs, transcripts, or full work product from a workstream — only each team's completion report (~1000-token cap) plus `integration-verifier` / `program-validator` findings.
 
 ### Rules for you as orchestrator
 

@@ -40,9 +40,16 @@ Material inputs without traced assumptions.
 
 ## Checks Performed
 What you recomputed and which sources you opened.
+
+## Budget actuals
+Estimated vs approximately consumed.
 ```
 
 You report fixes; owning modelers/analysts apply them — you do not silently rewrite models.
+
+### Budget
+
+Run the startup fit test (skill `fit-test`) before touching any file. Do not proceed past your budget's soft ceiling without checkpointing — skill `write-handoff-and-yield`.
 
 ## 2. Tone context
 

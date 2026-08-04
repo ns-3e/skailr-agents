@@ -45,6 +45,12 @@ Before decomposition. **Never a gate.** Follow skill `consult-or-mint` with `mod
 
 Brief is already confirmed. Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: .claude/program/brief.md`, `evidence: brief + .claude/repo/orientation.md` / backlog if present, `carry_to: plan.md` (Experts note so `/build-program` knows which domain leads get expert input). Re-consult after any mint.
 
+### Fit-test before decomposition
+
+Before invoking the architect for Job 2, and before the architect (or any later lead) splits scope further, run skill `fit-test` (`.claude/skills/fit-test/SKILL.md`): estimate against budget (target 80k / soft ceiling 100k / hard ceiling 110k tokens) — estimate > 65% of budget → decompose further; ≤65% → execute as leaf. Record the row in `.claude/program/budget-ledger.md` (`.claude/program/schemas/budget-ledger.template.md`).
+
+Decomposition rules the architect applies when cutting workstreams (and every lead applies again when splitting its own scope): contract-seam splits, MECE units, single-writer file ownership per task, ≤7 direct reports per lead, ~10k-token minimum task size — below that, inline the work instead of spawning a sub-agent.
+
 ### Decomposition
 
 Invoke the `program-architect` subagent to run **Job 2 (Decomposition)**. It reads `brief.md` and produces: the shared kernel definition, the workstreams, the ownership map, the frozen contracts (written to `.claude/program/contracts/`), and the dependency DAG — all written to `.claude/program/plan.md`.
@@ -59,6 +65,8 @@ Do not relay a plan you have not checked. Confirm all of the following, and send
 4. **Every brief item maps to at least one workstream or the kernel.** Nothing the user asked for is unowned.
 5. **Hard-sequenced dependencies are justified.** For each place one team must fully finish before another starts (rather than building against a stub in parallel), confirm the architect explained why a stub was not possible. Excessive sequencing is a decomposition smell.
 6. **MECE Features per workstream.** Every workstream has a Features (MECE) table with ID / Slug / Title / Goal / Depends-on / Maps-to brief, plus a MECE proof line. An engineering workstream with an empty Features table fails — send back to the architect. Confirm every brief item mapped to a WS also maps to exactly one feature in that WS (or the kernel). Feature `Depends-on` may only reference feature IDs in the same workstream (or documented same-WS order); tickets are not invented at plan time.
+
+**Integration/verification stays a separate budgeted step.** The plan's DAG must leave Phase C (Integration) and Phase D (Program validation) as their own step, sized against the same 80k/100k/110k target/soft/hard ceilings — not folded into Phase B workstream budgets. The orchestrator that later executes this plan never ingests raw diffs, transcripts, or full work product from a workstream directly; it consumes only each team's completion report (~1000-token cap, per `budget-templates` contract) plus the `integration-verifier` / `program-validator` findings.
 
 ### GATE — user approval of the program plan
 

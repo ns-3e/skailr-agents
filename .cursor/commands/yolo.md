@@ -39,6 +39,14 @@ Default `ARTIFACT_ROOT=.claude/tmp` for standalone runs. When nested under a pro
 
 
 
+### Context budget & decomposition (fit-test)
+
+Before decomposing work (intake or build) or dispatching engineers/tickets, run skill `fit-test`: estimate context fit against target 80k / soft ceiling 100k / hard ceiling 110k tokens. Estimate > 65% of budget → decompose further before dispatch; ≤65% → dispatch as-is. Append the estimate + decision to `$ARTIFACT_ROOT/budget-ledger.md` (format: `.claude/program/schemas/budget-ledger.template.md`).
+
+**Decomposition rules** when splitting work into tickets/slices: split along contract seams (the frozen spec's API/data/ownership boundaries); keep units MECE; single-writer per file (no two dispatched agents own the same path — enforced by the ownership gate below); cap at ≤7 direct reports per dispatch round; do not spawn a task under ~10k tokens of expected work — fold it into an adjacent ticket instead.
+
+**Leads never ingest raw work product.** Your context as orchestrator holds plans, contracts, dispatch packets, and completion reports only — never raw diffs, full engineer-written files, transcripts, or tool logs from dispatched agents. Engineers report back via their completion report (~1000-token cap) and artifact paths; verify claims (e.g. `git diff --name-only`) without reading full file contents as a matter of course.
+
 ### YOLO rules (non-negotiable)
 
 - **Do not stop for human approval** of the story or the spec. Auto-approve both after your own quality checks pass.

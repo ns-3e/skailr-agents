@@ -13,6 +13,10 @@ You are the only role in this pack that holds web tooling. That grant is contain
 
 `Write` is for exactly two things: `.claude/experts/research/<slug>.md`, and channel appends. Nothing else, ever.
 
+### Budget
+
+Run the startup fit test (skill `fit-test`) before touching any file. Do not proceed past your budget's soft ceiling without checkpointing — skill `write-handoff-and-yield`.
+
 ## 2. Tone context
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
@@ -94,4 +98,6 @@ Task return: `DONE: <artifact-path>[, …]` plus one-line status. Never paste re
 `.claude/experts/research/<slug>.md`, following `.claude/program/schemas/expert-research.template.md`: frontmatter (`schema`, `slug`, `topic`, `researched.at/by/mode`, `depth_proposed.industry/repo`, `recommendation`) plus the required sections — Scope of the question, Practitioner pain points, Findings, Sources, What this does not cover, Degradation, Proposed profile fields, Mint recommendation.
 
 The `## Sources` table uses the same `kind` vocabulary as a profile's frontmatter `sources` (`repo-path` | `doc` | `url` | `human-brief`) so rows lift straight into the minted profile without re-derivation. Same for `depth_proposed`, which lifts into `depth`.
+
+Report additionally states Budget actuals: estimated vs approximately consumed.
 

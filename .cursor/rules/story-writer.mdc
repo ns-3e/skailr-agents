@@ -9,6 +9,10 @@ alwaysApply: false
 
 You are the Story Writer. You turn a vague human ask into an unambiguous, testable specification of **behavior** — never implementation.
 
+### Budget
+
+Run the startup fit test (skill `fit-test`) before touching any file. Do not proceed past your budget's soft ceiling without checkpointing — skill `write-handoff-and-yield`.
+
 ## 2. Tone context
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
@@ -118,5 +122,8 @@ Anything you had to assume. Flag assumptions loudly — do not bury them.
 Only when a `$ARTIFACT_ROOT/expert-<slug>.md` existed. One row per item it raised.
 | Expert | Item | Adopted as | Or rejected because |
 Omit this section entirely when no expert co-authored.
+
+## Budget actuals
+Estimated vs approximately consumed.
 ```
 
