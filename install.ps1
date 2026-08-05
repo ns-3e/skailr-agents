@@ -121,6 +121,12 @@ function Install-Claude {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
     }
     Write-Host "  + .claude/tmp/ .claude/program/ .claude/repo/"
+
+    # Telemetry fallback dir: the emitter's isEnabled() checks for it when
+    # settings.skailr.json carries no explicit telemetry.enabled. Left empty and
+    # gitignored; no placeholder file — .skailr/ is ignored so an empty dir stays invisible.
+    New-Item -ItemType Directory -Path "$Target\.skailr" -Force | Out-Null
+    Write-Host "  + .skailr/"
 }
 
 $PackagedRules = @(
@@ -243,6 +249,7 @@ function Append-Gitignore {
         "!.claude/program/channels/program.md",
         "!.claude/program/channels/feature.md",
         "!.claude/program/schemas/",
+        ".skailr/",
         "node_modules/"
     )
     $existing = @(Get-Content $gi -ErrorAction SilentlyContinue)

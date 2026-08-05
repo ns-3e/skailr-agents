@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.12.1] — 2026-08-05
+
+### Fixed
+
+- **Installers now always create an empty `.skailr/` directory (belt-and-suspenders for the telemetry fallback).** `emit-telemetry.mjs`'s `isEnabled()` falls back to `existsSync('.skailr')` whenever `.claude/settings.skailr.json`'s `telemetry.enabled` key is absent or non-boolean — but neither `install.sh` nor `install.ps1` actually created that directory, so a project that hit the fallback path (malformed settings, or the file hand-deleted) got a silent no-op: `span.start` never wrote and no error surfaced. Both installers' claude-only paths (`install_claude` / `Install-Claude`) now `mkdir -p` / `New-Item -Force` an empty `.skailr/` right after their existing `.claude/tmp/`, `.claude/program/`, `.claude/repo/` block, printing a matching `  + .skailr/` line; idempotent on upgrade, no `.gitkeep` or other file written inside it (it's already gitignored, and git can't track an empty dir anyway). `--cursor-only`/`-CursorOnly` installs are unaffected — that mode never installs the emitter. The emitter's gating precedence (`isEnabled()`) is unchanged. **One real behavioral consequence:** deleting `settings.skailr.json` no longer disables telemetry, since `.skailr/` now always exists after install — the only supported opt-out is an explicit `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Along the way, `install.ps1`'s `Append-Gitignore` gitignore-lines list was also found missing `.skailr/` (a pre-existing carrier-drift bug, `install.sh`'s equivalent list already had it) — added in the same relative position so both carriers stay line-for-line comparable. [docs/TELEMETRY.md](docs/TELEMETRY.md)
+
 ## [1.12.0] — 2026-08-05
 
 ### Changed

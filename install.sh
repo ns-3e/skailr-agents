@@ -14,7 +14,7 @@ Copies the packaged agent library into a project:
   CLAUDE.md (plain-chat intake for Claude Code)
   scripts/skailr/  scripts/hooks/
   .cursor/rules/   .cursor/commands/
-  Creates .claude/tmp/, .claude/program/, and .claude/repo/
+  Creates .claude/tmp/, .claude/program/, .claude/repo/, and .skailr/
   Appends ignore rules if missing
 
 Never touches .claude/experts/. That roster is accumulated project expertise
@@ -141,6 +141,12 @@ install_claude() {
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
   [[ -f "$TARGET/.claude/repo/.gitkeep" ]] || touch "$TARGET/.claude/repo/.gitkeep"
   echo "  + .claude/tmp/ .claude/program/ .claude/repo/"
+
+  # Telemetry fallback dir: the emitter's isEnabled() checks for it when
+  # settings.skailr.json carries no explicit telemetry.enabled. Left empty and
+  # gitignored; no .gitkeep — git cannot track an empty dir and .skailr/ is ignored.
+  mkdir -p "$TARGET/.skailr"
+  echo "  + .skailr/"
 }
 
 PACKAGED_RULES=(

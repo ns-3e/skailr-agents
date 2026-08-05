@@ -4,7 +4,7 @@
 
 ## Verify it / turn it off (30 seconds)
 
-Telemetry is **on by default**: the pack ships `.claude/settings.skailr.json` with `"telemetry": { "enabled": true }`, so spans are emitted out of the box — whether or not a `.skailr/` dir already exists.
+Telemetry is **on by default**: the pack ships `.claude/settings.skailr.json` with `"telemetry": { "enabled": true }`, so spans are emitted out of the box — whether or not a `.skailr/` dir already exists. (As of this release, `install.sh`/`install.ps1` also always create an empty `.skailr/` on every install/upgrade — see the note under the gating table.)
 
 ```bash
 # run any command that dispatches a subagent, e.g. /patch, /yolo, /build-program
@@ -17,6 +17,8 @@ To opt out, flip the shipped key in `.claude/settings.skailr.json`:
 ```jsonc
 { "telemetry": { "enabled": false }, "hooks": { /* unchanged */ } }   // true | false
 ```
+
+**This explicit key is the only supported opt-out.** Deleting `settings.skailr.json` no longer disables emission: `install.sh`/`install.ps1` now always create the empty `.skailr/` fallback directory on install, so the `existsSync`-fallback path the emitter falls back to is permanently true.
 
 `install.sh` copies `settings.skailr.json` **only if absent**, so your choice survives upgrades — and the upgrade migration that fills this key into older installs never overwrites an explicit `true` *or* `false` ([Upgrading from ≤ 1.11.0](#upgrading-from--1110)).
 
@@ -32,6 +34,8 @@ The emitter reads `telemetry.enabled` from `.claude/settings.skailr.json`; an ex
 | key/file absent                | yes                | yes    |
 
 The gate lives inside the emitter script, not in command prose — it cannot be half-applied. Output stays on your machine: files land only under `.skailr/`, which `install.sh` adds to the installed project's `.gitignore`.
+
+Since `install.sh`/`install.ps1` now always create an empty `.skailr/` on every install/upgrade (fresh or re-run), the two `.skailr/ exists? = no` rows above only describe a tree where `.skailr/` was hand-deleted after install, or a project that has never run the installer at all.
 
 ### Upgrading from ≤ 1.11.0
 
@@ -70,7 +74,7 @@ One `trace_id` is minted per run and threaded through every span — including d
 - `<YYYY-MM-DD>` — current **UTC** date. `<emitter-id>` — the command's kebab slug (`patch`, `yolo`, `build-program`, …), `[a-z0-9-]{1,32}`.
 - One compact JSON object per line, LF-terminated, UTF-8 no BOM. Each line is written in a single atomic `O_APPEND` syscall — a killed process never leaves a partial line, and no line is ever rewritten in place.
 - **Rotation:** on UTC date rollover, appends move to the new date's file. When the active file would cross **100 MiB**, appends move to `<date>-<emitter-id>-<k>.jsonl` (smallest `k ≥ 1` that fits). Existing files are never truncated.
-- Files are consumer runtime state: `install.sh` never creates, modifies, or deletes anything under `.skailr/`, and `.skailr/` is added to the installed project's `.gitignore`.
+- Files are consumer runtime state: `install.sh` (and `install.ps1`) create the empty `.skailr/` directory on every install/upgrade and never write, modify, or delete anything **inside** it, and `.skailr/` is added to the installed project's `.gitignore`.
 
 ## Reading and verifying a record
 
