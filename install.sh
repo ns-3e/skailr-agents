@@ -242,6 +242,37 @@ assert_roster_untouched() {
   esac
 }
 
+# Ordered list of migration ids implemented by scripts/skailr/migrate.mjs. All logic lives
+# in the runner; this array is only the ordered call list. It is asserted identical to the
+# runner's exports and to install.ps1's $SkailrMigrations by scripts/skailr/doctor.mjs, so
+# ids must stay lowercase-hyphen (/^[a-z][a-z0-9-]*$/) and the literal must contain no
+# parentheses beyond its own delimiters — doctor's extractor drops anything else.
+SKAILR_MIGRATIONS=(
+  telemetry-enabled-default
+)
+
+# Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk
+# state) and BEFORE assert_roster_untouched (so a roster-touching migration fails loudly).
+# Never fatal: the runner reports and exits 0 for unparseable/unwritable files, and `|| true`
+# covers even a usage error, because `set -euo pipefail` must not abort an install here.
+run_migrations() {
+  [[ "$MODE" == "cursor" ]] && return 0   # .claude/ is not managed in cursor-only mode
+  if ! command -v node >/dev/null 2>&1; then
+    echo "  ! migrations skipped (node not on PATH; install continues)"
+    return 0
+  fi
+  if [[ -z "$MIGRATE_PRE_EXISTING" ]]; then
+    echo "  = migrations skipped (fresh install; shipped defaults already current)"
+    return 0
+  fi
+  for id in "${SKAILR_MIGRATIONS[@]}"; do
+    # Invoked from $SCRIPT_DIR (the pack), never from $TARGET: the target's copy of the
+    # runner may be an older version that predates this migration.
+    node "$SCRIPT_DIR/scripts/skailr/migrate.mjs" --target "$TARGET" --only "$id" \
+      --pre-existing "$MIGRATE_PRE_EXISTING" || true
+  done
+}
+
 append_gitignore() {
   local gi="$TARGET/.gitignore"
   # Deliberately absent: .claude/experts/. The roster is git-tracked in consumer projects,
@@ -282,6 +313,16 @@ append_gitignore() {
 
 ROSTER_BEFORE="$(roster_fingerprint)"
 
+# Snapshot which migration targets existed BEFORE the copy phase. A file the copy phase
+# creates in this same run already carries current shipped defaults, so migrating it would
+# be a redundant double-write; only genuinely pre-existing consumer files are candidates.
+# (written as an `if`, not `[[ … ]] && …`: the latter returns 1 when absent and `set -e`
+# would abort the install on the ordinary fresh-install path.)
+MIGRATE_PRE_EXISTING=""
+if [[ -f "$TARGET/.claude/settings.skailr.json" ]]; then
+  MIGRATE_PRE_EXISTING=".claude/settings.skailr.json"
+fi
+
 case "$MODE" in
   both)
     install_claude
@@ -295,6 +336,7 @@ case "$MODE" in
   cursor) install_cursor ;;
 esac
 
+run_migrations
 append_gitignore
 assert_roster_untouched "$ROSTER_BEFORE"
 echo "Done."

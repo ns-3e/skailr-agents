@@ -295,6 +295,58 @@ function main() {
       }
       report(wfErrors.length ? "FAIL" : "PASS", "workflow scalars", wfErrors.length ? wfErrors.slice(0, 3).join("; ") : "no column-0 lines inside run:| blocks");
     }
+
+    // 7f. Migrations: three-way ordered identity between the runner's exported ids and
+    // BOTH installers' call lists (runner == install.sh == install.ps1). A two-way carrier
+    // check passes when both carriers drift together from the runner, so the runner is the
+    // third party here. Never vacuously green: an unparseable extraction and an EMPTY
+    // extraction are each their own named failure — two empty lists must never count as
+    // agreement, which is exactly what an id that doctor's token filter silently drops
+    // (uppercase, dots, parens, leading digit) would otherwise produce.
+    const mErrs = [];
+    let exported = [];
+    if (!existsSync(join(root, "scripts/skailr/migrate.mjs"))) {
+      mErrs.push("scripts/skailr/migrate.mjs missing");
+    } else {
+      const mr = runNode(root, "migrate.mjs", ["--list", "--json"]);
+      if (mr.status !== 0) {
+        mErrs.push(`migrate.mjs --list --json exited ${mr.status}: ${(mr.out || "").trim().split("\n").pop()}`);
+      } else {
+        try {
+          const parsed = JSON.parse(mr.out);
+          if (!Array.isArray(parsed.migrations)) throw new Error("output has no migrations[] array");
+          exported = parsed.migrations.map((m) => (m ? m.id : m));
+        } catch (e) {
+          mErrs.push(`migrate.mjs --list --json unparseable: ${String(e.message || e)}`);
+        }
+        if (!mErrs.length && !exported.length) mErrs.push("migrate.mjs exports zero migrations");
+      }
+      for (const id of exported) {
+        if (typeof id !== "string" || !/^[a-z][a-z0-9-]*$/.test(id)) {
+          mErrs.push(`migrate.mjs: migration id ${JSON.stringify(id)} cannot survive doctor's token filter (/^[a-z][a-z0-9-]*$/)`);
+        }
+      }
+      for (const [label, text, marker] of [
+        ["install.sh", sh, "SKAILR_MIGRATIONS"],
+        ["install.ps1", ps1, String.raw`\$SkailrMigrations`],
+      ]) {
+        const name = marker.replace(/\\/g, "");
+        if (!text) { mErrs.push(`${label}: unreadable or absent`); continue; }
+        if (!text.includes("migrate.mjs")) mErrs.push(`${label}: never invokes migrate.mjs`);
+        const got = extract(text, marker);
+        if (!got) { mErrs.push(`${label}: could not parse ${name}`); continue; }
+        if (!got.length) { mErrs.push(`${label}: ${name} extracted empty — check for uppercase/dots/parens in ids`); continue; }
+        for (const id of exported) if (!got.includes(id)) mErrs.push(`${label}: missing migration ${id}`);
+        for (const id of got) if (!exported.includes(id)) mErrs.push(`${label}: unknown migration ${id} (not exported by migrate.mjs)`);
+        if (got.join(",") !== exported.join(","))
+          mErrs.push(`${label}: migration order differs (migrate.mjs=[${exported.join(",")}] ${label}=[${got.join(",")}])`);
+      }
+    }
+    report(
+      mErrs.length ? "FAIL" : "PASS",
+      "migrations",
+      mErrs.length ? mErrs.slice(0, 6).join("; ") : `${exported.length} migration(s), runner == install.sh == install.ps1`,
+    );
   }
 
   // ---- Output ----

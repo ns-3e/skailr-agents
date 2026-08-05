@@ -86,10 +86,17 @@ function Install-Claude {
         }
     }
 
+    # Copy settings.skailr.json only if absent: it may carry a consumer's telemetry
+    # enable/disable choice (optional `telemetry.enabled` key), which a blind overwrite
+    # on upgrade would silently reset. Preserve consumer intent (AC-26).
     $settings = Join-Path $ScriptDir ".claude\settings.skailr.json"
     if (Test-Path $settings) {
-        Copy-Item $settings "$Target\.claude\settings.skailr.json" -Force
-        Write-Host "  + .claude/settings.skailr.json"
+        if (Test-Path "$Target\.claude\settings.skailr.json") {
+            Write-Host "  = .claude/settings.skailr.json exists (preserved; consumer telemetry choice kept)"
+        } else {
+            Copy-Item $settings "$Target\.claude\settings.skailr.json" -Force
+            Write-Host "  + .claude/settings.skailr.json"
+        }
     }
 
     $routing = Join-Path $ScriptDir ".claude\model-routing.json"
@@ -186,6 +193,41 @@ function Install-Cursor {
     }
 }
 
+# Ordered list of migration ids implemented by scripts/skailr/migrate.mjs. All logic lives
+# in the runner; this array is only the ordered call list. It is asserted identical to the
+# runner's exports and to install.sh's SKAILR_MIGRATIONS by scripts/skailr/doctor.mjs, so
+# ids must stay lowercase-hyphen (/^[a-z][a-z0-9-]*$/) and the literal must contain no
+# parentheses beyond its own delimiters — doctor's extractor drops anything else.
+$SkailrMigrations = @(
+    "telemetry-enabled-default"
+)
+
+# Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk
+# state) and BEFORE the gitignore/finish steps. Never fatal: the runner reports and exits 0
+# for unparseable/unwritable files, and the try/catch covers even a usage error, because
+# $ErrorActionPreference = "Stop" must not abort an install here.
+function Invoke-Migrations {
+    if ($Mode -eq "cursor") { return }   # .claude/ is not managed in cursor-only mode
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Host "  ! migrations skipped (node not on PATH; install continues)"
+        return
+    }
+    if ([string]::IsNullOrEmpty($MigratePreExisting)) {
+        Write-Host "  = migrations skipped (fresh install; shipped defaults already current)"
+        return
+    }
+    foreach ($id in $SkailrMigrations) {
+        # Invoked from $ScriptDir (the pack), never from $Target: the target's copy of the
+        # runner may be an older version that predates this migration.
+        try {
+            & node (Join-Path $ScriptDir "scripts\skailr\migrate.mjs") `
+                --target $Target --only $id --pre-existing $MigratePreExisting
+        } catch {
+            Write-Host "  ! migrations skipped ($_)"
+        }
+    }
+}
+
 function Append-Gitignore {
     $gi = Join-Path $Target ".gitignore"
     if (-not (Test-Path $gi)) { New-Item -ItemType File -Path $gi -Force | Out-Null }
@@ -220,11 +262,17 @@ function Append-Gitignore {
     }
 }
 
+# Snapshot which migration targets existed BEFORE the copy phase. A file the copy phase
+# creates in this same run already carries current shipped defaults, so migrating it would
+# be a redundant double-write; only genuinely pre-existing consumer files are candidates.
+$MigratePreExisting = if (Test-Path "$Target\.claude\settings.skailr.json") { ".claude/settings.skailr.json" } else { "" }
+
 switch ($Mode) {
     "both" { Install-Claude; Install-Cursor; Install-Scripts }
     "claude" { Install-Claude; Install-Scripts }
     "cursor" { Install-Cursor }
 }
 
+Invoke-Migrations
 Append-Gitignore
 Write-Host "Done."
