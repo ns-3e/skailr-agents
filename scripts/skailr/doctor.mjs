@@ -12,6 +12,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, basename } from "node:path";
 import { spawnSync } from "node:child_process";
+import { autoUpdateChecks } from "./doctor-autoupdate.mjs";
 
 function parseArgs(argv) {
   const out = { root: ".", json: false };
@@ -347,6 +348,11 @@ function main() {
       "migrations",
       mErrs.length ? mErrs.slice(0, 6).join("; ") : `${exported.length} migration(s), runner == install.sh == install.ps1`,
     );
+
+    // 7g. Update-check (autoUpdate) rows — settings default + wiring parity. Lives in a
+    // sibling module to keep this file under the megafile threshold; must sit AFTER 7f
+    // because it consumes 7f's `exported` id list alongside `sh`/`ps1`.
+    rows.push(...autoUpdateChecks({ root, sh, ps1, exported }));
   }
 
   // ---- Output ----

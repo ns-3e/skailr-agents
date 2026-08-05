@@ -373,6 +373,7 @@ Plain chat routes a question to an expert only when **exactly one** band covers 
 - **Run status** — `node scripts/skailr/status.mjs`: program phase + feature cursors, active feature, ticket frontier, channel inbox with message age, blockers. Read-only; `--json` for tooling.
 - **Health check** — `node scripts/skailr/doctor.mjs`: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence (plus pack-repo-only checks). Exit 1 on any FAIL; `--json` for tooling.
 - **Telemetry** — `span.start`/`span.end` records around every subagent dispatch, for Skailr Console ([docs/TELEMETRY.md](docs/TELEMETRY.md)): **on by default** (existing installs are migrated to the new default automatically on upgrade; an explicit setting is never overwritten) — opt out with `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Local files under `.skailr/` only, never sent anywhere, never blocks a run.
+- **Update check** — one line after a turn when a newer `skailr-agents` exists ([docs/UPDATE-CHECK.md](docs/UPDATE-CHECK.md)): **on by default** — opt out with `"autoUpdate": { "enabled": false }` in `.claude/settings.skailr.json`. **Check-and-notify only; it never upgrades anything** — the notice tells you to re-run the installer yourself. At most one unauthenticated `GET https://registry.npmjs.org/skailr-agents/latest` per 24 h (no auth, no telemetry, nothing identifying sent); the pack's only runtime network call. Offline or blocked → silent, never blocks a run.
 - **Model routing** — trade cost vs quality per role ([docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md)):
 
 ```bash
@@ -405,9 +406,10 @@ There is no separate update command — re-run any install channel (`npx skailr-
 | `.claude/tmp/` feature artifacts | Program schemas + channel templates |
 | `.claude/repo/` map-repo baseline | Cursor rules/commands and `scripts/skailr/` |
 | `.claude/experts/` (asserted byte-identical) | |
-| `.claude/settings.skailr.json` (copied only if absent; see migrations below) | |
+| `.claude/settings.skailr.json` — your `telemetry` and `autoUpdate` choices and your own `hooks` entries (copied only if absent; see migrations below) | |
+| `.skailr/` runtime state (telemetry spans, `installed-version.json` is re-stamped on each install) | |
 
-**Install migrations.** New *shipped defaults* still reach an existing install, without overwriting anything you set: after the copy phase, `scripts/skailr/migrate.mjs` runs an ordered, additive-only migration list against files that already existed. A migration fills a key only where it is absent or malformed — an explicit value you typed is never replaced — and can never fail an install (it always exits 0, and is skipped for `--cursor-only` installs or when `node` is off PATH). 1.12.0 ships one: `telemetry-enabled-default` ([docs/TELEMETRY.md](docs/TELEMETRY.md#upgrading-from--1110)).
+**Install migrations.** New *shipped defaults* still reach an existing install, without overwriting anything you set: after the copy phase, `scripts/skailr/migrate.mjs` runs an ordered, additive-only migration list against files that already existed. A migration fills a key only where it is absent or malformed — an explicit value you typed is never replaced — and can never fail an install (it always exits 0, and is skipped for `--cursor-only` installs or when `node` is off PATH). Shipped so far: `telemetry-enabled-default` ([docs/TELEMETRY.md](docs/TELEMETRY.md#upgrading-from--1110)), then `autoupdate-enabled-default` and `autoupdate-stop-hook` in 1.13.0 — the latter appends the update-check `Stop` hook entry to an existing `hooks` block, preserving your own entries and never adding a second copy ([docs/UPDATE-CHECK.md](docs/UPDATE-CHECK.md#upgrading-from--1121)).
 
 Local edits to pack files in a consumer repo are replaced on upgrade. Commit the refreshed pack paths afterward. Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
 

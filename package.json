@@ -1,6 +1,6 @@
 {
   "name": "skailr-agents",
-  "version": "1.12.1",
+  "version": "1.13.0",
   "description": "Multi-agent operating model for Claude Code and Cursor — roles, contracts, channels, and script gates",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
@@ -12,7 +12,10 @@
     "status": "node scripts/skailr/status.mjs",
     "ledger:status": "node scripts/skailr/ledger-status.mjs",
     "models:apply": "node scripts/skailr/apply-model-routing.mjs",
-    "models:check": "node scripts/skailr/apply-model-routing.mjs --check"
+    "models:check": "node scripts/skailr/apply-model-routing.mjs --check",
+    "smoke:update": "node scripts/skailr/update-smoke.mjs",
+    "smoke:migrate": "node scripts/skailr/migrate-smoke.mjs",
+    "smoke:telemetry": "node scripts/skailr/telemetry-smoke.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -48,7 +51,8 @@
     "docs/MODEL_ROUTING.md",
     "docs/YOLO.md",
     "docs/experts.md",
-    "docs/TELEMETRY.md"
+    "docs/TELEMETRY.md",
+    "docs/UPDATE-CHECK.md"
   ],
   "repository": {
     "type": "git",

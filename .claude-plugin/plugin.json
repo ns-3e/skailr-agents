@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
   "displayName": "skailr-agents",
-  "version": "1.12.1",
+  "version": "1.13.0",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates. This plugin bootstraps the pack into your project: run /skailr-agents:install once, then use the project-local commands (/yolo, /map-repo, /patch, \u2026).",
   "author": {
     "name": "Skailr",
