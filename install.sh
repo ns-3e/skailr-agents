@@ -255,6 +255,8 @@ assert_roster_untouched() {
 # parentheses beyond its own delimiters — doctor's extractor drops anything else.
 SKAILR_MIGRATIONS=(
   telemetry-enabled-default
+  autoupdate-enabled-default
+  autoupdate-stop-hook
 )
 
 # Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk
@@ -277,6 +279,22 @@ run_migrations() {
     node "$SCRIPT_DIR/scripts/skailr/migrate.mjs" --target "$TARGET" --only "$id" \
       --pre-existing "$MIGRATE_PRE_EXISTING" || true
   done
+}
+
+# Refresh $TARGET/.skailr/installed-version.json on EVERY claude-mode install/upgrade — it is
+# the "installed" side of the update check and must track the pack, unlike autoUpdate.enabled
+# (user-editable, copy-once-if-absent). Runs unconditionally, not gated on MIGRATE_PRE_EXISTING:
+# a fresh install needs the marker too. Never fatal — the runner always exits 0 and `|| true`
+# covers even a usage error, because `set -euo pipefail` must not abort an install here.
+record_install() {
+  [[ "$MODE" == "cursor" ]] && return 0   # .claude/ is not managed in cursor-only mode
+  if ! command -v node >/dev/null 2>&1; then
+    echo "  ! installed-version marker skipped (node not on PATH; install continues)"
+    return 0
+  fi
+  # Invoked from $SCRIPT_DIR (the pack), never from $TARGET: the version stamped must be the
+  # pack's own package.json version, and the target's copy may predate this script entirely.
+  node "$SCRIPT_DIR/scripts/skailr/check-update.mjs" --record-install --target "$TARGET" || true
 }
 
 append_gitignore() {
@@ -343,6 +361,7 @@ case "$MODE" in
 esac
 
 run_migrations
+record_install
 append_gitignore
 assert_roster_untouched "$ROSTER_BEFORE"
 echo "Done."

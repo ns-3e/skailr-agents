@@ -205,7 +205,9 @@ function Install-Cursor {
 # ids must stay lowercase-hyphen (/^[a-z][a-z0-9-]*$/) and the literal must contain no
 # parentheses beyond its own delimiters — doctor's extractor drops anything else.
 $SkailrMigrations = @(
-    "telemetry-enabled-default"
+    "telemetry-enabled-default",
+    "autoupdate-enabled-default",
+    "autoupdate-stop-hook"
 )
 
 # Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk
@@ -231,6 +233,28 @@ function Invoke-Migrations {
         } catch {
             Write-Host "  ! migrations skipped ($_)"
         }
+    }
+}
+
+# Refresh $Target\.skailr\installed-version.json on EVERY claude-mode install/upgrade — it is
+# the "installed" side of the update check and must track the pack, unlike autoUpdate.enabled
+# (user-editable, copy-once-if-absent). Runs unconditionally, not gated on $MigratePreExisting:
+# a fresh install needs the marker too. Never fatal — the runner always exits 0 and the
+# try/catch covers even a usage error, because $ErrorActionPreference = "Stop" must not abort
+# an install here.
+function Invoke-RecordInstall {
+    if ($Mode -eq "cursor") { return }   # .claude/ is not managed in cursor-only mode
+    if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+        Write-Host "  ! installed-version marker skipped (node not on PATH; install continues)"
+        return
+    }
+    # Invoked from $ScriptDir (the pack), never from $Target: the version stamped must be the
+    # pack's own package.json version, and the target's copy may predate this script entirely.
+    try {
+        & node (Join-Path $ScriptDir "scripts\skailr\check-update.mjs") `
+            --record-install --target $Target
+    } catch {
+        Write-Host "  ! installed-version marker skipped ($_)"
     }
 }
 
@@ -281,5 +305,6 @@ switch ($Mode) {
 }
 
 Invoke-Migrations
+Invoke-RecordInstall
 Append-Gitignore
 Write-Host "Done."

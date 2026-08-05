@@ -48,6 +48,79 @@ function classifyTelemetryEnabled(json) {
   return "fill-malformed";
 }
 
+/**
+ * Structural clone of classifyTelemetryEnabled for `autoUpdate.enabled`
+ * (spec: Data Model → Migrations → forward `autoupdate-enabled-default`).
+ * Same rule, same order, same "never replace a value the consumer typed".
+ */
+function classifyAutoUpdateEnabled(json) {
+  if (json === null || typeof json !== "object" || Array.isArray(json)) return "unsafe";
+  const a = json.autoUpdate;
+  if (a === undefined) return "fill-absent";
+  if (a === null || typeof a !== "object" || Array.isArray(a)) return "unsafe";
+  if (!("enabled" in a)) return "fill-absent";
+  if (typeof a.enabled === "boolean") return "explicit";
+  return "fill-malformed";
+}
+
+// The exact third entry shipped in .claude/settings.skailr.json. Cloned on use so
+// no two runs can ever share one mutable object.
+const CHECK_UPDATE_MARKER = "check-update.mjs";
+const CHECK_UPDATE_HOOK = {
+  type: "command",
+  command: "node scripts/skailr/check-update.mjs 2>/dev/null || true",
+};
+
+function isDefaultStopBlock(block) {
+  return (
+    block !== null &&
+    typeof block === "object" &&
+    !Array.isArray(block) &&
+    Array.isArray(block.hooks) &&
+    (block.matcher === undefined || block.matcher === "")
+  );
+}
+
+/**
+ * Array-aware, idempotent append of the check-update Stop hook entry.
+ * Returns { verdict, blockIndex }.
+ *
+ * `unsafe` here is deliberate and load-bearing (spec Design Decisions row 3): a
+ * consumer who deleted `hooks` / `hooks.Stop` did so on purpose, and re-creating
+ * the container would not be additive. No-op, never resurrect.
+ *
+ * Idempotency is by re-derivation, not by ledger: if ANY entry in ANY Stop block
+ * already mentions check-update.mjs (ours or a consumer's own wiring), we are
+ * done. Existing entries are never read for anything but this test, never
+ * rewritten, never reordered.
+ */
+function classifyStopHookEntry(json) {
+  const no = (verdict) => ({ verdict, blockIndex: -1 });
+  if (json === null || typeof json !== "object" || Array.isArray(json)) return no("unsafe");
+  const hooks = json.hooks;
+  if (hooks === null || typeof hooks !== "object" || Array.isArray(hooks)) return no("no-container");
+  const stop = hooks.Stop;
+  if (!Array.isArray(stop) || stop.length === 0) return no("no-container");
+
+  for (const block of stop) {
+    if (block === null || typeof block !== "object" || !Array.isArray(block.hooks)) continue;
+    for (const entry of block.hooks) {
+      if (
+        entry !== null &&
+        typeof entry === "object" &&
+        typeof entry.command === "string" &&
+        entry.command.includes(CHECK_UPDATE_MARKER)
+      ) {
+        return no("explicit");
+      }
+    }
+  }
+
+  const blockIndex = stop.findIndex(isDefaultStopBlock);
+  if (blockIndex === -1) return no("no-default-block");
+  return { verdict: "fill-absent", blockIndex };
+}
+
 export const MIGRATIONS = [
   {
     id: "telemetry-enabled-default",
@@ -71,6 +144,60 @@ export const MIGRATIONS = [
       };
     },
   },
+  {
+    id: "autoupdate-enabled-default",
+    file: SETTINGS,
+    describe: "fill autoUpdate.enabled: true when the consumer never set it explicitly",
+    classify: classifyAutoUpdateEnabled,
+    apply(json) {
+      const verdict = classifyAutoUpdateEnabled(json);
+      if (verdict === "explicit") {
+        return {
+          changed: false,
+          json,
+          reason: "explicit",
+          detail: "autoUpdate.enabled already set explicitly",
+        };
+      }
+      if (verdict === "unsafe") {
+        return {
+          changed: false,
+          json,
+          reason: "non-object-container",
+          detail: "autoUpdate is not an object; consumer value left untouched",
+        };
+      }
+      if (json.autoUpdate === undefined) json.autoUpdate = {};
+      json.autoUpdate.enabled = true;
+      return {
+        changed: true,
+        json,
+        reason: verdict === "fill-malformed" ? "autoupdate-malformed" : "autoupdate-absent",
+      };
+    },
+  },
+  {
+    id: "autoupdate-stop-hook",
+    file: SETTINGS,
+    describe: "append the check-update.mjs Stop hook entry when it is not already wired",
+    classify: (json) => classifyStopHookEntry(json).verdict,
+    apply(json) {
+      const { verdict, blockIndex } = classifyStopHookEntry(json);
+      if (verdict === "explicit") return { changed: false, json, reason: "already-wired" };
+      if (verdict === "unsafe") {
+        return {
+          changed: false,
+          json,
+          reason: "non-object-container",
+          detail: "settings root is not an object; consumer value left untouched",
+        };
+      }
+      if (verdict !== "fill-absent") return { changed: false, json, reason: verdict };
+      // Append only. Never splice, reorder, or touch an existing entry.
+      json.hooks.Stop[blockIndex].hooks.push({ ...CHECK_UPDATE_HOOK });
+      return { changed: true, json, reason: "hook-appended" };
+    },
+  },
 ];
 
 // ---------- result → human line (spec: API Contract → human mode) ----------
@@ -83,9 +210,21 @@ const DETAIL = {
   "missing-file": "not present before this run",
   unparseable: "unparseable JSON; left untouched",
   "non-object-container": "telemetry is not an object; consumer value left untouched",
+  "autoupdate-absent": "added autoUpdate.enabled: true",
+  "autoupdate-malformed": "corrected non-boolean autoUpdate.enabled → true",
+  "hook-appended": "appended the check-update.mjs Stop hook entry",
+  "already-wired": "check-update.mjs Stop hook entry already present",
+  "no-container": "hooks.Stop absent or empty; not re-created",
+  "no-default-block": "no default Stop block to append to; left untouched",
 };
 
-const LOUD = new Set(["unparseable", "non-object-container", "write-error"]);
+const LOUD = new Set([
+  "unparseable",
+  "non-object-container",
+  "write-error",
+  "no-container",
+  "no-default-block",
+]);
 
 function humanLine(r) {
   if (r.status === "applied") return `  ~ ${r.file} ← ${r.id} applied (${r.detail})`;
@@ -131,7 +270,9 @@ export function runMigration(mig, targetDir, preExisting) {
   const out = mig.apply(json);
   if (!out.changed) {
     const status = out.reason === "explicit" ? "noop" : "skipped";
-    return result(mig, status, out.reason);
+    // out.detail is optional: it lets a migration reuse a shared reason key
+    // (explicit / non-object-container) with per-key wording. Undefined ⇒ DETAIL.
+    return result(mig, status, out.reason, out.detail);
   }
 
   try {
