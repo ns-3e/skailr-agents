@@ -69,6 +69,8 @@ Omit `--claude-only` to also install the Cursor mirror; `--cursor-only` for Curs
 
 Every channel runs the same idempotent installers. They never touch `.claude/experts/` (your minted expert roster survives every upgrade), and re-running never wipes runtime state. Details: [Install details](#install-details).
 
+> **Windows:** `install.ps1`'s 1.12.0 changes (settings-preservation guard + install migrations) are syntax-gated in CI but have not been run end-to-end on a Windows host — verify with `node scripts/skailr/doctor.mjs` and check `.claude/settings.skailr.json` after upgrading. See [CHANGELOG](CHANGELOG.md#1120--2026-08-05) → Known limitations.
+
 ### 2. Commit the pack
 
 ```bash
@@ -370,7 +372,7 @@ Plain chat routes a question to an expert only when **exactly one** band covers 
 
 - **Run status** — `node scripts/skailr/status.mjs`: program phase + feature cursors, active feature, ticket frontier, channel inbox with message age, blockers. Read-only; `--json` for tooling.
 - **Health check** — `node scripts/skailr/doctor.mjs`: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence (plus pack-repo-only checks). Exit 1 on any FAIL; `--json` for tooling.
-- **Telemetry** — `span.start`/`span.end` records around every subagent dispatch, for Skailr Console ([docs/TELEMETRY.md](docs/TELEMETRY.md)): **on by default** — opt out with `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Local files under `.skailr/` only, never sent anywhere, never blocks a run.
+- **Telemetry** — `span.start`/`span.end` records around every subagent dispatch, for Skailr Console ([docs/TELEMETRY.md](docs/TELEMETRY.md)): **on by default** (existing installs are migrated to the new default automatically on upgrade; an explicit setting is never overwritten) — opt out with `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Local files under `.skailr/` only, never sent anywhere, never blocks a run.
 - **Model routing** — trade cost vs quality per role ([docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md)):
 
 ```bash
@@ -399,10 +401,13 @@ There is no separate update command — re-run any install channel (`npx skailr-
 | Preserved | Overwritten (pack files) |
 | --------- | ------------------------ |
 | `.claude/portfolio/` | Agents, commands, skills, teams registry |
-| `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`, intake, settings, model-routing |
+| `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`, intake, model-routing |
 | `.claude/tmp/` feature artifacts | Program schemas + channel templates |
 | `.claude/repo/` map-repo baseline | Cursor rules/commands and `scripts/skailr/` |
 | `.claude/experts/` (asserted byte-identical) | |
+| `.claude/settings.skailr.json` (copied only if absent; see migrations below) | |
+
+**Install migrations.** New *shipped defaults* still reach an existing install, without overwriting anything you set: after the copy phase, `scripts/skailr/migrate.mjs` runs an ordered, additive-only migration list against files that already existed. A migration fills a key only where it is absent or malformed — an explicit value you typed is never replaced — and can never fail an install (it always exits 0, and is skipped for `--cursor-only` installs or when `node` is off PATH). 1.12.0 ships one: `telemetry-enabled-default` ([docs/TELEMETRY.md](docs/TELEMETRY.md#upgrading-from--1110)).
 
 Local edits to pack files in a consumer repo are replaced on upgrade. Commit the refreshed pack paths afterward. Inventory: [manifest.json](manifest.json). License: [MIT](LICENSE).
 

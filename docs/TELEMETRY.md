@@ -18,7 +18,7 @@ To opt out, flip the shipped key in `.claude/settings.skailr.json`:
 { "telemetry": { "enabled": false }, "hooks": { /* unchanged */ } }   // true | false
 ```
 
-`install.sh` copies `settings.skailr.json` **only if absent**, so your choice survives upgrades.
+`install.sh` copies `settings.skailr.json` **only if absent**, so your choice survives upgrades — and the upgrade migration that fills this key into older installs never overwrites an explicit `true` *or* `false` ([Upgrading from ≤ 1.11.0](#upgrading-from--1110)).
 
 ## Gating rule
 
@@ -35,7 +35,22 @@ The gate lives inside the emitter script, not in command prose — it cannot be 
 
 ### Upgrading from ≤ 1.11.0
 
-`install.sh` never overwrites an existing `.claude/settings.skailr.json`. A project installed before this change keeps its own file — and therefore the old "derive from `.skailr/` presence" behavior — until you add `"telemetry": { "enabled": true }` yourself. Only fresh installs pick up the enabled-by-default file.
+`install.sh` still never overwrites an existing `.claude/settings.skailr.json` — but as of 1.12.0 you no longer have to hand-edit the key to get the new default. On your next upgrade, an install migration (`telemetry-enabled-default`) fills `"telemetry": { "enabled": true }` into your existing file for you, and prints the line it changed. Nothing else in the file is touched; your `hooks` block and any other keys are preserved.
+
+**Additive-only** is the rule the migration obeys: it writes only where the write cannot destroy something you set.
+
+| Your existing `.claude/settings.skailr.json` | What the migration does |
+| --- | --- |
+| no `telemetry` key, or `"telemetry": {}` | fills `enabled: true` |
+| `"telemetry": { "enabled": false }` | **left alone** — an explicit opt-out is never overwritten, on this or any future upgrade |
+| `"telemetry": { "enabled": true }` | left alone (already correct) |
+| `"telemetry": { "enabled": "true" }` / `1` / `null` — non-boolean | replaced with `true` (a non-boolean was never a working setting) |
+| `"telemetry": "on"` / `1` / `null` / `[]` — the key is not an object | **skipped with a warning**; fix it by hand — the installer will not guess at a value it cannot safely parse |
+| file is not valid JSON | skipped with a warning; the file is never opened for write |
+
+One formatting caveat: when the migration does write, it rewrites the whole file as `JSON.stringify(json, null, 2)`. Every key and value survives — but if your `settings.skailr.json` was formatted differently (tabs, single-line objects), `git diff` will show those lines reflowed to 2-space JSON alongside the added key. Nothing is lost; only whitespace moved.
+
+The migration runs once per install, is skipped for files that did not already exist, is idempotent (re-running an install is a byte-for-byte no-op), and always exits 0 — it can never fail your upgrade. `--cursor-only` installs skip it entirely. On Windows, `install.ps1` carries the same migration list (asserted identical by `doctor.mjs`), but the 1.12.0 PowerShell path has not yet been executed end-to-end on a Windows host — check the file by hand after upgrading. This is a general mechanism, not a one-off: future changes to shipped defaults reach already-installed projects the same way, under the same additive-only rule.
 
 ## What gets emitted, and when
 
