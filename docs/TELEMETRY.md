@@ -1,36 +1,41 @@
 # Telemetry emission
 
-**A Skailr Console has no on-disk record of what the orchestrator actually did — it would have to poll and infer dispatch timing from `ledger.md`/`progress.md`/channels.** Skailr now emits append-only JSONL span records around every subagent dispatch, matching Console's fixed v1 schema — **opt-in, and structurally incapable of blocking or failing your run.** Skailr never sends this data anywhere; it only writes local files under `.skailr/`.
+**A Skailr Console has no on-disk record of what the orchestrator actually did — it would have to poll and infer dispatch timing from `ledger.md`/`progress.md`/channels.** Skailr now emits append-only JSONL span records around every subagent dispatch, matching Console's fixed v1 schema — **on by default, and structurally incapable of blocking or failing your run.** Skailr never sends this data anywhere; it only writes local files under `.skailr/`.
 
-## Turn it on / verify (30 seconds)
+## Verify it / turn it off (30 seconds)
 
-Telemetry is **off by default**. It activates only when a project has opted in:
+Telemetry is **on by default**: the pack ships `.claude/settings.skailr.json` with `"telemetry": { "enabled": true }`, so spans are emitted out of the box — whether or not a `.skailr/` dir already exists.
 
 ```bash
-mkdir -p .skailr                         # simplest opt-in: presence of .skailr/ turns it on
-# then run any command that dispatches a subagent, e.g. /patch, /yolo, /build-program
+# run any command that dispatches a subagent, e.g. /patch, /yolo, /build-program
 ls .skailr/telemetry/                    # → <YYYY-MM-DD>-<emitter-id>.jsonl once a dispatch fires
 node scripts/skailr/telemetry-smoke.mjs  # executable proof: emit → re-read → recompute event_hash
 ```
 
-To force it on or off regardless of `.skailr/` presence, add a `telemetry` block to `.claude/settings.skailr.json`:
+To opt out, flip the shipped key in `.claude/settings.skailr.json`:
 
 ```jsonc
-{ "hooks": { /* unchanged */ }, "telemetry": { "enabled": false } }   // true | false
+{ "telemetry": { "enabled": false }, "hooks": { /* unchanged */ } }   // true | false
 ```
 
-The pack ships this file **without** the `telemetry` key, so the default stays "derive from `.skailr/` presence."
+`install.sh` copies `settings.skailr.json` **only if absent**, so your choice survives upgrades.
 
 ## Gating rule
 
+The emitter reads `telemetry.enabled` from `.claude/settings.skailr.json`; an explicit boolean always wins. Only if that key (or the whole file) is missing does it fall back to deriving enablement from `.skailr/` presence.
+
 | `.claude/settings.skailr.json` | `.skailr/` exists? | Emits? |
 | ------------------------------ | ------------------ | ------ |
+| `telemetry.enabled: true` — **shipped default** | either | **yes** |
 | `telemetry.enabled: false`     | either             | no     |
-| `telemetry.enabled: true`      | either             | yes    |
-| key absent                     | no                 | **no** (safe default) |
-| key absent                     | yes                | yes    |
+| key/file absent                | no                 | no     |
+| key/file absent                | yes                | yes    |
 
-A project that never set up Console never gets a `.skailr/telemetry/` file or directory. The gate lives inside the emitter script, not in command prose — it cannot be half-applied.
+The gate lives inside the emitter script, not in command prose — it cannot be half-applied. Output stays on your machine: files land only under `.skailr/`, which `install.sh` adds to the installed project's `.gitignore`.
+
+### Upgrading from ≤ 1.11.0
+
+`install.sh` never overwrites an existing `.claude/settings.skailr.json`. A project installed before this change keeps its own file — and therefore the old "derive from `.skailr/` presence" behavior — until you add `"telemetry": { "enabled": true }` yourself. Only fresh installs pick up the enabled-by-default file.
 
 ## What gets emitted, and when
 
@@ -110,4 +115,4 @@ v1 emits **`span.start` and `span.end` only**, plus `status: "blocked"` / `statu
 - **The 5-status ticket board** (`status: in-review`, `claimed_by`) and **channel `seen_by` markers** — each a separate, smaller follow-up.
 - **`correction` emission** — the hash-exclusion rules for `corrects_event_hash` are respected, but no v1 flow issues corrections.
 - **Cursor-native emission** — instrumentation is authored once under `.claude/` and mirrored to `.cursor/` via `remirror.sh`, but is not asserted to fire under Cursor (no Task-dispatch runtime there). v1 emission is scoped to the Claude Code Task-dispatch runtime.
-- **Backfill** — no reconstruction of runs that happened before this shipped; the first dispatch after opt-in starts a fresh file.
+- **Backfill** — no reconstruction of runs that happened before this shipped; the first dispatch after telemetry is enabled starts a fresh file.

@@ -1,5 +1,8 @@
 {
-  "//telemetry": "Optional key `telemetry` is not set here on purpose. When absent, span telemetry (scripts/skailr/emit-telemetry.mjs) is enabled iff a `.skailr/` dir exists at repo root. To force it, add a sibling key: \"telemetry\": { \"enabled\": true } (or false). See .claude/skills/emit-telemetry/SKILL.md and .claude/program/schemas/telemetry-event.schema.json. install.sh copies this file only if absent, so your choice survives upgrades.",
+  "//telemetry": "Key `telemetry` defaults to enabled here (\"telemetry\": { \"enabled\": true }), so span telemetry (scripts/skailr/emit-telemetry.mjs) is on out of the box regardless of whether a `.skailr/` dir exists at repo root. To opt out, set \"telemetry\": { \"enabled\": false }. See .claude/skills/emit-telemetry/SKILL.md and .claude/program/schemas/telemetry-event.schema.json. install.sh copies this file only if absent, so your override survives upgrades.",
+  "telemetry": {
+    "enabled": true
+  },
   "hooks": {
     "Stop": [
       {

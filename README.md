@@ -370,7 +370,7 @@ Plain chat routes a question to an expert only when **exactly one** band covers 
 
 - **Run status** — `node scripts/skailr/status.mjs`: program phase + feature cursors, active feature, ticket frontier, channel inbox with message age, blockers. Read-only; `--json` for tooling.
 - **Health check** — `node scripts/skailr/doctor.mjs`: core files, agent/skill/script references, model routing, expert roster, contracts, channels, mirror presence (plus pack-repo-only checks). Exit 1 on any FAIL; `--json` for tooling.
-- **Telemetry** — opt-in `span.start`/`span.end` records around every subagent dispatch, for Skailr Console ([docs/TELEMETRY.md](docs/TELEMETRY.md)): off unless `.skailr/` exists; never blocks a run.
+- **Telemetry** — `span.start`/`span.end` records around every subagent dispatch, for Skailr Console ([docs/TELEMETRY.md](docs/TELEMETRY.md)): **on by default** — opt out with `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Local files under `.skailr/` only, never sent anywhere, never blocks a run.
 - **Model routing** — trade cost vs quality per role ([docs/MODEL_ROUTING.md](docs/MODEL_ROUTING.md)):
 
 ```bash

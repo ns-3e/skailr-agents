@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Telemetry now defaults to enabled out of the box (behavior change).** `.claude/settings.skailr.json` ships with a real `"telemetry": { "enabled": true }` key, so `span.start`/`span.end` records are emitted from the first dispatch — replacing 1.11.0's "key shipped unset, derive enablement from `.skailr/` presence" default. **Opt out** with `"telemetry": { "enabled": false }` in `.claude/settings.skailr.json`. Emission remains local-only (`.skailr/telemetry/*.jsonl`, added to the installed `.gitignore`), non-networked, and structurally unable to block or fail a run. The emitter's gating logic (`scripts/skailr/emit-telemetry.mjs`) is **unchanged** — an explicit boolean still wins, and a missing key/file still falls back to `.skailr/` presence; only the shipped default flipped. **Existing installs are unaffected:** `install.sh` copies `settings.skailr.json` only if absent, so a project installed before this keeps its own file and its old presence-derived behavior until it adds the key itself. [docs/TELEMETRY.md](docs/TELEMETRY.md)
+
 ## [1.11.0] — 2026-08-04
 
 ### Added
