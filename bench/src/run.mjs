@@ -1,0 +1,558 @@
+// DOC: F-012/F-013 — per-run lifecycle (FR-4), installArm (install-arm
+// contract, Q2), and campaign runner + CLI (FR-11). This is the single
+// orchestrator; claude.mjs/telemetry.mjs are pure collaborators it calls.
+//
+// Lifecycle stages (each logged to `<runDir>/lifecycle.log`), matching FR-4
+// exactly: clean fixture -> fresh git checkout at fixture_sha -> setup cmds
+// -> installArm -> launch claude headless -> capture telemetry+stream-json
+// -> terminate (finish|budget|turns|wall_clock_kill) -> freeze workspace
+// (read-only) -> extract skailr diagnostics -> run external hidden grader
+// (out-of-band grader path/process, never copied into workspace) -> capture
+// git diff vs fixture_sha -> write schema-valid run.json -> mark run
+// immutable. A failure at ANY stage still yields a written, schema-valid,
+// failed run.json (never silently dropped — brief non-negotiable).
+import { execFileSync, execSync, spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { loadAndVerifyConfig, getLiveEnv } from "./lib/config.mjs";
+import { deriveSeriesId, deriveRunId } from "./lib/ids.mjs";
+import { ensureDir, atomicWriteJson, atomicWriteValidatedJson, markReadOnly } from "./lib/fsutil.mjs";
+import { invokeClaude } from "./claude.mjs";
+import { buildTelemetryEnv, buildTelemetry } from "./telemetry.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BENCH_ROOT = path.resolve(__dirname, "..");
+const SKAILR_REPO_ROOT = path.resolve(BENCH_ROOT, ".."); // this repo's root (contains .claude/)
+
+export class InstallArmError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = "InstallArmError";
+    this.code = code;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// installArm — install-arm contract (Q2). The ONLY place baseline/skailr
+// differ; keeps the agent prompt byte-identical across arms.
+// ---------------------------------------------------------------------------
+export async function installArm(arm, ref, workspace, opts = {}) {
+  const skailrRepoRoot = opts.skailrRepoRoot || SKAILR_REPO_ROOT;
+
+  if (arm === "baseline") {
+    return { arm, installed: false, skailr_sha: null, skailr_version: null, artifacts_root: null };
+  }
+  if (arm !== "skailr") {
+    throw new InstallArmError(`installArm: unknown arm "${arm}"`, "bad_ref");
+  }
+  if (!fs.existsSync(workspace)) {
+    throw new InstallArmError(`installArm: workspace missing: ${workspace}`, "workspace_missing");
+  }
+
+  let sha;
+  try {
+    sha = execFileSync("git", ["-C", skailrRepoRoot, "rev-parse", ref], { encoding: "utf8" }).trim();
+  } catch (err) {
+    throw new InstallArmError(`installArm: bad ref "${ref}" in ${skailrRepoRoot}: ${err.message}`, "bad_ref");
+  }
+
+  try {
+    // git archive <sha> .claude | tar -x -C <workspace>  — archives ONLY the
+    // .claude/ pack subtree; bench/** is never touched (satisfies the
+    // "MUST NOT copy any bench/** into workspace" invariant by construction:
+    // the archive path scope excludes it entirely, not by post-hoc filtering).
+    const archiveProc = spawnSync("git", ["-C", skailrRepoRoot, "archive", sha, ".claude"], {
+      maxBuffer: 1024 * 1024 * 256,
+    });
+    if (archiveProc.status !== 0 || archiveProc.error) {
+      throw new Error((archiveProc.stderr || archiveProc.error?.message || "unknown git archive failure").toString());
+    }
+    const tarProc = spawnSync("tar", ["-x", "-C", workspace], {
+      input: archiveProc.stdout,
+      maxBuffer: 1024 * 1024 * 256,
+    });
+    if (tarProc.status !== 0 || tarProc.error) {
+      throw new Error((tarProc.stderr || tarProc.error?.message || "unknown tar extract failure").toString());
+    }
+  } catch (err) {
+    throw new InstallArmError(`installArm: archive failed for ref "${ref}" (sha ${sha}): ${err.message}`, "archive_failed");
+  }
+
+  let skailr_version = null;
+  try {
+    skailr_version = execFileSync("git", ["-C", skailrRepoRoot, "show", `${sha}:package.json`], { encoding: "utf8" });
+    skailr_version = JSON.parse(skailr_version).version || null;
+  } catch {
+    skailr_version = sha.slice(0, 10); // fallback: short sha, always available
+  }
+
+  return { arm, installed: true, skailr_sha: sha, skailr_version, artifacts_root: path.join(workspace, ".claude") };
+}
+
+// ---------------------------------------------------------------------------
+// Fixture checkout — "fresh git checkout at fixture_sha" stage, literally: a
+// local clone of the fixture repo followed by a detached checkout, so the
+// resulting workspace keeps its own .git history back to fixture_sha (needed
+// later for "capture git diff vs fixture_sha").
+// ---------------------------------------------------------------------------
+export function checkoutFixture(fixtureDir, fixtureSha, workspace) {
+  fs.rmSync(workspace, { recursive: true, force: true });
+  ensureDir(path.dirname(workspace));
+  execFileSync("git", ["clone", "--quiet", "--local", "--no-hardlinks", fixtureDir, workspace]);
+  execFileSync("git", ["-C", workspace, "checkout", "--quiet", fixtureSha]);
+}
+
+export function runSetupCommands(workspace, setup = []) {
+  for (const cmd of setup) {
+    execSync(cmd, { cwd: workspace, stdio: "pipe" });
+  }
+}
+
+/** Coarse visible-test run: honors fixture.manifest.json's visible_test_cmd
+ * if present (fixture-layout contract); exit code only (pass/fail as a
+ * single case) until WS-fixtures ships real fixtures with a documented
+ * per-case output convention for finer-grained counts (Phase C follow-up). */
+export function runVisibleTests(workspace) {
+  const manifestPath = path.join(workspace, "fixture.manifest.json");
+  if (!fs.existsSync(manifestPath)) return { passed: 0, failed: 0, total: 0 };
+  let manifest;
+  try {
+    manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  } catch {
+    return { passed: 0, failed: 0, total: 0 };
+  }
+  if (!manifest.visible_test_cmd) return { passed: 0, failed: 0, total: 0 };
+  const proc = spawnSync(manifest.visible_test_cmd, { cwd: workspace, shell: true, encoding: "utf8" });
+  const ok = proc.status === 0;
+  return { passed: ok ? 1 : 0, failed: ok ? 0 : 1, total: 1 };
+}
+
+/** Q4: copy + best-effort parse Skailr on-disk diagnostics artifacts. Dual
+ * source per brief — this is the "artifacts" side; OTel resource attrs are
+ * the fallback (telemetry.mjs), not implemented as a second counter here
+ * since no live OTel sample exists yet (see telemetry.mjs top comment). */
+export function extractSkailrDiagnostics(workspace, runDir) {
+  const destRoot = path.join(runDir, "skailr-artifacts");
+  const sources = [path.join(workspace, ".claude", "program"), path.join(workspace, ".claude", "tmp")];
+  let copiedAny = false;
+  for (const src of sources) {
+    if (!fs.existsSync(src)) continue;
+    copiedAny = true;
+    const dest = path.join(destRoot, path.basename(src));
+    fs.cpSync(src, dest, { recursive: true });
+  }
+  if (!copiedAny) {
+    return { agents_spawned: 0, inter_agent_messages: 0, blockers: 0, contract_events: 0, gate_failures: 0, validator_findings: 0 };
+  }
+
+  let text = "";
+  for (const file of walkFiles(destRoot)) {
+    if (file.endsWith(".md") || file.endsWith(".json")) {
+      try { text += fs.readFileSync(file, "utf8") + "\n"; } catch { /* unreadable, skip */ }
+    }
+  }
+  const count = (re) => (text.match(re) || []).length;
+  return {
+    agents_spawned: count(/^\|?\s*[\w-]+\s*(@\s*Task|dispatched)/gim) || count(/role:\s*\w/gim),
+    inter_agent_messages: count(/^type:\s*\w+/gim),
+    blockers: count(/type:\s*blocker/gim),
+    contract_events: count(/type:\s*contract-change/gim),
+    gate_failures: count(/gate.*fail|status:\s*fail/gim),
+    validator_findings: count(/type:\s*(finding|validator)/gim),
+  };
+}
+
+function walkFiles(dir) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walkFiles(full));
+    else out.push(full);
+  }
+  return out;
+}
+
+/** git diff vs fixture_sha -> writes <runDir>/git.diff, returns code stats. */
+export function captureDiff(workspace, fixtureSha, runDir) {
+  let diffText = "";
+  let numstat = "";
+  try {
+    diffText = execFileSync("git", ["-C", workspace, "diff", fixtureSha], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
+    numstat = execFileSync("git", ["-C", workspace, "diff", "--numstat", fixtureSha], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
+  } catch (err) {
+    diffText = `<git diff failed: ${err.message}>`;
+  }
+  fs.writeFileSync(path.join(runDir, "git.diff"), diffText, "utf8");
+  let lines_added = 0, lines_removed = 0, files_edited = 0;
+  for (const line of numstat.trim().split("\n").filter(Boolean)) {
+    const [add, rem] = line.split("\t");
+    lines_added += parseInt(add, 10) || 0;
+    lines_removed += parseInt(rem, 10) || 0;
+    files_edited++;
+  }
+  return { lines_added, lines_removed, files_edited, diff_bytes: Buffer.byteLength(diffText, "utf8") };
+}
+
+function classifyFailureStage({ termination_reason, grade, setupFailed, installFailed, checkoutFailed }) {
+  if (checkoutFailed) return "unclassified";
+  if (installFailed) return "unclassified";
+  if (setupFailed) return "unclassified";
+  if (termination_reason === "wall_clock_kill" || termination_reason === "budget" || termination_reason === "turns") {
+    return "budget_timeout";
+  }
+  if (termination_reason === "crash" || termination_reason === "nonzero_exit") return "unclassified";
+  if (!grade) return "unclassified";
+  if (grade.solved) return "none";
+  if (grade.critical_failures && grade.critical_failures.length > 0) return "validation";
+  const hf = grade.tests?.hidden_functional;
+  if (hf && hf.failed > 0) return "implementation";
+  return "unclassified";
+}
+
+function zeroTestCounts() { return { passed: 0, failed: 0, total: 0 }; }
+// grader.json test-category objects carry an extra `cases[]` array
+// (grader-json contract); run.json's testCounts shape is stricter
+// (additionalProperties:false, passed/failed/total only) — project down.
+function toTestCounts(g) {
+  if (!g) return zeroTestCounts();
+  return { passed: g.passed || 0, failed: g.failed || 0, total: g.total || 0 };
+}
+function zeroSubscores() { return { functional: 0, regression: 0, security: 0, static: 0, scope: 0, maintainability: 0 }; }
+
+function fallbackGrade(reason) {
+  return {
+    tests: { hidden_functional: zeroTestCounts(), regression: zeroTestCounts() },
+    subscores: zeroSubscores(),
+    quality_score: 0,
+    critical_failures: [`grader_error:${reason}`],
+    solved: false,
+  };
+}
+
+/** Default grader invocation convention (grade.mjs entrypoints not yet built
+ * by WS-grade-analytics as of this writing — see completion report /
+ * channel note). Convention: `node <graderEntry> <frozenWorkspace> <outFile>`,
+ * grader MUST write grader.json-shaped JSON to <outFile>. Injectable via
+ * opts.runGrader for tests / until the real entrypoint exists. */
+async function defaultRunGrader(workspace, task, runDir, { gradersRoot }) {
+  const graderEntry = path.isAbsolute(task.grader) ? task.grader : path.join(gradersRoot, task.grader);
+  const outFile = path.join(runDir, "grader.json");
+  const proc = spawnSync("node", [graderEntry, workspace, outFile], { encoding: "utf8" });
+  if (proc.status !== 0) {
+    throw new Error(`grader exited ${proc.status}: ${proc.stderr || proc.stdout}`);
+  }
+  if (!fs.existsSync(outFile)) {
+    throw new Error(`grader did not write grader.json to ${outFile}`);
+  }
+  return JSON.parse(fs.readFileSync(outFile, "utf8"));
+}
+
+// ---------------------------------------------------------------------------
+// runOne — single-run lifecycle. ALWAYS resolves (never throws) so a
+// campaign never drops a run; failures at any stage become a recorded
+// failed run.json (AC-2 non-negotiable).
+// ---------------------------------------------------------------------------
+export async function runOne(opts) {
+  const {
+    task, arm, rep, config,
+    skailrRef = "HEAD",
+    fixturesRoot = path.join(BENCH_ROOT, "fixtures"),
+    gradersRoot = path.join(BENCH_ROOT, "graders"),
+    resultsRoot = path.join(BENCH_ROOT, "results"),
+    workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "bench-ws-")),
+    mock = false,
+    flavor = "solved",
+    claudeBin = "claude",
+    runGrader,
+    skailrRepoRoot,
+  } = opts;
+
+  const timestamp = new Date().toISOString();
+  const series_id = deriveSeriesId({ claude_code_version: config.claude_code_version, model_id: config.model });
+  const run_id = deriveRunId({ task_id: task.id, arm, rep, series_id, timestamp });
+  const runDir = path.join(resultsRoot, run_id);
+  const workspace = path.join(workspaceRoot, run_id);
+  ensureDir(runDir);
+
+  const log = [];
+  const stage = (name) => log.push(`${new Date().toISOString()} ${name}`);
+
+  let checkoutFailed = false, installFailed = false, setupFailed = false;
+  let claudeResult = null;
+  let installResult = { arm, installed: false, skailr_sha: null, skailr_version: null, artifacts_root: null };
+  let grade = null;
+  let diagnostics = null;
+  let diffStats = { lines_added: 0, lines_removed: 0, files_edited: 0, diff_bytes: 0 };
+  let visible_tests = zeroTestCounts();
+  let filesRead = 0;
+
+  try {
+    stage("clean-fixture+checkout");
+    const fixtureDir = path.isAbsolute(task.fixture) ? task.fixture : path.join(fixturesRoot, task.fixture);
+    checkoutFixture(fixtureDir, task.fixture_sha, workspace);
+  } catch (err) {
+    checkoutFailed = true;
+    log.push(`checkout failed: ${err.message}`);
+  }
+
+  if (!checkoutFailed) {
+    try {
+      stage("setup");
+      runSetupCommands(workspace, task.setup || []);
+    } catch (err) {
+      setupFailed = true;
+      log.push(`setup failed: ${err.message}`);
+    }
+  }
+
+  if (!checkoutFailed && !setupFailed) {
+    try {
+      stage("install-arm");
+      installResult = await installArm(arm, skailrRef, workspace, { skailrRepoRoot });
+    } catch (err) {
+      installFailed = true;
+      log.push(`installArm failed: ${err.message}`);
+    }
+  }
+
+  if (!checkoutFailed && !setupFailed && !installFailed) {
+    stage("launch-claude");
+    const env = buildTelemetryEnv({ task_id: task.id, arm, run_id, skailr_version: installResult.skailr_version });
+    const maxBudgetUsd = task.limits?.max_budget_usd ?? config.defaults.max_budget_usd;
+    const maxTurns = task.limits?.max_turns ?? config.defaults.max_turns;
+    const timeoutMs = (config.defaults.wall_clock_timeout_min || 45) * 60 * 1000;
+    try {
+      claudeResult = await invokeClaude({
+        prompt: task.prompt, model: config.model, cwd: workspace, runDir,
+        maxBudgetUsd, timeoutMs, env, mock, flavor, claudeBin, maxTurns,
+      });
+      stage(`terminate:${claudeResult.termination_reason}`);
+    } catch (err) {
+      log.push(`claude invocation crashed: ${err.message}`);
+      claudeResult = {
+        sessionId: null, promptId: null, events: [], resultEvent: null,
+        exitCode: null, signal: null, killedByTimeout: false,
+        termination_reason: "crash", wall_clock_s: 0,
+      };
+    }
+
+    stage("visible-tests");
+    visible_tests = runVisibleTests(workspace);
+
+    stage("freeze-workspace");
+    try { markReadOnly(workspace); } catch { /* best-effort */ }
+
+    stage("extract-skailr-diagnostics");
+    diagnostics = arm === "baseline" ? null : extractSkailrDiagnostics(workspace, runDir);
+
+    stage("run-grader");
+    try {
+      const grader = runGrader || ((ws, t, rd) => defaultRunGrader(ws, t, rd, { gradersRoot }));
+      grade = await grader(workspace, task, runDir);
+    } catch (err) {
+      log.push(`grader failed: ${err.message}`);
+      grade = fallbackGrade(err.message);
+    }
+
+    stage("capture-diff");
+    diffStats = captureDiff(workspace, task.fixture_sha, runDir);
+    filesRead = (claudeResult.events || []).filter((e) => e.type === "tool_use" && e.name === "Read").length;
+  }
+
+  const termination_reason = claudeResult?.termination_reason
+    || (checkoutFailed || setupFailed || installFailed ? "crash" : "crash");
+
+  const telemetry = claudeResult
+    ? buildTelemetry({
+        runDir, sessionId: claudeResult.sessionId, promptId: claudeResult.promptId,
+        model: config.model, resultEvent: claudeResult.resultEvent, events: claudeResult.events || [],
+        pricingTable: config.pricing_table, modelId: config.model,
+      })
+    : {
+        usage: { tokens: { input: 0, output: 0, cache_read: 0, cache_create: 0 }, by_model: {}, by_source: { main: { input: 0, output: 0, cache_read: 0, cache_create: 0 }, subagent: { input: 0, output: 0, cache_read: 0, cache_create: 0 }, auxiliary: { input: 0, output: 0, cache_read: 0, cache_create: 0 } }, by_agent: {} },
+        trajectory: { model_requests: 0, tool_calls: 0, failed_tool_calls: 0, retries: 0, compactions: 0 },
+        cost: { cost_reported_usd: null, cost_reconstructed_usd: 0, pricing_table_version: config.pricing_table.version },
+      };
+
+  const failure_stage = classifyFailureStage({
+    termination_reason, grade, setupFailed, installFailed, checkoutFailed,
+  });
+
+  const run = {
+    identity: {
+      run_id, series_id, task_id: task.id, task_version: task.version, arm,
+      skailr_sha: installResult.skailr_sha, skailr_version: installResult.skailr_version,
+      fixture_sha: task.fixture_sha, timestamp,
+    },
+    environment: {
+      claude_code_version: config.claude_code_version, model_id: config.model,
+      os: `${os.platform()}-${os.release()}`, container: config.container_image ?? null,
+      node_version: process.version.replace(/^v/, ""),
+    },
+    outcome: {
+      solved: grade ? !!grade.solved : false,
+      termination_reason,
+      visible_tests,
+      hidden_tests: toTestCounts(grade?.tests?.hidden_functional),
+      regression: toTestCounts(grade?.tests?.regression),
+      critical_failures: grade?.critical_failures || [],
+    },
+    quality: {
+      quality_score: grade?.quality_score ?? 0,
+      subscores: grade?.subscores || zeroSubscores(),
+    },
+    time: {
+      wall_clock_s: claudeResult?.wall_clock_s ?? 0,
+      claude_active_s: claudeResult?.wall_clock_s ?? 0,
+      time_to_first_edit_s: null,
+      grader_s: 0,
+    },
+    usage: telemetry.usage,
+    cost: telemetry.cost,
+    trajectory: telemetry.trajectory,
+    code: {
+      files_read: filesRead,
+      files_edited: diffStats.files_edited,
+      lines_added: diffStats.lines_added,
+      lines_removed: diffStats.lines_removed,
+      diff_bytes: diffStats.diff_bytes,
+    },
+    process: { test_executions: 0, test_failures: 0, repair_loops: 0 },
+    skailr_diagnostics: diagnostics,
+    failure_stage,
+  };
+
+  fs.writeFileSync(path.join(runDir, "lifecycle.log"), log.join("\n") + "\n", "utf8");
+  atomicWriteJson(path.join(runDir, "environment.json"), {
+    ...run.environment,
+    live_captured_at: timestamp,
+  });
+
+  stage("write-run-json");
+  atomicWriteValidatedJson(path.join(runDir, "run.json"), run, "run");
+
+  stage("mark-immutable");
+  try { markReadOnly(runDir); } catch { /* best-effort; runDir still valid */ }
+
+  return { run, runDir, workspace };
+}
+
+// ---------------------------------------------------------------------------
+// Campaign runner (F-013) — reps, randomized arm order, sequential default /
+// --parallel N, --smoke, --max-campaign-usd cost guard.
+// ---------------------------------------------------------------------------
+function shuffle(arr, rng = Math.random) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Refuse a campaign whose worst-case spend exceeds --max-campaign-usd
+ * (default 100) — NFR cost safety. Worst case = Σ per-planned-run
+ * max_budget_usd (task override or config default). */
+export function estimateWorstCaseUsd({ tasks, arms, reps, config }) {
+  let total = 0;
+  for (const task of tasks) {
+    const perRun = task.limits?.max_budget_usd ?? config.defaults.max_budget_usd;
+    total += perRun * arms.length * reps;
+  }
+  return total;
+}
+
+export async function runCampaign(opts) {
+  const {
+    tasks, arms = ["baseline", "skailr"], reps, smoke = false,
+    maxCampaignUsd = 100, parallel = 1, config, rng,
+  } = opts;
+  const repsEff = smoke ? 1 : (reps ?? config.defaults.repetitions);
+
+  const worstCase = estimateWorstCaseUsd({ tasks, arms, reps: repsEff, config });
+  if (worstCase > maxCampaignUsd) {
+    throw new Error(
+      `cost guard: worst-case campaign spend $${worstCase.toFixed(2)} exceeds --max-campaign-usd $${maxCampaignUsd}`
+    );
+  }
+
+  let plan = [];
+  for (const task of tasks) {
+    for (let rep = 0; rep < repsEff; rep++) {
+      for (const arm of arms) plan.push({ task, arm, rep });
+    }
+  }
+  plan = shuffle(plan, rng);
+
+  if (parallel > 1) {
+    const results = new Array(plan.length);
+    let idx = 0;
+    async function worker() {
+      while (idx < plan.length) {
+        const i = idx++;
+        const { task, arm, rep } = plan[i];
+        results[i] = await runOne({ ...opts, task, arm, rep });
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(parallel, plan.length) }, worker));
+    return results;
+  }
+
+  const results = [];
+  for (const { task, arm, rep } of plan) {
+    results.push(await runOne({ ...opts, task, arm, rep }));
+  }
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// CLI (FR-11)
+// ---------------------------------------------------------------------------
+function parseArgs(argv) {
+  const out = { parallel: 1 };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--task") out.task = argv[++i];
+    else if (a === "--variant") out.variant = argv[++i];
+    else if (a === "--skailr-ref") out.skailrRef = argv[++i];
+    else if (a === "--reps") out.reps = parseInt(argv[++i], 10);
+    else if (a === "--smoke") out.smoke = true;
+    else if (a === "--max-campaign-usd") out.maxCampaignUsd = parseFloat(argv[++i]);
+    else if (a === "--parallel") out.parallel = parseInt(argv[++i], 10);
+    else if (a === "--mock") out.mock = true;
+  }
+  return out;
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const config = loadAndVerifyConfig({ live: process.env.BENCH_MOCK === "1" ? getLiveEnvSafe() : undefined });
+  const mock = args.mock || process.env.BENCH_MOCK === "1";
+  const arms = args.variant ? [args.variant] : ["baseline", "skailr"];
+
+  const { parseYaml } = await import("./lib/yaml.mjs");
+  const taskPath = path.join(BENCH_ROOT, "tasks", `${args.task}.yaml`);
+  const task = parseYaml(fs.readFileSync(taskPath, "utf8"));
+
+  const results = await runCampaign({
+    tasks: [task], arms, reps: args.reps, smoke: args.smoke,
+    maxCampaignUsd: args.maxCampaignUsd ?? 100, parallel: args.parallel,
+    config, skailrRef: args.skailrRef || "HEAD", mock,
+  });
+  console.log(`bench: completed ${results.length} runs. See bench/results/<run_id>/run.json`);
+}
+
+function getLiveEnvSafe() {
+  try { return getLiveEnv(); } catch { return undefined; }
+}
+
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch((err) => {
+    console.error(`bench: fatal: ${err.message}`);
+    process.exit(1);
+  });
+}

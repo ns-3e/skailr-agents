@@ -1,0 +1,134 @@
+{
+  "identity": {
+    "run_id": "patch-webhook_skailr_rep2_e76271bdf1",
+    "series_id": "series_359ba37f53d6",
+    "task_id": "patch-webhook",
+    "task_version": "1",
+    "arm": "skailr",
+    "skailr_sha": "sha_v1_11_0_aaaaaaa",
+    "skailr_version": "1.11.0",
+    "fixture_sha": "fixsha_patch-webhook",
+    "timestamp": "2026-07-01T03:28:00.000Z"
+  },
+  "environment": {
+    "claude_code_version": "2.1.224",
+    "model_id": "claude-sonnet-4-6-20260201",
+    "os": "linux",
+    "container": null,
+    "node_version": "22.22.2"
+  },
+  "outcome": {
+    "solved": true,
+    "termination_reason": "finish",
+    "visible_tests": {
+      "passed": 6,
+      "failed": 0,
+      "total": 6
+    },
+    "hidden_tests": {
+      "passed": 10,
+      "failed": 0,
+      "total": 10
+    },
+    "regression": {
+      "passed": 8,
+      "failed": 0,
+      "total": 8
+    },
+    "critical_failures": []
+  },
+  "quality": {
+    "quality_score": 80,
+    "subscores": {
+      "functional": 80,
+      "regression": 80,
+      "security": 80,
+      "static": 80,
+      "scope": 80,
+      "maintainability": 80
+    }
+  },
+  "time": {
+    "wall_clock_s": 220,
+    "claude_active_s": 187,
+    "time_to_first_edit_s": 8,
+    "grader_s": 1.5
+  },
+  "usage": {
+    "tokens": {
+      "input": 3024,
+      "output": 1008,
+      "cache_read": 756,
+      "cache_create": 378
+    },
+    "by_model": {
+      "claude-sonnet-4-6-20260201": {
+        "input": 3024,
+        "output": 1008,
+        "cache_read": 756,
+        "cache_create": 378
+      }
+    },
+    "by_source": {
+      "main": {
+        "input": 2160,
+        "output": 720,
+        "cache_read": 540,
+        "cache_create": 270
+      },
+      "subagent": {
+        "input": 864,
+        "output": 288,
+        "cache_read": 216,
+        "cache_create": 108
+      },
+      "auxiliary": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      }
+    },
+    "by_agent": {
+      "sub-worker": {
+        "input": 864,
+        "output": 288,
+        "cache_read": 216,
+        "cache_create": 108
+      }
+    }
+  },
+  "cost": {
+    "cost_reported_usd": 0.0421,
+    "cost_reconstructed_usd": 0.029497,
+    "pricing_table_version": "2026-08"
+  },
+  "trajectory": {
+    "model_requests": 3,
+    "tool_calls": 4,
+    "failed_tool_calls": 0,
+    "retries": 0,
+    "compactions": 1
+  },
+  "code": {
+    "files_read": 4,
+    "files_edited": 2,
+    "lines_added": 30,
+    "lines_removed": 5,
+    "diff_bytes": 900
+  },
+  "process": {
+    "test_executions": 2,
+    "test_failures": 0,
+    "repair_loops": 0
+  },
+  "skailr_diagnostics": {
+    "agents_spawned": 3,
+    "inter_agent_messages": 12,
+    "blockers": 0,
+    "contract_events": 2,
+    "gate_failures": 0,
+    "validator_findings": 1
+  },
+  "failure_stage": "none"
+}

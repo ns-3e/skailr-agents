@@ -1,0 +1,4 @@
+# aggregate.mjs's getCachedAggregate() writes this beside any campaign dir it
+# aggregates (including these committed synthetic ones) as a reusable-baseline
+# cache. It's derived/regenerable, not part of the committed dataset itself.
+.aggregate-cache.json

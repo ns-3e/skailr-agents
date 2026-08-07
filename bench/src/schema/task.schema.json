@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/task.schema.json",
+  "title": "BenchTask",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "class", "fixture", "fixture_sha", "grader", "prompt", "setup", "critical_requirements"],
+  "properties": {
+    "id": { "type": "string" },
+    "version": { "type": "string" },
+    "class": { "enum": ["patch", "cross-cutting", "program"] },
+    "fixture": { "type": "string" },
+    "fixture_sha": { "type": "string" },
+    "grader": { "type": "string" },
+    "prompt": { "type": "string" },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_turns": { "type": "integer" },
+        "max_budget_usd": { "type": "number" }
+      }
+    },
+    "setup": { "type": "array", "items": { "type": "string" } },
+    "critical_requirements": { "type": "array", "items": { "type": "string" } }
+  }
+}
