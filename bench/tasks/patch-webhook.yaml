@@ -1,0 +1,24 @@
+id: patch-webhook
+version: "1.0"
+class: patch
+fixture: bench/fixtures/patch-webhook
+fixture_sha: 22a02522c5f70d1207eefe2c3e922b4667b2e1aa
+grader: bench/graders/patch-webhook
+prompt: |
+  Fix the duplicate webhook processing bug.
+  POST /webhooks receives events containing a unique event_id. The same event may
+  be delivered more than once, including concurrently.
+  Requirements:
+  - Each event_id must be processed at most once.
+  - Repeated submissions must return the previously stored result.
+  - Two concurrent requests for the same event_id must not create duplicate ledger entries.
+  - Do not change the existing public API contract.
+  - Existing behavior for distinct events must remain unchanged.
+  - Add appropriate tests.
+  Run the relevant test suite and leave the repository in a working state.
+setup:
+  - npm ci
+critical_requirements:
+  - exactly-once-processing
+  - api-contract-preserved
+  - no-duplicate-ledger-entry

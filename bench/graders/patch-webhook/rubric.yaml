@@ -1,0 +1,27 @@
+# FR-8 weighted rubric — patch-webhook. Weights mirror bench/src/grade.mjs
+# RUBRIC_WEIGHTS (recomputed there, never trusted from grader arithmetic).
+task_id: patch-webhook
+weights:
+  functional: 60
+  regression: 15
+  security: 10
+  static: 5
+  scope: 5
+  maintainability: 5
+critical_requirements:
+  - exactly-once-processing
+  - api-contract-preserved
+  - no-duplicate-ledger-entry
+notes: |
+  functional: exactly-once-processing under a 25-way concurrent burst
+  (majority vote over 3 trials), stored-result idempotency, distinct-event
+  independence under concurrency.
+  regression: sequential idempotency + independent distinct events (mirrors
+  the fixture's own visible test suite).
+  security: input validation / malformed-body / wrong-method / large-payload
+  edge cases must not change the documented error contract or crash the
+  server.
+  static: tsc --noEmit against the workspace's own tsconfig.
+  scope: contract-preservation signal (regression+security all pass implies
+  the public HTTP surface was not altered).
+  maintainability: TODO/FIXME/stub/placeholder scan over src/.

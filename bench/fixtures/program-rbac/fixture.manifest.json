@@ -1,0 +1,19 @@
+{
+  "task_id": "program-rbac",
+  "class": "program",
+  "root_dirs": ["apps/api", "apps/web", "packages/db", "packages/contracts", "packages/email", "packages/audit"],
+  "visible_test_cmd": "npm test",
+  "setup_cmd": ["npm ci"],
+  "entrypoints": {
+    "api": "apps/api/src/server.ts",
+    "web": "apps/web/src/pages/OrganizationSettingsPage.ts",
+    "db": "packages/db/src/db.ts",
+    "email_adapter": "packages/email/src/adapter.ts"
+  },
+  "critical_requirements": [
+    "cross-org-isolation",
+    "last-admin-protected",
+    "invitation-single-use",
+    "audit-events-emitted"
+  ]
+}

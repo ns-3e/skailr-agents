@@ -1,0 +1,127 @@
+{
+  "identity": {
+    "run_id": "program-rbac_baseline_rep0_a22c9ed0c6",
+    "series_id": "series_1355e0a7d637",
+    "task_id": "program-rbac",
+    "task_version": "1",
+    "arm": "baseline",
+    "skailr_sha": null,
+    "skailr_version": null,
+    "fixture_sha": "fixsha_program-rbac",
+    "timestamp": "2026-07-01T00:21:00.000Z"
+  },
+  "environment": {
+    "claude_code_version": "2.1.224",
+    "model_id": "claude-sonnet-4-5-20250929",
+    "os": "linux",
+    "container": null,
+    "node_version": "22.22.2"
+  },
+  "outcome": {
+    "solved": false,
+    "termination_reason": "wall_clock_kill",
+    "visible_tests": {
+      "passed": 3,
+      "failed": 3,
+      "total": 6
+    },
+    "hidden_tests": {
+      "passed": 6,
+      "failed": 4,
+      "total": 10
+    },
+    "regression": {
+      "passed": 5,
+      "failed": 3,
+      "total": 8
+    },
+    "critical_failures": []
+  },
+  "quality": {
+    "quality_score": 40,
+    "subscores": {
+      "functional": 40,
+      "regression": 40,
+      "security": 40,
+      "static": 40,
+      "scope": 40,
+      "maintainability": 40
+    }
+  },
+  "time": {
+    "wall_clock_s": 380,
+    "claude_active_s": 323,
+    "time_to_first_edit_s": null,
+    "grader_s": 1.5
+  },
+  "usage": {
+    "tokens": {
+      "input": 1512,
+      "output": 504,
+      "cache_read": 378,
+      "cache_create": 189
+    },
+    "by_model": {
+      "claude-sonnet-4-5-20250929": {
+        "input": 1512,
+        "output": 504,
+        "cache_read": 378,
+        "cache_create": 189
+      }
+    },
+    "by_source": {
+      "main": {
+        "input": 1080,
+        "output": 360,
+        "cache_read": 270,
+        "cache_create": 135
+      },
+      "subagent": {
+        "input": 432,
+        "output": 144,
+        "cache_read": 108,
+        "cache_create": 54
+      },
+      "auxiliary": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      }
+    },
+    "by_agent": {
+      "sub-worker": {
+        "input": 432,
+        "output": 144,
+        "cache_read": 108,
+        "cache_create": 54
+      }
+    }
+  },
+  "cost": {
+    "cost_reported_usd": 0.0198,
+    "cost_reconstructed_usd": 0.012918,
+    "pricing_table_version": "2026-08"
+  },
+  "trajectory": {
+    "model_requests": 3,
+    "tool_calls": 4,
+    "failed_tool_calls": 0,
+    "retries": 1,
+    "compactions": 0
+  },
+  "code": {
+    "files_read": 4,
+    "files_edited": 2,
+    "lines_added": 30,
+    "lines_removed": 5,
+    "diff_bytes": 900
+  },
+  "process": {
+    "test_executions": 2,
+    "test_failures": 1,
+    "repair_loops": 1
+  },
+  "skailr_diagnostics": null,
+  "failure_stage": "budget_timeout"
+}

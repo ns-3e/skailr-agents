@@ -1,0 +1,28 @@
+id: feature-api-keys
+version: "1.0"
+class: cross-cutting
+fixture: bench/fixtures/feature-api-keys
+fixture_sha: 0d4cb2091b49d018629817e586f78de9ab43ceb4
+grader: bench/graders/feature-api-keys
+prompt: |
+  Add organization-scoped API keys.
+  An organization administrator must be able to create, list, and revoke API keys.
+  Requirements:
+  - A generated API key is displayed only once at creation.
+  - Raw API keys must never be stored in the database.
+  - Store a secure hash that can be used to authenticate subsequent API requests.
+  - Existing session authentication must continue to work.
+  - Revoked keys must immediately stop authenticating.
+  - API keys must never authorize access to another organization.
+  - Creating and revoking a key must generate an audit event.
+  - The list endpoint must return metadata but never the raw key or stored hash.
+  - Follow the repository's existing architecture and conventions.
+  - Add tests for the new behavior and preserve all existing tests.
+  Run the complete test suite and leave the feature production-ready.
+setup:
+  - npm ci
+critical_requirements:
+  - no-cross-org-access
+  - no-raw-key-storage
+  - revoked-keys-rejected
+  - hash-not-exposed

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/fixture-manifest.schema.json",
+  "title": "BenchFixtureManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "class", "root_dirs", "visible_test_cmd", "setup_cmd", "entrypoints", "critical_requirements"],
+  "properties": {
+    "task_id": { "type": "string" },
+    "class": { "enum": ["patch", "cross-cutting", "program"] },
+    "root_dirs": { "type": "array", "items": { "type": "string" } },
+    "visible_test_cmd": { "type": "string" },
+    "setup_cmd": { "type": "array", "items": { "type": "string" } },
+    "entrypoints": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "api": { "type": "string" },
+        "web": { "type": "string" },
+        "db": { "type": "string" },
+        "email_adapter": { "type": "string" },
+        "service": { "type": "string" }
+      }
+    },
+    "critical_requirements": { "type": "array", "items": { "type": "string" } }
+  }
+}

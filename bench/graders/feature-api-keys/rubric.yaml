@@ -1,0 +1,33 @@
+# FR-8 weighted rubric — feature-api-keys.
+task_id: feature-api-keys
+weights:
+  functional: 60
+  regression: 15
+  security: 10
+  static: 5
+  scope: 5
+  maintainability: 5
+critical_requirements:
+  - no-cross-org-access
+  - no-raw-key-storage
+  - revoked-keys-rejected
+  - hash-not-exposed
+notes: |
+  Route conventions are not dictated by the task prompt (feature is entirely
+  absent from the baseline); the grader discovers create/list/revoke routes
+  via lib/probe.mjs across a short list of conventional REST shapes rather
+  than hard-coding one path, then black-box-tests the discovered surface.
+  functional: endpoint discoverability, raw-key-shown-once, hash-not-exposed
+  (list + create response never carry salt:hex-shaped hash text or the raw
+  key after the initial reveal), no-raw-key-storage (HTTP-surface check +
+  best-effort reflection over any agent-exported api-key accessor), API-key
+  bearer auth against the list endpoint, no-cross-org-access (list scoping +
+  direct-fetch denial + cross-org key-auth denial), audit events on
+  create/revoke (via the fixture's existing stable `listAuditEvents` export),
+  revoked-keys-rejected (immediate 401/403 after revoke).
+  regression: existing /login, /me, /logout unchanged.
+  security: missing-field validation, auth-required on list, invalid-key
+  rejection, non-admin create does not 500.
+  static: tsc --noEmit against the workspace's own tsconfig.
+  scope: contract-preservation proxy (regression all pass).
+  maintainability: TODO/FIXME/stub/placeholder scan over src/.

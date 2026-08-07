@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/mock-streamjson.schema.json",
+  "title": "BenchStreamAndTelemetry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event", "telemetry"],
+  "description": "Envelope describing the two normalized shapes: a stream-json event and a telemetry record.",
+  "properties": {
+    "event": {
+      "title": "NormalizedStreamEvent",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "subtype", "session_id", "model"],
+          "properties": {
+            "type": { "const": "system" },
+            "subtype": { "const": "init" },
+            "session_id": { "type": "string" },
+            "model": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "session_id", "prompt_id", "message"],
+          "properties": {
+            "type": { "const": "assistant" },
+            "session_id": { "type": "string" },
+            "prompt_id": { "type": "string" },
+            "message": { "type": "object" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "session_id", "name", "ok"],
+          "properties": {
+            "type": { "const": "tool_use" },
+            "session_id": { "type": "string" },
+            "name": { "type": "string" },
+            "ok": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "subtype", "session_id", "is_error", "num_turns", "total_cost_usd", "usage"],
+          "properties": {
+            "type": { "const": "result" },
+            "subtype": { "enum": ["success", "error"] },
+            "session_id": { "type": "string" },
+            "is_error": { "type": "boolean" },
+            "num_turns": { "type": "integer" },
+            "total_cost_usd": { "type": ["number", "null"] },
+            "usage": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"],
+              "properties": {
+                "input_tokens": { "type": "integer" },
+                "output_tokens": { "type": "integer" },
+                "cache_read_input_tokens": { "type": "integer" },
+                "cache_creation_input_tokens": { "type": "integer" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "telemetry": {
+      "title": "NormalizedTelemetryRecord",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id", "prompt_id", "source", "model", "agent_name", "skill_name", "tokens", "tool_calls", "failed_tool_calls"],
+      "properties": {
+        "session_id": { "type": "string" },
+        "prompt_id": { "type": "string" },
+        "source": { "enum": ["main", "subagent", "auxiliary"] },
+        "model": { "type": "string" },
+        "agent_name": { "type": ["string", "null"] },
+        "skill_name": { "type": ["string", "null"] },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input", "output", "cache_read", "cache_create"],
+          "properties": {
+            "input": { "type": "integer" },
+            "output": { "type": "integer" },
+            "cache_read": { "type": "integer" },
+            "cache_create": { "type": "integer" }
+          }
+        },
+        "tool_calls": { "type": "integer" },
+        "failed_tool_calls": { "type": "integer" }
+      }
+    }
+  }
+}

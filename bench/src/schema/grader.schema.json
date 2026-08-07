@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/grader.schema.json",
+  "title": "BenchGraderResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["grader_version", "task_id", "task_version", "workspace_frozen", "tests", "subscores", "quality_score", "critical_failures", "solved", "solved_inputs", "determinism", "failure_stage_hint"],
+  "properties": {
+    "grader_version": { "type": "string" },
+    "task_id": { "type": "string" },
+    "task_version": { "type": "string" },
+    "workspace_frozen": { "const": true },
+    "tests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hidden_functional", "regression", "security", "static"],
+      "properties": {
+        "hidden_functional": { "$ref": "#/$defs/category" },
+        "regression": { "$ref": "#/$defs/category" },
+        "security": { "$ref": "#/$defs/category" },
+        "static": { "$ref": "#/$defs/category" }
+      }
+    },
+    "subscores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["functional", "regression", "security", "static", "scope", "maintainability"],
+      "properties": {
+        "functional": { "type": "number", "minimum": 0, "maximum": 100 },
+        "regression": { "type": "number", "minimum": 0, "maximum": 100 },
+        "security": { "type": "number", "minimum": 0, "maximum": 100 },
+        "static": { "type": "number", "minimum": 0, "maximum": 100 },
+        "scope": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maintainability": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "quality_score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "critical_failures": { "type": "array", "items": { "type": "string" } },
+    "solved": { "type": "boolean" },
+    "solved_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hidden_functional_all_pass", "critical_failures_count"],
+      "properties": {
+        "hidden_functional_all_pass": { "type": "boolean" },
+        "critical_failures_count": { "type": "integer" }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "flaky_retries", "majority_vote"],
+      "properties": {
+        "seed": { "type": "integer" },
+        "flaky_retries": { "type": "integer" },
+        "majority_vote": { "type": "boolean" }
+      }
+    },
+    "failure_stage_hint": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "failed", "total", "cases"],
+      "properties": {
+        "passed": { "type": "integer" },
+        "failed": { "type": "integer" },
+        "total": { "type": "integer" },
+        "cases": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "ok"],
+            "properties": {
+              "id": { "type": "string" },
+              "ok": { "type": "boolean" },
+              "detail": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "feature-api-keys-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fixture: session-auth API app with persistence + audit scaffolding; org-scoped API keys feature is missing.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "start": "node src/http/server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "22.20.1"
+  }
+}

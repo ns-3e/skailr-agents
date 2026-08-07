@@ -1,0 +1,17 @@
+{
+  "task_id": "feature-api-keys",
+  "class": "cross-cutting",
+  "root_dirs": ["src", "test"],
+  "visible_test_cmd": "npm test",
+  "setup_cmd": ["npm ci"],
+  "entrypoints": {
+    "api": "src/http/server.ts",
+    "db": "src/persistence/db.ts"
+  },
+  "critical_requirements": [
+    "no-cross-org-access",
+    "no-raw-key-storage",
+    "revoked-keys-rejected",
+    "hash-not-exposed"
+  ]
+}

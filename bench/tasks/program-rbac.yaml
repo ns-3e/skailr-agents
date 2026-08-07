@@ -1,0 +1,44 @@
+id: program-rbac
+version: "1.0"
+class: program
+fixture: bench/fixtures/program-rbac
+fixture_sha: 10fd79781ad721cbdfbc10fc341facb3e1164345
+grader: bench/graders/program-rbac
+prompt: |
+  Implement organization team invitations and role-based access control.
+  Product requirements:
+  Administrators can:
+  - invite a user by email,
+  - choose Member or Admin,
+  - view pending invitations,
+  - revoke a pending invitation,
+  - change an existing member's role.
+  Invited users can:
+  - accept a valid invitation,
+  - join the correct organization,
+  - never use the same invitation twice.
+  Authorization:
+  - Admins can manage invitations and roles.
+  - Members cannot.
+  - A user must never access or modify another organization's invitations.
+  - The final Admin of an organization cannot demote or remove themselves.
+  System behavior:
+  - Invitation creation and acceptance generate audit events.
+  - Use the existing email adapter to send the invitation.
+  - Do not introduce a real external email dependency.
+  - Expose the functionality through the existing API.
+  - Add the required UI to the organization settings area.
+  - Preserve backwards compatibility with existing users and organizations.
+  Quality:
+  - Handle expired, revoked, reused, and malformed invitations.
+  - Add automated tests.
+  - Existing tests must continue to pass.
+  - Do not leave TODOs, skipped tests, placeholder implementations, or stubbed behavior.
+  Treat this as a production feature and leave the repository in a shippable state.
+setup:
+  - npm ci
+critical_requirements:
+  - cross-org-isolation
+  - last-admin-protected
+  - invitation-single-use
+  - audit-events-emitted

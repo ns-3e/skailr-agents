@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/config.schema.json",
+  "title": "BenchConfig",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["claude_code_version", "model", "node_version", "container_image", "defaults", "pricing_table"],
+  "properties": {
+    "claude_code_version": { "type": "string" },
+    "model": { "type": "string", "description": "exact model ID; floating aliases refused" },
+    "node_version": { "type": "string" },
+    "container_image": { "type": ["string", "null"] },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_turns", "max_budget_usd", "wall_clock_timeout_min", "repetitions"],
+      "properties": {
+        "max_turns": { "type": "integer" },
+        "max_budget_usd": { "type": "number" },
+        "wall_clock_timeout_min": { "type": "integer" },
+        "repetitions": { "type": "integer" }
+      }
+    },
+    "pricing_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "models"],
+      "properties": {
+        "version": { "type": "string" },
+        "models": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["input_per_mtok", "output_per_mtok", "cache_write_per_mtok", "cache_read_per_mtok"],
+            "properties": {
+              "input_per_mtok": { "type": "number" },
+              "output_per_mtok": { "type": "number" },
+              "cache_write_per_mtok": { "type": "number" },
+              "cache_read_per_mtok": { "type": "number" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

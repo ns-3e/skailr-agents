@@ -13,7 +13,8 @@
 node_modules/
 examples/parallel-api/stubs/
 # Local checkouts of sibling products (never ship inside this pack)
-src/
+# Anchored to repo root only — must NOT match bench/src/ (the benchmark harness source).
+/src/
 **/__pycache__/
 *.pyc
 

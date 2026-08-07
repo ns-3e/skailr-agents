@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skailr.dev/bench/run.schema.json",
+  "title": "BenchRunRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "identity", "environment", "outcome", "quality", "time",
+    "usage", "cost", "trajectory", "code", "process",
+    "skailr_diagnostics", "failure_stage"
+  ],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["run_id", "series_id", "task_id", "task_version", "arm", "skailr_sha", "skailr_version", "fixture_sha", "timestamp"],
+      "properties": {
+        "run_id": { "type": "string" },
+        "series_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "task_version": { "type": "string" },
+        "arm": { "enum": ["baseline", "skailr"] },
+        "skailr_sha": { "type": ["string", "null"] },
+        "skailr_version": { "type": ["string", "null"] },
+        "fixture_sha": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude_code_version", "model_id", "os", "container", "node_version"],
+      "properties": {
+        "claude_code_version": { "type": "string" },
+        "model_id": { "type": "string" },
+        "os": { "type": "string" },
+        "container": { "type": ["string", "null"] },
+        "node_version": { "type": "string" }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["solved", "termination_reason", "visible_tests", "hidden_tests", "regression", "critical_failures"],
+      "properties": {
+        "solved": { "type": "boolean" },
+        "termination_reason": { "enum": ["finish", "budget", "turns", "wall_clock_kill", "crash", "nonzero_exit"] },
+        "visible_tests": { "$ref": "#/$defs/testCounts" },
+        "hidden_tests": { "$ref": "#/$defs/testCounts" },
+        "regression": { "$ref": "#/$defs/testCounts" },
+        "critical_failures": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quality_score", "subscores"],
+      "properties": {
+        "quality_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "subscores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["functional", "regression", "security", "static", "scope", "maintainability"],
+          "properties": {
+            "functional": { "type": "number" },
+            "regression": { "type": "number" },
+            "security": { "type": "number" },
+            "static": { "type": "number" },
+            "scope": { "type": "number" },
+            "maintainability": { "type": "number" }
+          }
+        }
+      }
+    },
+    "time": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wall_clock_s", "claude_active_s", "time_to_first_edit_s", "grader_s"],
+      "properties": {
+        "wall_clock_s": { "type": "number" },
+        "claude_active_s": { "type": "number" },
+        "time_to_first_edit_s": { "type": ["number", "null"] },
+        "grader_s": { "type": "number" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens", "by_model", "by_source", "by_agent"],
+      "properties": {
+        "tokens": { "$ref": "#/$defs/tokenCounts" },
+        "by_model": { "type": "object", "additionalProperties": { "$ref": "#/$defs/tokenCounts" } },
+        "by_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["main", "subagent", "auxiliary"],
+          "properties": {
+            "main": { "$ref": "#/$defs/tokenCounts" },
+            "subagent": { "$ref": "#/$defs/tokenCounts" },
+            "auxiliary": { "$ref": "#/$defs/tokenCounts" }
+          }
+        },
+        "by_agent": { "type": "object", "additionalProperties": { "$ref": "#/$defs/tokenCounts" } }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cost_reported_usd", "cost_reconstructed_usd", "pricing_table_version"],
+      "properties": {
+        "cost_reported_usd": { "type": ["number", "null"] },
+        "cost_reconstructed_usd": { "type": "number" },
+        "pricing_table_version": { "type": "string" }
+      }
+    },
+    "trajectory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_requests", "tool_calls", "failed_tool_calls", "retries", "compactions"],
+      "properties": {
+        "model_requests": { "type": "integer" },
+        "tool_calls": { "type": "integer" },
+        "failed_tool_calls": { "type": "integer" },
+        "retries": { "type": "integer" },
+        "compactions": { "type": "integer" }
+      }
+    },
+    "code": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files_read", "files_edited", "lines_added", "lines_removed", "diff_bytes"],
+      "properties": {
+        "files_read": { "type": "integer" },
+        "files_edited": { "type": "integer" },
+        "lines_added": { "type": "integer" },
+        "lines_removed": { "type": "integer" },
+        "diff_bytes": { "type": "integer" }
+      }
+    },
+    "process": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_executions", "test_failures", "repair_loops"],
+      "properties": {
+        "test_executions": { "type": "integer" },
+        "test_failures": { "type": "integer" },
+        "repair_loops": { "type": "integer" }
+      }
+    },
+    "skailr_diagnostics": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["agents_spawned", "inter_agent_messages", "blockers", "contract_events", "gate_failures", "validator_findings"],
+      "properties": {
+        "agents_spawned": { "type": "integer" },
+        "inter_agent_messages": { "type": "integer" },
+        "blockers": { "type": "integer" },
+        "contract_events": { "type": "integer" },
+        "gate_failures": { "type": "integer" },
+        "validator_findings": { "type": "integer" }
+      }
+    },
+    "failure_stage": {
+      "enum": ["routing", "requirements", "planning", "localization", "architecture_contract", "implementation", "integration", "test", "validation", "budget_timeout", "none", "unclassified"]
+    }
+  },
+  "$defs": {
+    "testCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "failed", "total"],
+      "properties": {
+        "passed": { "type": "integer" },
+        "failed": { "type": "integer" },
+        "total": { "type": "integer" }
+      }
+    },
+    "tokenCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "output", "cache_read", "cache_create"],
+      "properties": {
+        "input": { "type": "integer" },
+        "output": { "type": "integer" },
+        "cache_read": { "type": "integer" },
+        "cache_create": { "type": "integer" }
+      }
+    }
+  }
+}
