@@ -32,7 +32,18 @@ export ANTHROPIC_API_KEY=""
 "$@"
 
 mkdir -p /out/results /out/benchmarks
-[ -d results ] && cp -a results/. /out/results/ 2>/dev/null || true
-[ -d benchmarks ] && cp -a benchmarks/. /out/benchmarks/ 2>/dev/null || true
+
+# The harness marks completed run dirs read-only (fsutil.mjs markReadOnly).
+# `cp -a` tries to replicate that exact mode onto the bind-mounted /out
+# volume and fails ("Permission denied" setting perms on the FUSE-backed
+# mount) on Docker Desktop for Mac — which `cp` treats as a hard error,
+# aborting the copy of that subtree before any file content lands. Drop the
+# read-only bit on our own throwaway copy first so the export can't silently
+# lose data the way it did the first time this ran for real.
+[ -d results ] && chmod -R u+w results
+[ -d benchmarks ] && chmod -R u+w benchmarks
+
+[ -d results ] && cp -a results/. /out/results/
+[ -d benchmarks ] && cp -a benchmarks/. /out/benchmarks/
 
 echo "Exported bench/results and bench/benchmarks to the host-mounted /out."
