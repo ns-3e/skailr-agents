@@ -8,7 +8,7 @@ on:
 jobs:
   verify:
     runs-on: self-hosted
-
+    steps:
       - name: Lint all workflow files (would have caught the 3399d14 YAML break on day one)
         run: |
           bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
