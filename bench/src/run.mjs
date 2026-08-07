@@ -21,6 +21,7 @@ import { deriveSeriesId, deriveRunId } from "./lib/ids.mjs";
 import { ensureDir, atomicWriteJson, atomicWriteValidatedJson, markReadOnly } from "./lib/fsutil.mjs";
 import { invokeClaude } from "./claude.mjs";
 import { buildTelemetryEnv, buildTelemetry } from "./telemetry.mjs";
+import { runGraderProcess } from "./grade.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = path.resolve(__dirname, "..");
@@ -92,16 +93,52 @@ export async function installArm(arm, ref, workspace, opts = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture checkout — "fresh git checkout at fixture_sha" stage, literally: a
-// local clone of the fixture repo followed by a detached checkout, so the
-// resulting workspace keeps its own .git history back to fixture_sha (needed
-// later for "capture git diff vs fixture_sha").
+// Fixture checkout — "fresh git checkout at fixture_sha" stage (FR-4).
+//
+// PHASE-C RECONCILIATION (integration-verifier): WS-fixtures ships fixtures as
+// PLAIN FILES (nested .git removed) with a `.fixture-sha` integrity file and
+// `fixture_sha` recorded in task.yaml — there is no clonable repo on disk. The
+// original impl `git clone --local <fixtureDir>` cannot check out a repo that
+// isn't there. Reconciled: if the fixture dir IS a git repo (legacy / test
+// fixtures), keep the clone+checkout path unchanged; otherwise materialize a
+// clean workspace by COPYING the fixture tree into the isolated temp workspace,
+// verifying integrity against `.fixture-sha`==`fixture_sha`, then `git init` +
+// baseline commit so the later "git diff vs fixture_sha" stage has a base.
 // ---------------------------------------------------------------------------
 export function checkoutFixture(fixtureDir, fixtureSha, workspace) {
   fs.rmSync(workspace, { recursive: true, force: true });
   ensureDir(path.dirname(workspace));
-  execFileSync("git", ["clone", "--quiet", "--local", "--no-hardlinks", fixtureDir, workspace]);
-  execFileSync("git", ["-C", workspace, "checkout", "--quiet", fixtureSha]);
+
+  if (fs.existsSync(path.join(fixtureDir, ".git"))) {
+    // Real git-repo fixture: fresh local clone + detached checkout at sha.
+    execFileSync("git", ["clone", "--quiet", "--local", "--no-hardlinks", fixtureDir, workspace]);
+    execFileSync("git", ["-C", workspace, "checkout", "--quiet", fixtureSha]);
+    return;
+  }
+
+  // Plain-file fixture (Phase C): verify integrity, copy, git-init a baseline.
+  const shaFile = path.join(fixtureDir, ".fixture-sha");
+  if (fs.existsSync(shaFile)) {
+    const recorded = fs.readFileSync(shaFile, "utf8").trim();
+    if (fixtureSha && recorded && recorded !== fixtureSha) {
+      throw new Error(
+        `fixture integrity mismatch: .fixture-sha (${recorded}) != task.fixture_sha (${fixtureSha}) in ${fixtureDir}`
+      );
+    }
+  }
+  ensureDir(workspace);
+  fs.cpSync(fixtureDir, workspace, {
+    recursive: true,
+    filter: (src) => path.basename(src) !== ".git",
+  });
+  execFileSync("git", ["-C", workspace, "init", "--quiet"]);
+  execFileSync("git", ["-C", workspace, "add", "-A"]);
+  execFileSync("git", [
+    "-C", workspace,
+    "-c", "user.email=bench@skailr.local",
+    "-c", "user.name=skailr-bench",
+    "commit", "--quiet", "--allow-empty", "-m", `fixture baseline ${fixtureSha || ""}`.trim(),
+  ]);
 }
 
 export function runSetupCommands(workspace, setup = []) {
@@ -179,9 +216,19 @@ function walkFiles(dir) {
 export function captureDiff(workspace, fixtureSha, runDir) {
   let diffText = "";
   let numstat = "";
+  // Phase-C reconcile: for copied plain-file fixtures the workspace repo is a
+  // fresh `git init` whose baseline commit == the fixture tree (verified
+  // against `.fixture-sha`), so `fixture_sha` is not a resolvable rev here.
+  // Diff against the baseline commit (HEAD) when the sha is unknown to the repo.
+  let base = fixtureSha;
   try {
-    diffText = execFileSync("git", ["-C", workspace, "diff", fixtureSha], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
-    numstat = execFileSync("git", ["-C", workspace, "diff", "--numstat", fixtureSha], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
+    execFileSync("git", ["-C", workspace, "cat-file", "-e", `${fixtureSha}^{commit}`], { stdio: "ignore" });
+  } catch {
+    base = "HEAD";
+  }
+  try {
+    diffText = execFileSync("git", ["-C", workspace, "diff", base], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
+    numstat = execFileSync("git", ["-C", workspace, "diff", "--numstat", base], { encoding: "utf8", maxBuffer: 1024 * 1024 * 200 });
   } catch (err) {
     diffText = `<git diff failed: ${err.message}>`;
   }
@@ -232,22 +279,26 @@ function fallbackGrade(reason) {
   };
 }
 
-/** Default grader invocation convention (grade.mjs entrypoints not yet built
- * by WS-grade-analytics as of this writing — see completion report /
- * channel note). Convention: `node <graderEntry> <frozenWorkspace> <outFile>`,
- * grader MUST write grader.json-shaped JSON to <outFile>. Injectable via
- * opts.runGrader for tests / until the real entrypoint exists. */
+/** Default grader invocation — RECONCILED grader seam (MSG-006, integration-
+ * verifier Phase C). The frozen convention (grade.mjs::runGraderProcess, which
+ * all three real graders implement) is: `node <graderDir>/grade.mjs
+ * <frozenWorkspaceAbs>` with cwd=<graderDir>, grader prints exactly one
+ * grader-json object to STDOUT and exits 0. `task.grader` is a repo-root-
+ * relative grader DIRECTORY (e.g. "bench/graders/patch-webhook"), resolved
+ * against the repo root. The prior impl used a stale convention
+ * (`node <graderEntry> <ws> <outFile>` writing to a file) — that is the drift
+ * this seam existed to catch. Delegates to grade.mjs::runGraderProcess so the
+ * run.mjs -> grade.mjs -> grader chain is one wired path. grader.json is
+ * persisted to the run dir for the FR-5 artifact set. Injectable via
+ * opts.runGrader for unit tests. `gradersRoot` kept for bare-name fallback. */
 async function defaultRunGrader(workspace, task, runDir, { gradersRoot }) {
-  const graderEntry = path.isAbsolute(task.grader) ? task.grader : path.join(gradersRoot, task.grader);
-  const outFile = path.join(runDir, "grader.json");
-  const proc = spawnSync("node", [graderEntry, workspace, outFile], { encoding: "utf8" });
-  if (proc.status !== 0) {
-    throw new Error(`grader exited ${proc.status}: ${proc.stderr || proc.stdout}`);
-  }
-  if (!fs.existsSync(outFile)) {
-    throw new Error(`grader did not write grader.json to ${outFile}`);
-  }
-  return JSON.parse(fs.readFileSync(outFile, "utf8"));
+  let graderDir;
+  if (path.isAbsolute(task.grader)) graderDir = task.grader;
+  else if (task.grader.includes("/")) graderDir = path.resolve(SKAILR_REPO_ROOT, task.grader);
+  else graderDir = path.join(gradersRoot, task.grader);
+  const grade = runGraderProcess(graderDir, workspace, {});
+  fs.writeFileSync(path.join(runDir, "grader.json"), JSON.stringify(grade, null, 2) + "\n", "utf8");
+  return grade;
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +342,13 @@ export async function runOne(opts) {
 
   try {
     stage("clean-fixture+checkout");
-    const fixtureDir = path.isAbsolute(task.fixture) ? task.fixture : path.join(fixturesRoot, task.fixture);
+    // task.fixture is a repo-root-relative path ("bench/fixtures/<x>") per
+    // task-config; resolve against the repo root. Bare names (tests) fall back
+    // to fixturesRoot; absolute paths (tests) used verbatim.
+    let fixtureDir;
+    if (path.isAbsolute(task.fixture)) fixtureDir = task.fixture;
+    else if (task.fixture.includes("/")) fixtureDir = path.resolve(SKAILR_REPO_ROOT, task.fixture);
+    else fixtureDir = path.join(fixturesRoot, task.fixture);
     checkoutFixture(fixtureDir, task.fixture_sha, workspace);
   } catch (err) {
     checkoutFailed = true;
@@ -360,6 +417,21 @@ export async function runOne(opts) {
     stage("capture-diff");
     diffStats = captureDiff(workspace, task.fixture_sha, runDir);
     filesRead = (claudeResult.events || []).filter((e) => e.type === "tool_use" && e.name === "Read").length;
+
+    // Persist the frozen workspace snapshot into the run dir so a later
+    // `bench:grade --run <id>` can RE-GRADE without re-invoking the agent
+    // (FR-11 re-grade / NN "re-grading must not re-run the agent"). grade.mjs
+    // defaults its workspaceDir to <runDir>/workspace. .git is excluded (the
+    // grader never needs it; git.diff already captures the agent's changes).
+    stage("persist-workspace-snapshot");
+    try {
+      fs.cpSync(workspace, path.join(runDir, "workspace"), {
+        recursive: true,
+        filter: (src) => path.basename(src) !== ".git",
+      });
+    } catch (err) {
+      log.push(`workspace snapshot failed: ${err.message}`);
+    }
   }
 
   const termination_reason = claudeResult?.termination_reason

@@ -7,6 +7,57 @@ import fs from "node:fs";
 import path from "node:path";
 import { validateOrThrow } from "../schema/validate.mjs";
 import { atomicWriteJson, ensureDir } from "./fsutil.mjs";
+import { reconstructCost } from "./pricing.mjs";
+import { loadConfig } from "./config.mjs";
+
+// AC-6 self-consistency (integration hardening): the mock's canned
+// `total_cost_usd` (cost_reported_usd) must be reconcilable to the SAME
+// per-category token counts × the config pricing table that
+// telemetry.mjs uses to compute cost_reconstructed_usd. We derive reported
+// from the reconstruction and apply a small DELIBERATE delta so the two are
+// not identical (mirrors real reported-vs-reconstructed float/rounding drift)
+// yet stay within the documented tolerance band. Delta = +2% of reconstructed,
+// well inside the 5% tolerance documented in README. Documenter: record 2%.
+export const MOCK_COST_REPORTED_DELTA = 0.02;
+
+// Fallback canned reported costs (used only when the pricing table can't be
+// loaded or the model isn't priced — e.g. unit tests passing model:"m").
+const FALLBACK_REPORTED_USD = { solved: 0.0421, "planted-defect": 0.0587, timeout: 0.0198, crash: null };
+
+function addTok(a, b) {
+  return { input: a.input + b.input, output: a.output + b.output, cache_read: a.cache_read + b.cache_read, cache_create: a.cache_create + b.cache_create };
+}
+
+/** Total tokens across the telemetry sources generateMockTelemetry emits for
+ * a flavor — the exact input telemetry.mjs reconstructs cost from. Keep in
+ * lock-step with generateMockTelemetry's records. */
+function telemetryTokenTotal(flavor) {
+  let t = addTok(baseTokens(1), baseTokens(0.4)); // main + subagent (always)
+  if (flavor === "planted-defect") t = addTok(t, baseTokens(0.2)); // + auxiliary
+  return t;
+}
+
+let _mockPricing;
+function getMockPricing() {
+  if (_mockPricing === undefined) {
+    try { _mockPricing = loadConfig().pricing_table; } catch { _mockPricing = null; }
+  }
+  return _mockPricing;
+}
+
+/** Reported cost derived from per-category reconstruction + in-tolerance delta;
+ * null for the crash flavor (no cost signal). Falls back to a canned constant
+ * when the model isn't in the pricing table. */
+export function mockReportedCost(flavor, model) {
+  if (flavor === "crash") return null;
+  const pt = getMockPricing();
+  try {
+    const { cost_reconstructed_usd } = reconstructCost(telemetryTokenTotal(flavor), pt, model);
+    return Math.round(cost_reconstructed_usd * (1 + MOCK_COST_REPORTED_DELTA) * 1e6) / 1e6;
+  } catch {
+    return FALLBACK_REPORTED_USD[flavor] ?? null;
+  }
+}
 
 // Recognized flavors. "solved" / "planted-defect" are the two the kernel
 // contract requires (AC-4 drives planted-defect: harness/grader treats the
@@ -51,7 +102,7 @@ export function generateMockEvents({ sessionId, promptId, model, flavor = "solve
       session_id: sessionId,
       is_error: false,
       num_turns: 6,
-      total_cost_usd: 0.0421,
+      total_cost_usd: mockReportedCost("solved", model),
       usage: { input_tokens: 1200, output_tokens: 400, cache_read_input_tokens: 300, cache_creation_input_tokens: 150 },
     });
   } else if (flavor === "planted-defect") {
@@ -66,7 +117,7 @@ export function generateMockEvents({ sessionId, promptId, model, flavor = "solve
       session_id: sessionId,
       is_error: false,
       num_turns: 8,
-      total_cost_usd: 0.0587,
+      total_cost_usd: mockReportedCost("planted-defect", model),
       usage: { input_tokens: 1500, output_tokens: 520, cache_read_input_tokens: 300, cache_creation_input_tokens: 150 },
     });
   } else if (flavor === "timeout") {
@@ -76,7 +127,7 @@ export function generateMockEvents({ sessionId, promptId, model, flavor = "solve
       session_id: sessionId,
       is_error: true,
       num_turns: 4,
-      total_cost_usd: 0.0198,
+      total_cost_usd: mockReportedCost("timeout", model),
       usage: { input_tokens: 900, output_tokens: 210, cache_read_input_tokens: 100, cache_creation_input_tokens: 0 },
     });
   } else if (flavor === "crash") {

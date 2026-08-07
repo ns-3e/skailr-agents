@@ -13,6 +13,7 @@ import {
   computeVerdict,
   computeParetoFrontier,
   loadCampaign,
+  resolveCampaignDir,
 } from "./report.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,14 @@ const CROSS = path.join(SYNTHETIC, "cross-series-v2");
 function mkTmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bench-report-"));
 }
+
+test("robustness: resolveCampaignDir resolves bare synthetic labels but THROWS on a bogus ref (no phantom dir)", () => {
+  assert.equal(resolveCampaignDir("v1.11.0"), V1_11);
+  const bogus = `no-such-campaign-${Date.now()}`;
+  assert.throws(() => resolveCampaignDir(bogus), /campaign not found/);
+  assert.equal(fs.existsSync(path.resolve(__dirname, "..", bogus)), false, "must not create a phantom dir");
+  assert.equal(fs.existsSync(path.resolve(__dirname, "..", "results-synthetic", bogus)), false);
+});
 
 test("ciOverlaps: overlapping ranges are not significant, disjoint ranges are significant", () => {
   assert.equal(ciOverlaps({ lo: 10, hi: 20 }, { lo: 15, hi: 25 }), true);

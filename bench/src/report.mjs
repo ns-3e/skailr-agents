@@ -34,6 +34,25 @@ function campaignLabel(dir) {
   return path.basename(path.resolve(dir));
 }
 
+/** Resolve a campaign ref to a real directory. Accepts an explicit path
+ * (relative/absolute) OR a bare campaign label (e.g. "v1.11.0"), which is
+ * looked up under results-synthetic/ then results/ so the documented
+ * `bench:compare v1.11.0 v1.12.0` command works as written. Falls back to the
+ * literal ref if nothing matches (so the error surfaces at load time).
+ * Integration-verifier CLI reconciliation. */
+export function resolveCampaignDir(ref) {
+  const candidates = [ref, ...["results-synthetic", "results"].map((r) => path.resolve(__dirname, "..", r, ref))];
+  for (const cand of candidates) {
+    if (fs.existsSync(cand) && fs.statSync(cand).isDirectory()) return cand;
+  }
+  // Hard error (nonzero exit at CLI) rather than silently materializing a
+  // phantom campaign dir — integration hardening finding #3.
+  throw new Error(
+    `campaign not found: "${ref}" (looked in ., results-synthetic/, results/). ` +
+    `Pass an existing campaign directory or a committed synthetic label (e.g. v1.11.0).`
+  );
+}
+
 /** Load one campaign: aggregate stats (cached) + raw entries for diagnostics. */
 export function loadCampaign(dir) {
   const agg = getCachedAggregate(dir);
@@ -155,7 +174,9 @@ export function computeVerdict(refA, refB, { armForVerdict = "skailr" } = {}) {
 
   const reasons = [];
   if (matchedTasks.length === 0) {
-    return { verdict: "INCONCLUSIVE", reasons: [`no matched task_id under arm="${armForVerdict}" between the two campaigns`], matchedTasks };
+    // deltas:[] so the MD/HTML renderers (which iterate verdict.deltas) don't
+    // crash on a legitimate INCONCLUSIVE comparison — integration-verifier fix.
+    return { verdict: "INCONCLUSIVE", reasons: [`no matched task_id under arm="${armForVerdict}" between the two campaigns`], matchedTasks, deltas: [] };
   }
 
   let totalA = 0, solvedA = 0, totalB = 0, solvedB = 0;
@@ -616,14 +637,17 @@ async function main() {
       process.exitCode = 2;
       return;
     }
-    const result = compareCampaigns(refA, refB);
-    const outDir = args.out ? path.resolve(args.out) : path.resolve(__dirname, "../results/reports", `${campaignLabel(refA)}_vs_${campaignLabel(refB)}`);
+    const dirA = resolveCampaignDir(refA);
+    const dirB = resolveCampaignDir(refB);
+    const result = compareCampaigns(dirA, dirB);
+    const outDir = args.out ? path.resolve(args.out) : path.resolve(__dirname, "../results/reports", `${campaignLabel(dirA)}_vs_${campaignLabel(dirB)}`);
     const paths = writeReport(outDir, result, "compare");
     console.log(`Verdict: ${result.verdict.verdict}${result.banner ? " (CROSS-SERIES — see banner)" : ""}`);
     console.log(`Wrote ${paths.md}\nWrote ${paths.html}\nWrote ${paths.csv}`);
   } else if (args.campaign) {
-    const result = reportSingleCampaign(args.campaign);
-    const outDir = args.out ? path.resolve(args.out) : path.resolve(__dirname, "../results/reports", campaignLabel(args.campaign));
+    const campDir = resolveCampaignDir(args.campaign);
+    const result = reportSingleCampaign(campDir);
+    const outDir = args.out ? path.resolve(args.out) : path.resolve(__dirname, "../results/reports", campaignLabel(campDir));
     const paths = writeReport(outDir, result, "report");
     console.log(`Wrote ${paths.md}\nWrote ${paths.html}\nWrote ${paths.csv}`);
   } else {

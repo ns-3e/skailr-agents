@@ -204,10 +204,14 @@ export function getCachedAggregate(campaignDir, opts = {}) {
     }
   }
   const fresh = aggregateCampaign(campaignDir, opts);
-  try {
-    atomicWriteJson(cachePath, fresh);
-  } catch {
-    // caching is best-effort; aggregation itself must still succeed
+  // Only cache into an EXISTING campaign dir — never let atomicWriteJson's
+  // ensureDir materialize a phantom dir for a bogus path (hardening finding #3).
+  if (fs.existsSync(campaignDir)) {
+    try {
+      atomicWriteJson(cachePath, fresh);
+    } catch {
+      // caching is best-effort; aggregation itself must still succeed
+    }
   }
   return fresh;
 }

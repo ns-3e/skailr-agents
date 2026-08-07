@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import {
   installArm, InstallArmError, runOne, runCampaign, estimateWorstCaseUsd, checkoutFixture, captureDiff,
 } from "./run.mjs";
+import { regradeRun } from "./grade.mjs";
 import { loadConfig } from "./lib/config.mjs";
 import { validate } from "./schema/validate.mjs";
 
@@ -181,21 +182,21 @@ test("runOne: a grader that throws still produces a schema-valid failed run.json
   assert.ok(run.outcome.critical_failures[0].startsWith("grader_error"));
 });
 
-test("runOne: default grader invocation shells out to `node <graderEntry> <workspace> <outFile>` and reads grader.json back", async () => {
+test("runOne: default grader invocation (reconciled seam, MSG-006) runs `node <graderDir>/grade.mjs <workspace>` and reads grader-json from STDOUT", async () => {
   const { dir, sha } = mkGitFixture();
   const config = loadConfig();
   const graderScriptDir = mkTmp("fake-grader"); // NOT under bench/graders — isolation-safe location
   const graderScript = path.join(graderScriptDir, "grade.mjs");
   fs.writeFileSync(graderScript, `
-    import fs from "node:fs";
-    const [, , workspace, outFile] = process.argv;
-    fs.writeFileSync(outFile, JSON.stringify({
+    const workspace = process.argv[2];
+    process.stdout.write(JSON.stringify({
       tests: { hidden_functional: { passed: 1, failed: 0, total: 1, cases: [] }, regression: { passed: 0, failed: 0, total: 0, cases: [] } },
       subscores: { functional: 100, regression: 100, security: 100, static: 100, scope: 100, maintainability: 100 },
       quality_score: 100, critical_failures: [], solved: true,
     }));
   `);
-  const task = baseTask({ fixtureDir: dir, sha, grader: graderScript });
+  // task.grader is a grader DIRECTORY (absolute here); grade.mjs finds grade.mjs inside it.
+  const task = baseTask({ fixtureDir: dir, sha, grader: graderScriptDir });
 
   const { run } = await runOne({
     task, arm: "baseline", rep: 0, config, mock: true, flavor: "solved",
@@ -204,6 +205,49 @@ test("runOne: default grader invocation shells out to `node <graderEntry> <works
 
   assert.equal(run.outcome.solved, true);
   assert.equal(validate(run, "run").valid, true);
+});
+
+test("FR-11 re-grade: runOne persists a workspace/ snapshot in the run dir; bench:grade re-grades from it WITHOUT re-running the agent", async () => {
+  const { dir, sha } = mkGitFixture();
+  const config = loadConfig();
+  const resultsRoot = mkTmp("results");
+  // Real STDOUT grader (reconciled convention), in an isolation-safe dir.
+  const graderDir = mkTmp("regrade-grader");
+  const graderResult = {
+    grader_version: "1", task_id: "t1", task_version: "1", workspace_frozen: true,
+    tests: {
+      hidden_functional: { passed: 1, failed: 0, total: 1, cases: [{ id: "hf-1", ok: true }] },
+      regression: { passed: 0, failed: 0, total: 0, cases: [] },
+      security: { passed: 0, failed: 0, total: 0, cases: [] },
+      static: { passed: 0, failed: 0, total: 0, cases: [] },
+    },
+    subscores: { functional: 100, regression: 100, security: 100, static: 100, scope: 100, maintainability: 100 },
+    quality_score: 100, critical_failures: [], solved: true,
+    solved_inputs: { hidden_functional_all_pass: true, critical_failures_count: 0 },
+    determinism: { seed: 1, flaky_retries: 0, majority_vote: false },
+    failure_stage_hint: null,
+  };
+  fs.writeFileSync(path.join(graderDir, "grade.mjs"),
+    `process.stdout.write(${JSON.stringify(JSON.stringify(graderResult))});\n`);
+  const task = baseTask({ fixtureDir: dir, sha, grader: graderDir });
+
+  const { runDir } = await runOne({
+    task, arm: "baseline", rep: 0, config, mock: true, flavor: "solved",
+    resultsRoot, workspaceRoot: mkTmp("wsroot"),
+  });
+
+  // Snapshot persisted alongside the run.
+  const snapshot = path.join(runDir, "workspace");
+  assert.equal(fs.existsSync(snapshot), true, "expected workspace/ snapshot in run dir");
+  const graderJsonBefore = fs.readFileSync(path.join(runDir, "grader.json"), "utf8");
+
+  // Re-grade from the persisted snapshot (grade.mjs never imports claude.mjs).
+  const { runRecord } = regradeRun({ runDir, workspaceDir: snapshot, graderDir });
+  assert.equal(fs.existsSync(path.join(runDir, "grader.v2.json")), true);
+  assert.equal(fs.existsSync(path.join(runDir, "run.v2.json")), true);
+  assert.equal(validate(runRecord, "run").valid, true);
+  // Originals untouched (immutability NN).
+  assert.equal(fs.readFileSync(path.join(runDir, "grader.json"), "utf8"), graderJsonBefore);
 });
 
 test("estimateWorstCaseUsd: sums max_budget_usd across tasks x arms x reps", () => {
