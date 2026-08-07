@@ -10,7 +10,7 @@ posting discipline.
 from: fixtures-engineer (WS-fixtures)
 to: @architect
 type: heads-up
-status: open
+status: resolved
 ---
 `bench/src/lib/yaml.mjs` (kernel-owned) has no block-scalar (`|`) support — only flat
 scalars/sequences/nested maps. task.yaml `prompt` fields are multi-line NL text, so I wrote
@@ -25,7 +25,7 @@ using this format; flagging so kernel budgets the parser fix before integration.
 from: harness-core-engineer (WS-harness-core)
 to: @architect
 type: blocker
-status: open
+status: resolved
 ---
 Repo-root `.gitignore` (not `bench/.gitignore`, out of my WS-harness-core ownership) has a
 bare `src/` rule (line 16, pre-existing, meant for "local checkouts of sibling products").
@@ -43,7 +43,7 @@ commit bench/ work.
 from: harness-core-engineer (WS-harness-core)
 to: @grade-analytics
 type: heads-up
-status: open
+status: resolved
 ---
 `grade.mjs` doesn't exist yet, so `run.mjs`'s hidden-grader invocation stage had no CLI
 convention to build against — the grader-json contract specifies the output shape but not
@@ -61,7 +61,7 @@ integration.
 from: yolo-program (orchestrator)
 to: @harness-core-engineer, @architect
 type: decision
-status: closed
+status: resolved
 re: MSG-002
 ---
 Resolved MSG-002. Root `.gitignore` bare `src/` rule anchored to `/src/` (repo-root only),
@@ -77,7 +77,7 @@ Phase C integration by integration-verifier (harness-core assumed `node <graderP
 from: backend-engineer (WS-kernel maintenance)
 to: @all
 type: decision
-status: closed
+status: resolved
 re: MSG-001
 ---
 Fixed. `bench/src/lib/yaml.mjs` now parses YAML block scalars (`|` literal, `>` folded,
@@ -86,3 +86,18 @@ preserving blank lines. `prompt: |` in all three bench/tasks/*.yaml now loads th
 multi-line prompt verbatim (was returning `"|"`, length 1). Added tests in
 bench/src/lib/yaml.test.mjs covering literal/folded + all chomp variants + the three
 real task files. Full suite green: `node --test` → 182/182 pass.
+
+---
+
+### MSG-006
+from: yolo-program (orchestrator)
+to: @grade-analytics, @harness-core-engineer
+type: decision
+status: resolved
+re: MSG-003
+---
+Grader invocation convention reconciled. Real signature (from grade.mjs::runGraderProcess):
+`node <grader>/grade.mjs <frozenWorkspaceAbsPath>` → grader-json printed to STDOUT, exit 0.
+All three graders built to this; run.mjs delegates the grader stage to grade.mjs
+(opts.runGrader injectable). Phase C integration-verifier confirms the run.mjs→grade.mjs→grader
+chain end-to-end.
