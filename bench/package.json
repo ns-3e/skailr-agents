@@ -1,0 +1,20 @@
+{
+  "name": "skailr-bench",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skailr Bench — A/B benchmark harness: baseline Claude Code vs Claude Code + Skailr, at a pinned model/version, over a fixed task set.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "bench": "node src/run.mjs",
+    "bench:grade": "node src/grade.mjs",
+    "bench:compare": "node src/report.mjs compare",
+    "bench:report": "node src/report.mjs",
+    "bench:verify-isolation": "node src/verify-isolation.mjs",
+    "test": "node --test"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,0 +1,34 @@
+# Skailr Bench — pinned environment + defaults + pricing table (FR-1).
+# Harness fails fast if the live `claude --version` / `node --version` do not
+# match the values pinned here. See README "Decisions record" for rationale.
+#
+# NOTE on `model`: this MUST be an exact, dated Anthropic model ID — never a
+# floating alias ("sonnet", "latest", etc). "claude-sonnet-4-5-20250929" is
+# used here as the pinned placeholder; confirm it is a real exact ID for the
+# account/region running the campaign before spending, and update in lockstep
+# with `pricing_table.models` below (a model change forks `series_id`).
+claude_code_version: "2.1.224"
+model: "claude-sonnet-4-5-20250929"
+node_version: "22.x"
+container_image: null
+
+defaults:
+  max_turns: 200
+  max_budget_usd: 10
+  wall_clock_timeout_min: 45
+  repetitions: 5
+
+# Per-category USD-per-million-tokens rates. Reconstructed cost is ALWAYS
+# computed per-category (tokens_category × rate_category), never
+# total_tokens × a single rate. Values below are plausible placeholders —
+# edit to match actual published Anthropic pricing before a real campaign;
+# bump `version` whenever rates change so historical runs stay attributable
+# to the table version that priced them.
+pricing_table:
+  version: "2026-08"
+  models:
+    claude-sonnet-4-5-20250929:
+      input_per_mtok: 3.00
+      output_per_mtok: 15.00
+      cache_write_per_mtok: 3.75
+      cache_read_per_mtok: 0.30
