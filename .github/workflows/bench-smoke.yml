@@ -1,0 +1,117 @@
+name: bench-smoke (real A/B campaign)
+
+# Runs a REAL smoke benchmark campaign (1 rep × all tasks × both arms:
+# baseline Claude Code vs. Claude Code + Skailr@ref) on a SELF-HOSTED runner,
+# then publishes the stats/metrics into bench/benchmarks/ and pushes to main.
+#
+# Auth: uses a Claude Code SUBSCRIPTION token (CLAUDE_CODE_OAUTH_TOKEN secret),
+# NOT an Anthropic API key. Generate one on an authenticated machine with
+#   claude setup-token
+# and store it as the repo secret CLAUDE_CODE_OAUTH_TOKEN. (Alternatively, a
+# self-hosted runner already logged in via `claude login` works without the
+# secret.)
+#
+# Runner requirements:
+#   - self-hosted, Linux, label `self-hosted` (adjust `runs-on` for your fleet)
+#   - NOT running as root — Claude Code refuses --dangerously-skip-permissions
+#     under root; the harness needs that flag for headless runs
+#   - Node 22.x and the `claude` CLI (version must match bench/config.yaml) on PATH
+#   - git available
+
+on:
+  workflow_dispatch:
+    inputs:
+      skailr_ref:
+        description: "Skailr git ref for the skailr arm (default: this checkout's HEAD = latest main)"
+        required: false
+        default: "HEAD"
+      max_campaign_usd:
+        description: "Hard cost guard for the whole campaign (USD)"
+        required: false
+        default: "30"
+      reps:
+        description: "Repetitions per task per arm (smoke = 1; raise for more statistical power)"
+        required: false
+        default: "1"
+
+concurrency:
+  group: bench-smoke
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  campaign:
+    runs-on: [self-hosted]
+    timeout-minutes: 360
+    env:
+      # Claude Code subscription auth — NOT an API key.
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+    steps:
+      - name: Checkout (full history + tags so installArm can archive the skailr ref)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Preflight — not root, tools present, versions match pinned config
+        run: |
+          set -euo pipefail
+          if [ "$(id -u)" = "0" ]; then
+            echo "::error::Runner is root. Claude Code refuses --dangerously-skip-permissions as root; run the self-hosted runner as a non-root user."
+            exit 1
+          fi
+          command -v node >/dev/null || { echo "::error::node not found on runner"; exit 1; }
+          command -v claude >/dev/null || { echo "::error::claude CLI not found on runner"; exit 1; }
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ ! -d "$HOME/.claude" ]; then
+            echo "::error::No CLAUDE_CODE_OAUTH_TOKEN secret and runner not logged in (~/.claude missing). Set the secret via 'claude setup-token' or run 'claude login' on the runner."
+            exit 1
+          fi
+          echo "node: $(node --version)"
+          echo "claude: $(claude --version)"
+          # Belt-and-suspenders: ensure no API key sneaks in (we want subscription auth).
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::warning::ANTHROPIC_API_KEY is set; unsetting for this job so subscription auth is used."
+          fi
+
+      - name: Run real smoke campaign (all tasks, both arms)
+        working-directory: bench
+        env:
+          ANTHROPIC_API_KEY: ""
+        run: |
+          set -euo pipefail
+          # No --task ⇒ every task in tasks/ ; both arms are the default.
+          node src/run.mjs \
+            --reps "${{ inputs.reps }}" \
+            --skailr-ref "${{ inputs.skailr_ref }}" \
+            --max-campaign-usd "${{ inputs.max_campaign_usd }}"
+
+      - name: Verify isolation (no grader path reachable from any fixture)
+        working-directory: bench
+        run: node src/verify-isolation.mjs
+
+      - name: Publish stats + metrics into bench/benchmarks/
+        id: publish
+        working-directory: bench
+        run: |
+          set -euo pipefail
+          node scripts/publish-campaign.mjs
+          LABEL=$(node -e "console.log(require('./benchmarks/latest.json').label)")
+          echo "label=$LABEL" >> "$GITHUB_OUTPUT"
+
+      - name: Commit + push results to main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout main
+          git pull --ff-only origin main
+          git add bench/benchmarks
+          if git diff --cached --quiet; then
+            echo "No new benchmark output to commit."
+            exit 0
+          fi
+          git commit -m "bench: publish campaign ${{ steps.publish.outputs.label }} (baseline vs skailr@${{ inputs.skailr_ref }}) [skip ci]"
+          git push origin main
