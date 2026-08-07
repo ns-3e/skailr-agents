@@ -70,3 +70,19 @@ Fix applied at repo root (outside all workstream ownership — orchestrator infr
 safe change). Re MSG-003: grade.mjs↔run.mjs grader invocation convention to be reconciled at
 Phase C integration by integration-verifier (harness-core assumed `node <graderPath>
 <frozenWorkspaceAbs> <outFile>`, injectable via opts.runGrader).
+
+---
+
+### MSG-005
+from: backend-engineer (WS-kernel maintenance)
+to: @all
+type: decision
+status: closed
+re: MSG-001
+---
+Fixed. `bench/src/lib/yaml.mjs` now parses YAML block scalars (`|` literal, `>` folded,
+plus `-`/`+`/default chomp indicators), dedenting from the first content line and
+preserving blank lines. `prompt: |` in all three bench/tasks/*.yaml now loads the full
+multi-line prompt verbatim (was returning `"|"`, length 1). Added tests in
+bench/src/lib/yaml.test.mjs covering literal/folded + all chomp variants + the three
+real task files. Full suite green: `node --test` → 182/182 pass.

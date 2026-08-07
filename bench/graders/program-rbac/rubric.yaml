@@ -1,0 +1,31 @@
+# FR-8 weighted rubric — program-rbac.
+task_id: program-rbac
+weights:
+  functional: 60
+  regression: 15
+  security: 10
+  static: 5
+  scope: 5
+  maintainability: 5
+critical_requirements:
+  - cross-org-isolation
+  - last-admin-protected
+  - invitation-single-use
+  - audit-events-emitted
+notes: |
+  Route conventions are not dictated by the task prompt; the grader
+  discovers invitation create/list/revoke/accept and member role-change/
+  remove routes via lib/probe.mjs across conventional REST shapes
+  (consistent with the fixture's existing /orgs/:orgId/members pattern).
+  functional: invitation lifecycle (create/list/revoke/accept), email sent
+  via the existing mock adapter, audit events on create+accept, cross-org
+  isolation (list/get/revoke denial across orgs), single-use enforcement
+  (revoked invite cannot be accepted; accepted invite cannot be reused),
+  last-admin self-demote/self-remove denial, UI presence (file-content scan
+  of apps/web/src for invitation references — no browser).
+  regression: existing login/me/members org-scoping unchanged.
+  security: admin-only invitation creation, auth-required listing, invalid
+  role / missing-field handling.
+  static: tsc --noEmit against the workspace's own tsconfig.
+  scope: contract-preservation proxy (regression all pass).
+  maintainability: TODO/FIXME/stub/placeholder scan over apps+packages src/.
