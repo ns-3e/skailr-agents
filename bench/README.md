@@ -81,7 +81,7 @@ so npm forwards them.
 
 | Flag | Meaning | Default |
 |---|---|---|
-| `--task <id>` | task to run (`patch-webhook`, `feature-api-keys`, `program-rbac`) | required |
+| `--task <id>` | task to run (`patch-webhook`, `feature-api-keys`, `program-rbac`) | all tasks in `tasks/` if omitted |
 | `--variant baseline\|skailr` | run a single arm | both arms |
 | `--skailr-ref <git-ref>` | ref the `skailr` arm installs from | — |
 | `--reps <n>` | repetitions per arm | `config.defaults.repetitions` (5) |
@@ -122,6 +122,30 @@ Asserts no grader path is reachable from any fixture. Optional positional
 Kernel + harness unit tests, `node:test`/`node:assert` only. ~188 tests pass on
 a clean tree; after a real campaign `node --test` also discovers the fixtures'
 visible tests inside persisted `results/<id>/workspace/` snapshots (also green).
+
+## Running real campaigns in CI (self-hosted)
+
+Real (non-mock) runs launch Claude Code headless with `--dangerously-skip-permissions`,
+which the CLI refuses under root — so they can't run in the default root container.
+The [`bench-smoke` workflow](../.github/workflows/bench-smoke.yml)
+(`workflow_dispatch`) runs a real campaign on a **self-hosted, non-root runner**
+and pushes the results to `main`:
+
+1. Runs a smoke campaign — 1 rep × all tasks × both arms (baseline + skailr@ref).
+2. Runs `scripts/publish-campaign.mjs` to distill raw runs into committable
+   stats/metrics under [`benchmarks/`](benchmarks/) (`SUMMARY.md`, `report.*`,
+   `aggregate.json`, `meta.json`, `runs/<run_id>.json`).
+3. Commits + pushes the campaign to `main`.
+
+**Auth is a Claude Code subscription token, not an API key:** run
+`claude setup-token` on an authenticated machine and store the value as the repo
+secret `CLAUDE_CODE_OAUTH_TOKEN` (or `claude login` on the runner). Inputs let
+you set `skailr_ref` (default `HEAD` = latest `main`), `reps`, and
+`max_campaign_usd`. Runner must have Node 22 + a matching `claude` CLI on PATH
+and must **not** run as root.
+
+To publish a campaign you ran elsewhere: `node scripts/publish-campaign.mjs
+--results-dir <dir>` writes into `benchmarks/<timestamp>-<series>/`.
 
 ## Architecture
 

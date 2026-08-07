@@ -652,15 +652,21 @@ async function main() {
   const arms = args.variant ? [args.variant] : ["baseline", "skailr"];
 
   const { parseYaml } = await import("./lib/yaml.mjs");
-  const taskPath = path.join(BENCH_ROOT, "tasks", `${args.task}.yaml`);
-  const task = parseYaml(fs.readFileSync(taskPath, "utf8"));
+  const tasksDir = path.join(BENCH_ROOT, "tasks");
+  // --task <id> runs one task; omitting it runs every task in tasks/ (the
+  // whole suite — this is what `--smoke` means in FR-11: "1 rep/task").
+  const taskIds = args.task
+    ? [args.task]
+    : fs.readdirSync(tasksDir).filter((f) => f.endsWith(".yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
+  if (taskIds.length === 0) throw new Error(`no tasks found in ${tasksDir}`);
+  const tasks = taskIds.map((id) => parseYaml(fs.readFileSync(path.join(tasksDir, `${id}.yaml`), "utf8")));
 
   const results = await runCampaign({
-    tasks: [task], arms, reps: args.reps, smoke: args.smoke,
+    tasks, arms, reps: args.reps, smoke: args.smoke,
     maxCampaignUsd: args.maxCampaignUsd ?? 100, parallel: args.parallel,
     config, skailrRef: args.skailrRef || "HEAD", mock,
   });
-  console.log(`bench: completed ${results.length} runs. See bench/results/<run_id>/run.json`);
+  console.log(`bench: completed ${results.length} runs across ${taskIds.length} task(s) [${taskIds.join(", ")}]. See bench/results/<run_id>/run.json`);
 }
 
 function getLiveEnvSafe() {
