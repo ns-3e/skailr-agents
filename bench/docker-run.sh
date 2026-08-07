@@ -38,6 +38,13 @@ docker build \
 
 mkdir -p "$OUT_DIR"
 
+# Quote each forwarded arg for safe re-injection into the container's shell
+# command below (needed because we chain bench + publish in one `bash -c`).
+BENCH_ARGS=""
+for a in "$@"; do
+  BENCH_ARGS="$BENCH_ARGS $(printf '%q' "$a")"
+done
+
 echo "Running campaign in a disposable container (host repo mounted read-only)..."
 docker run --rm \
   -e CLAUDE_CODE_OAUTH_TOKEN \
@@ -45,6 +52,6 @@ docker run --rm \
   -v "$REPO_ROOT:/repo:ro" \
   -v "$OUT_DIR:/out" \
   "$IMAGE" \
-  npm run bench -- "$@"
+  bash -c "npm run bench --$BENCH_ARGS && node scripts/publish-campaign.mjs"
 
 echo "Done. Results in $OUT_DIR/{results,benchmarks}"
