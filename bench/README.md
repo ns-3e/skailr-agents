@@ -148,6 +148,28 @@ pre-existing `claude login` session. Inputs let you set `skailr_ref` (default
 To publish a campaign you ran elsewhere: `node scripts/publish-campaign.mjs
 --results-dir <dir>` writes into `benchmarks/<timestamp>-<series>/`.
 
+## Running real campaigns locally (Docker)
+
+To run a real campaign on your own machine without exposing the host to
+`--dangerously-skip-permissions`, use [`docker-run.sh`](docker-run.sh). It
+builds a disposable, non-root container (Node 22 + the pinned `claude` CLI),
+mounts the host repo **read-only**, copies it into the container's own
+throwaway filesystem, and runs there — the agent can never write back to your
+host except through the one `bench-docker-out/` output folder the script
+mounts explicitly.
+
+```bash
+# Spend-free dry run — proves the setup works, no token, no model spend.
+BENCH_MOCK=1 bench/docker-run.sh -- --task patch-webhook --reps 1
+
+# Real run — needs a subscription token (claude setup-token), not an API key.
+CLAUDE_CODE_OAUTH_TOKEN=<value> bench/docker-run.sh -- --task patch-webhook --smoke --reps 1
+```
+
+Results land in `bench-docker-out/{results,benchmarks}/` on the host
+(gitignored). Requires Docker Desktop (or another Docker daemon) running
+locally.
+
 ## Architecture
 
 ### Tree

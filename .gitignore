@@ -21,3 +21,6 @@ examples/parallel-api/stubs/
 # Local audit working papers (not shipped, not tracked)
 docs/audits/
 .skailr/
+
+# bench/docker-run.sh output — regenerated per local run, never committed.
+/bench-docker-out/
