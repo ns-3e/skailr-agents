@@ -6,6 +6,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import {
   installArm, InstallArmError, runOne, runCampaign, estimateWorstCaseUsd, checkoutFixture, captureDiff,
+  extractSkailrDiagnostics, assertContainerSupported,
 } from "./run.mjs";
 import { regradeRun } from "./grade.mjs";
 import { loadConfig } from "./lib/config.mjs";
@@ -72,6 +73,54 @@ test("installArm: skailr materializes .claude/ pack from this repo at ref, resol
   assert.equal(res.artifacts_root, path.join(ws, ".claude"));
   assert.equal(fs.existsSync(path.join(ws, ".claude")), true);
   assert.equal(fs.existsSync(path.join(ws, "bench")), false);
+});
+
+test("MSG-007 installArm fidelity: skailr arm ships exactly the install.sh set, NEVER .claude/experts or bench/**", async () => {
+  const ws = mkTmp("ws-fidelity");
+  const res = await installArm("skailr", "HEAD", ws);
+  // Present: root CLAUDE.md + scripts + the shipped .claude subtrees.
+  for (const p of ["CLAUDE.md", "scripts/skailr", "scripts/hooks", ".claude/agents", ".claude/commands",
+    ".claude/teams/registry.md", ".claude/skills", ".claude/program/schemas",
+    ".claude/program/channels/PROTOCOL.md", ".claude/settings.skailr.json", ".claude/intake.md"]) {
+    assert.equal(fs.existsSync(path.join(ws, p)), true, `expected shipped path ${p}`);
+  }
+  // Empty runtime dirs created.
+  for (const d of [".claude/tmp", ".claude/program", ".claude/repo"]) {
+    assert.equal(fs.existsSync(path.join(ws, d)), true, `expected empty dir ${d}`);
+  }
+  // NEVER shipped: consumer roster, bench harness, source runtime program docs.
+  assert.equal(fs.existsSync(path.join(ws, ".claude/experts")), false, "must NOT ship .claude/experts");
+  assert.equal(fs.existsSync(path.join(ws, "bench")), false, "must NOT copy bench/**");
+  assert.equal(fs.existsSync(path.join(ws, ".claude/program/ledger.md")), false, "must NOT ship source program runtime");
+  assert.equal(fs.existsSync(path.join(ws, ".claude/program/plan.md")), false);
+  assert.ok(res.installed_paths instanceof Set && res.installed_paths.size > 0);
+  assert.ok(![...res.installed_paths].some((p) => p.startsWith(".claude/experts") || p.startsWith("bench/")));
+});
+
+test("MSG-007 diagnostics floor: a freshly-installed skailr workspace with NO agent artifacts yields all-zero diagnostics (no shipped-doc floor)", async () => {
+  const ws = mkTmp("ws-diagfloor");
+  const res = await installArm("skailr", "HEAD", ws);
+  const runDir = mkTmp("rundir-diag");
+  const diag = extractSkailrDiagnostics(ws, runDir, res.installed_paths);
+  assert.deepEqual(diag, {
+    agents_spawned: 0, inter_agent_messages: 0, blockers: 0,
+    contract_events: 0, gate_failures: 0, validator_findings: 0,
+  });
+  // A net-new agent artifact IS counted (proves it's not just returning zeros).
+  fs.writeFileSync(path.join(ws, ".claude/program/ledger.md"), "type: blocker\ntype: contract-change\n");
+  const diag2 = extractSkailrDiagnostics(ws, mkTmp("rundir-diag2"), res.installed_paths);
+  assert.ok(diag2.inter_agent_messages > 0 && diag2.contract_events > 0);
+});
+
+test("FR-1 container_image fail-fast: non-null container_image refuses to start the campaign", async () => {
+  const config = { ...loadConfig(), container_image: "ghcr.io/example/img:1" };
+  assert.throws(() => assertContainerSupported(config), /container execution is not implemented in V1/);
+  const { dir, sha } = mkGitFixture();
+  const task = baseTask({ fixtureDir: dir, sha });
+  await assert.rejects(
+    () => runCampaign({ tasks: [task], reps: 1, config, mock: true }),
+    /container execution is not implemented in V1/
+  );
 });
 
 test("installArm: bad ref throws InstallArmError with code bad_ref", async () => {

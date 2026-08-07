@@ -59,12 +59,27 @@ export async function installArm(arm, ref, workspace, opts = {}) {
     throw new InstallArmError(`installArm: bad ref "${ref}" in ${skailrRepoRoot}: ${err.message}`, "bad_ref");
   }
 
+  let installed_paths;
   try {
-    // git archive <sha> .claude | tar -x -C <workspace>  — archives ONLY the
-    // .claude/ pack subtree; bench/** is never touched (satisfies the
-    // "MUST NOT copy any bench/** into workspace" invariant by construction:
-    // the archive path scope excludes it entirely, not by post-hoc filtering).
-    const archiveProc = spawnSync("git", ["-C", skailrRepoRoot, "archive", sha, ".claude"], {
+    // Materialize EXACTLY what install.sh ships (MSG-007 fidelity), archived at
+    // the pinned sha and piped to tar. Allowlist ONLY — so bench/** is never
+    // copied (invariant holds by construction), `.claude/experts/` (consumer
+    // roster) is NEVER shipped, and the source repo's own `.claude/program/`
+    // runtime (ledger/brief/plan/contracts/workstreams + non-template channel
+    // content) and `.claude/tmp/` contents are excluded. Empty tmp/program/repo
+    // dirs are created afterward (install.sh does `mkdir`).
+    const pathspecs = [
+      "CLAUDE.md",
+      "scripts/skailr", "scripts/hooks",
+      ".claude/agents", ".claude/commands", ".claude/teams/registry.md", ".claude/skills",
+      ".claude/program/schemas",
+      ".claude/program/channels/PROTOCOL.md",
+      ".claude/program/channels/program.md",
+      ".claude/program/channels/feature.md",
+      ".claude/settings.skailr.json", ".claude/intake.md", ".claude/model-routing.json",
+    ].filter((p) => execFileSync("git", ["-C", skailrRepoRoot, "ls-tree", sha, "--", p], { encoding: "utf8" }).trim() !== "");
+
+    const archiveProc = spawnSync("git", ["-C", skailrRepoRoot, "archive", sha, "--", ...pathspecs], {
       maxBuffer: 1024 * 1024 * 256,
     });
     if (archiveProc.status !== 0 || archiveProc.error) {
@@ -77,6 +92,17 @@ export async function installArm(arm, ref, workspace, opts = {}) {
     if (tarProc.status !== 0 || tarProc.error) {
       throw new Error((tarProc.stderr || tarProc.error?.message || "unknown tar extract failure").toString());
     }
+
+    // Empty runtime dirs (install.sh mkdir -p) — created, never populated.
+    for (const d of [".claude/tmp", ".claude/program", ".claude/repo"]) ensureDir(path.join(workspace, d));
+
+    // Exact shipped-pack file set (repo-relative == workspace-relative), so the
+    // diagnostics extractor can exclude these git-tracked docs and count only
+    // agent-produced artifacts (MSG-007 diagnostics floor).
+    installed_paths = new Set(
+      execFileSync("git", ["-C", skailrRepoRoot, "ls-tree", "-r", "--name-only", sha, "--", ...pathspecs], { encoding: "utf8" })
+        .split("\n").map((s) => s.trim()).filter(Boolean)
+    );
   } catch (err) {
     throw new InstallArmError(`installArm: archive failed for ref "${ref}" (sha ${sha}): ${err.message}`, "archive_failed");
   }
@@ -89,7 +115,7 @@ export async function installArm(arm, ref, workspace, opts = {}) {
     skailr_version = sha.slice(0, 10); // fallback: short sha, always available
   }
 
-  return { arm, installed: true, skailr_sha: sha, skailr_version, artifacts_root: path.join(workspace, ".claude") };
+  return { arm, installed: true, skailr_sha: sha, skailr_version, artifacts_root: path.join(workspace, ".claude"), installed_paths };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,7 +196,7 @@ export function runVisibleTests(workspace) {
  * source per brief — this is the "artifacts" side; OTel resource attrs are
  * the fallback (telemetry.mjs), not implemented as a second counter here
  * since no live OTel sample exists yet (see telemetry.mjs top comment). */
-export function extractSkailrDiagnostics(workspace, runDir) {
+export function extractSkailrDiagnostics(workspace, runDir, shippedPaths = new Set()) {
   const destRoot = path.join(runDir, "skailr-artifacts");
   const sources = [path.join(workspace, ".claude", "program"), path.join(workspace, ".claude", "tmp")];
   let copiedAny = false;
@@ -180,16 +206,23 @@ export function extractSkailrDiagnostics(workspace, runDir) {
     const dest = path.join(destRoot, path.basename(src));
     fs.cpSync(src, dest, { recursive: true });
   }
-  if (!copiedAny) {
-    return { agents_spawned: 0, inter_agent_messages: 0, blockers: 0, contract_events: 0, gate_failures: 0, validator_findings: 0 };
-  }
+  const zero = { agents_spawned: 0, inter_agent_messages: 0, blockers: 0, contract_events: 0, gate_failures: 0, validator_findings: 0 };
+  if (!copiedAny) return zero;
 
+  // Count ONLY agent-produced artifacts: scan the live workspace under
+  // .claude/program + .claude/tmp but EXCLUDE the git-tracked shipped-pack docs
+  // installArm materialized (channels/PROTOCOL.md, schemas/*, etc.). Counting
+  // those shipped `type:`/schema tokens created a false nonzero floor (MSG-007).
   let text = "";
-  for (const file of walkFiles(destRoot)) {
-    if (file.endsWith(".md") || file.endsWith(".json")) {
+  for (const src of sources) {
+    for (const file of walkFiles(src)) {
+      if (!(file.endsWith(".md") || file.endsWith(".json"))) continue;
+      const rel = path.relative(workspace, file);
+      if (shippedPaths.has(rel)) continue; // shipped pack doc — not agent signal
       try { text += fs.readFileSync(file, "utf8") + "\n"; } catch { /* unreadable, skip */ }
     }
   }
+  if (text === "") return zero;
   const count = (re) => (text.match(re) || []).length;
   return {
     agents_spawned: count(/^\|?\s*[\w-]+\s*(@\s*Task|dispatched)/gim) || count(/role:\s*\w/gim),
@@ -403,7 +436,7 @@ export async function runOne(opts) {
     try { markReadOnly(workspace); } catch { /* best-effort */ }
 
     stage("extract-skailr-diagnostics");
-    diagnostics = arm === "baseline" ? null : extractSkailrDiagnostics(workspace, runDir);
+    diagnostics = arm === "baseline" ? null : extractSkailrDiagnostics(workspace, runDir, installResult.installed_paths);
 
     stage("run-grader");
     try {
@@ -537,11 +570,24 @@ export function estimateWorstCaseUsd({ tasks, arms, reps, config }) {
   return total;
 }
 
+/** FR-1: config.container_image, if set, means "runs execute inside it" — but
+ * containerized execution is NOT implemented in V1. Rather than silently ignore
+ * the knob (a false isolation guarantee), fail fast at campaign start. Default
+ * config leaves it null (unaffected). */
+export function assertContainerSupported(config) {
+  if (config?.container_image != null) {
+    throw new Error(
+      `container_image set ("${config.container_image}") but container execution is not implemented in V1; unset it or run V2`
+    );
+  }
+}
+
 export async function runCampaign(opts) {
   const {
     tasks, arms = ["baseline", "skailr"], reps, smoke = false,
     maxCampaignUsd = 100, parallel = 1, config, rng,
   } = opts;
+  assertContainerSupported(config);
   const repsEff = smoke ? 1 : (reps ?? config.defaults.repetitions);
 
   const worstCase = estimateWorstCaseUsd({ tasks, arms, reps: repsEff, config });
