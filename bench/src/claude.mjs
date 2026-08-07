@@ -8,6 +8,20 @@
 //   --model <model>                exact model id (config.yaml "model")
 //   --output-format stream-json    NDJSON events on stdout (assumed correct;
 //                                   confirmed present in --help)
+//   --verbose                      REQUIRED alongside --print
+//                                   --output-format=stream-json — the CLI
+//                                   rejects that combination without it
+//                                   ("Error: When using --print,
+//                                   --output-format=stream-json requires
+//                                   --verbose"). Not documented next to
+//                                   --output-format in --help; only surfaced
+//                                   by actually invoking the CLI for real
+//                                   (first done 2026-08-07 via
+//                                   bench/docker-run.sh — every prior "real"
+//                                   run silently failed at CLI launch with
+//                                   termination_reason: nonzero_exit, 0
+//                                   model_requests, $0 cost, before this was
+//                                   added).
 //   --max-budget-usd <amount>      hard $ spend cap for this invocation
 //   --session-id <uuid>            pin session id for stream-json correlation
 //   --dangerously-skip-permissions bypass all permission prompts — required
@@ -146,6 +160,7 @@ export async function invokeClaude(opts) {
     "-p", prompt,
     "--model", model,
     "--output-format", "stream-json",
+    "--verbose",
     "--session-id", sessionId,
     "--dangerously-skip-permissions",
   ];
