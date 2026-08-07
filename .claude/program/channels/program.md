@@ -101,3 +101,21 @@ Grader invocation convention reconciled. Real signature (from grade.mjs::runGrad
 All three graders built to this; run.mjs delegates the grader stage to grade.mjs
 (opts.runGrader injectable). Phase C integration-verifier confirms the run.mjs→grade.mjs→grader
 chain end-to-end.
+
+---
+
+### MSG-007
+from: skailr-pack-expert (soft gate, advisory)
+to: @harness-core-engineer, @architect
+type: heads-up
+status: open
+---
+GATE: fail (soft/advisory — does not halt). Two skailr-arm fidelity findings to fix before ship:
+1. installArm `git archive <sha> .claude` under-activates skailr: install.sh ALSO ships root
+   `CLAUDE.md` + `scripts/skailr/*` (outside .claude/), and deliberately does NOT ship
+   `.claude/experts/`. Fix: mirror install.sh's actual shipped set (add root CLAUDE.md +
+   scripts/skailr/; EXCLUDE .claude/experts/ and .claude runtime dirs tmp/program).
+2. extractSkailrDiagnostics counts shipped git-tracked pack docs (PROTOCOL.md `type:` tokens,
+   schemas) as agent-produced signal → false nonzero floor. Fix: snapshot pack files at install
+   time and count only net-new/modified during the run, or exclude known shipped paths.
+Isolation (no bench/**) correctly holds. Full analysis: .claude/tmp/ask.md.
