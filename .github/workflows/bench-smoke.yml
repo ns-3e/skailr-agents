@@ -1,22 +1,20 @@
 name: bench-smoke (real A/B campaign)
 
 # Runs a REAL smoke benchmark campaign (1 rep × all tasks × both arms:
-# baseline Claude Code vs. Claude Code + Skailr@ref) on a SELF-HOSTED runner,
-# then publishes the stats/metrics into bench/benchmarks/ and pushes to main.
+# baseline Claude Code vs. Claude Code + Skailr@ref) on a GitHub-hosted
+# runner, then publishes the stats/metrics into bench/benchmarks/ and
+# pushes to main.
 #
-# Auth: uses a Claude Code SUBSCRIPTION token (CLAUDE_CODE_OAUTH_TOKEN secret),
-# NOT an Anthropic API key. Generate one on an authenticated machine with
+# Auth: uses a Claude Code SUBSCRIPTION token (CLAUDE_CODE_OAUTH_TOKEN
+# secret), NOT an Anthropic API key. Generate one on an authenticated
+# machine with
 #   claude setup-token
-# and store it as the repo secret CLAUDE_CODE_OAUTH_TOKEN. (Alternatively, a
-# self-hosted runner already logged in via `claude login` works without the
-# secret.)
+# and store it as the repo secret CLAUDE_CODE_OAUTH_TOKEN — required, since
+# a GitHub-hosted runner has no pre-existing `claude login` session.
 #
-# Runner requirements:
-#   - self-hosted, Linux, label `self-hosted` (adjust `runs-on` for your fleet)
-#   - NOT running as root — Claude Code refuses --dangerously-skip-permissions
-#     under root; the harness needs that flag for headless runs
-#   - Node 22.x and the `claude` CLI (version must match bench/config.yaml) on PATH
-#   - git available
+# Runner: ubuntu-latest (GitHub-hosted). Node 22.x and the `claude` CLI
+# (pinned to bench/config.yaml's claude_code_version) are installed by this
+# workflow; the harness verifies the live versions match at run time.
 
 on:
   workflow_dispatch:
@@ -43,7 +41,7 @@ permissions:
 
 jobs:
   campaign:
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
       # Claude Code subscription auth — NOT an API key.
@@ -55,17 +53,28 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install claude CLI pinned to bench/config.yaml's claude_code_version
+        run: |
+          set -euo pipefail
+          version=$(grep -m1 '^claude_code_version:' bench/config.yaml | sed -E 's/^claude_code_version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')
+          echo "Installing @anthropic-ai/claude-code@${version}"
+          npm install -g "@anthropic-ai/claude-code@${version}"
+
       - name: Preflight — not root, tools present, versions match pinned config
         run: |
           set -euo pipefail
           if [ "$(id -u)" = "0" ]; then
-            echo "::error::Runner is root. Claude Code refuses --dangerously-skip-permissions as root; run the self-hosted runner as a non-root user."
+            echo "::error::Runner is root. Claude Code refuses --dangerously-skip-permissions as root."
             exit 1
           fi
           command -v node >/dev/null || { echo "::error::node not found on runner"; exit 1; }
           command -v claude >/dev/null || { echo "::error::claude CLI not found on runner"; exit 1; }
-          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ ! -d "$HOME/.claude" ]; then
-            echo "::error::No CLAUDE_CODE_OAUTH_TOKEN secret and runner not logged in (~/.claude missing). Set the secret via 'claude setup-token' or run 'claude login' on the runner."
+          if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+            echo "::error::CLAUDE_CODE_OAUTH_TOKEN secret is not set. Generate one via 'claude setup-token' and store it as a repo secret."
             exit 1
           fi
           echo "node: $(node --version)"
