@@ -7,13 +7,7 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: "22"
+    runs-on: self-hosted
 
       - name: Lint all workflow files (would have caught the 3399d14 YAML break on day one)
         run: |
