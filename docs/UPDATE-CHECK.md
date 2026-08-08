@@ -91,6 +91,13 @@ Everything else is silent: not due, opted out, no marker, offline, malformed res
 
 ### Upgrading from ≤ 1.12.1
 
+> **1.14.0 note:** the `autoupdate-stop-hook` migration below was removed in 1.14.0. Hooks
+> (including `check-update.mjs`'s Stop entry) now live in `.claude/settings.json` — the only
+> settings filename Claude Code actually auto-loads — which every install/upgrade always
+> copies from the pack, so the hook reaches your project unconditionally and no migration is
+> needed. This section is kept as an accurate historical record of what upgrading through
+> 1.13.0 did.
+
 `install.sh` still never overwrites an existing `.claude/settings.skailr.json` — so, exactly as with telemetry in 1.12.0, two additive install migrations carry the new default into your existing file on your next upgrade, and print the lines they changed:
 
 | Migration | What it does |

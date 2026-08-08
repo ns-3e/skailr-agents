@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.14.0] — 2026-08-08
+
+### Fixed
+
+- **Hooks were never loading, in any install, ever.** Hooks lived in `.claude/settings.skailr.json` — a filename Claude Code does not auto-load (only `.claude/settings.json`, `.claude/settings.local.json`, and `~/.claude/settings.json` are recognized). Every hook this pack has shipped, including 1.13.0's `check-update.mjs` Stop entry, silently never fired in any real run. Root-caused via a session-init event carrying no `hooks` field at all, confirmed against Claude Code's own settings docs, and verified by direct evidence from two live campaign runs whose Stop-hook marker files were absent despite matching finding data. **Fix:** hooks now live in `.claude/settings.json`, which every install/upgrade always copies from the pack (the same treatment as `CLAUDE.md` and `model-routing.json`) — no migration needed, since it reaches every project unconditionally. `.claude/settings.skailr.json` keeps its original, narrower job: the `telemetry`/`autoUpdate` toggles, still preserved across upgrades. Verified live with `--include-hook-events`: `UserPromptSubmit` and all four `Stop` hooks now fire and exit 0. The now-permanently-obsolete `autoupdate-stop-hook` migration (its premise — hooks living in the preserve-on-upgrade `settings.skailr.json` — no longer holds) and the tests that existed only to cover it were removed; see [docs/UPDATE-CHECK.md](docs/UPDATE-CHECK.md#upgrading-from--1121) for the historical record of what it did through 1.13.0.
+- `package.json`'s npm `files` whitelist omitted `.claude/settings.json` entirely, so `npx skailr-agents` installs would have shipped the hooks-fix file to nobody. Fixed and verified with `npm pack --dry-run`.
+
+### Added
+
+- **`check-phase-tracking.mjs`, a new Stop hook enforcing the `track-phase` skill's DB-writing instruction mechanically instead of by prose.** `.claude/skills/track-phase/SKILL.md` asks the orchestrator to record every phase transition in `scripts/skailr/skailr.db` (`node:sqlite`) and render it into `ledger.md`/`progress.md` — but a real program-scale run showed those files' Phases tables advancing well past "pending" while the DB's `programs`/`features` tables stayed completely empty, because a rendered markdown file and the DB it's supposed to be generated from can silently drift once nothing enforces the write. The new hook compares the two on every `Stop` and blocks once, with the exact catch-up `db.mjs` calls to run, if a phase transition landed in markdown but never reached the DB — the same enforcement pattern 1.13.0-era `check-blocking-findings.mjs` already used for the validate→fix loop, and subject to the same one-block-per-run bound.
+
 ## [1.13.0] — 2026-08-05
 
 ### Added
