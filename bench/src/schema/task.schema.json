@@ -18,7 +18,8 @@
       "additionalProperties": false,
       "properties": {
         "max_turns": { "type": "integer" },
-        "max_budget_usd": { "type": "number" }
+        "max_budget_usd": { "type": "number" },
+        "wall_clock_timeout_min": { "type": "number" }
       }
     },
     "setup": { "type": "array", "items": { "type": "string" } },

@@ -413,7 +413,7 @@ export async function runOne(opts) {
     const env = buildTelemetryEnv({ task_id: task.id, arm, run_id, skailr_version: installResult.skailr_version });
     const maxBudgetUsd = task.limits?.max_budget_usd ?? config.defaults.max_budget_usd;
     const maxTurns = task.limits?.max_turns ?? config.defaults.max_turns;
-    const timeoutMs = (config.defaults.wall_clock_timeout_min || 45) * 60 * 1000;
+    const timeoutMs = (task.limits?.wall_clock_timeout_min ?? config.defaults.wall_clock_timeout_min ?? 45) * 60 * 1000;
     try {
       claudeResult = await invokeClaude({
         prompt: task.prompt, model: config.model, cwd: workspace, runDir,
