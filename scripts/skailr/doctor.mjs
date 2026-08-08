@@ -63,6 +63,7 @@ function main() {
     "CLAUDE.md",
     ".claude/teams/registry.md",
     ".claude/model-routing.json",
+    ".claude/settings.json",
     ".claude/settings.skailr.json",
     ".claude/program/channels/PROTOCOL.md",
     ".claude/program/channels/program.md",

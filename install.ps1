@@ -206,8 +206,7 @@ function Install-Cursor {
 # parentheses beyond its own delimiters — doctor's extractor drops anything else.
 $SkailrMigrations = @(
     "telemetry-enabled-default",
-    "autoupdate-enabled-default",
-    "autoupdate-stop-hook"
+    "autoupdate-enabled-default"
 )
 
 # Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk

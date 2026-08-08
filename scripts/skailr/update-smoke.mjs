@@ -49,7 +49,6 @@ const CLI = join(HERE, "check-update.mjs");
 const REL = ".claude/settings.skailr.json";
 const STATE = ".skailr/update-check.json";
 const MARKER = ".skailr/installed-version.json";
-const HOOK_CMD = "node scripts/skailr/check-update.mjs 2>/dev/null || true";
 const DAY = 86_400_000;
 
 // ---------- harness ----------
@@ -739,13 +738,12 @@ const applyMig = (id, dir, pre = [REL]) => runMigration(migOf(id), dir, pre);
  *  contractual is: no write, and a non-failed status. */
 const isNoWrite = (r) => (r.status === "noop" || r.status === "skipped") && r.status !== "failed";
 const bytesOf = (dir) => readAt(dir, REL);
-const hookEntries = (dir) => jsonAt(dir, REL).hooks.Stop[0].hooks;
 
 {
   const n = "AC-11 migration ids exist, in order, and survive doctor's token filter";
   const ids = MIGRATIONS.map((m) => m.id);
   assert(
-    ids.join(",") === "telemetry-enabled-default,autoupdate-enabled-default,autoupdate-stop-hook",
+    ids.join(",") === "telemetry-enabled-default,autoupdate-enabled-default",
     n,
     `id order is [${ids}]`
   );
@@ -805,141 +803,25 @@ for (const weird of ['"yes"', "7", "null", "[]"]) {
   ok(n);
 }
 
-// -- autoupdate-stop-hook ----------------------------------------------------
 {
-  const n = "AC-11 hook appended exactly once; existing entries untouched and in order";
-  const dir = seed({ settings: settingsFixture({ enabled: true }) });
-  const before = hookEntries(dir).map((e) => JSON.stringify(e));
-  const r = applyMig("autoupdate-stop-hook", dir);
-  assert(r.status === "applied" && r.reason === "hook-appended", n, JSON.stringify(r));
-  const after = hookEntries(dir);
-  assert(after.length === before.length + 1, n, `expected ${before.length + 1} entries, got ${after.length}`);
-  assert(
-    after.slice(0, before.length).map((e) => JSON.stringify(e)).join("|") === before.join("|"),
-    n,
-    "pre-existing entries were mutated or reordered"
-  );
-  assert(after[after.length - 1].type === "command", n, "appended entry is not a command hook");
-  assert(after[after.length - 1].command === HOOK_CMD, n, `command was ${after[after.length - 1].command}`);
-  assert(jsonAt(dir, REL).telemetry.enabled === true, n, "unrelated keys lost");
-  ok(n);
-}
-{
-  const n = "AC-11 IDEMPOTENT: run 2× and 3× → byte-identical, already-wired";
-  const dir = seed({ settings: settingsFixture({ enabled: true }) });
-  assert(applyMig("autoupdate-stop-hook", dir).status === "applied", n, "first run did not apply");
-  const afterFirst = bytesOf(dir);
-  const second = applyMig("autoupdate-stop-hook", dir);
-  assert(isNoWrite(second) && second.reason === "already-wired", n, JSON.stringify(second));
-  assert(afterFirst.equals(bytesOf(dir)), n, "second run changed bytes");
-  const third = applyMig("autoupdate-stop-hook", dir);
-  assert(isNoWrite(third) && afterFirst.equals(bytesOf(dir)), n, "third run drifted");
-  assert(hookEntries(dir).filter((e) => e.command.includes("check-update.mjs")).length === 1, n, "duplicated");
-  ok(n);
-}
-{
-  const n = "AC-11 full upgrade pass (both ids, twice) is byte-stable";
-  const dir = seed({ settings: settingsFixture(undefined) });
-  for (const id of ["autoupdate-enabled-default", "autoupdate-stop-hook"]) applyMig(id, dir);
-  const afterFirst = bytesOf(dir);
-  const second = ["autoupdate-enabled-default", "autoupdate-stop-hook"].map((id) => applyMig(id, dir));
-  assert(second.every(isNoWrite), n, JSON.stringify(second));
-  assert(afterFirst.equals(bytesOf(dir)), n, "a second full pass changed the file");
-  const after = jsonAt(dir, REL);
-  assert(after.autoUpdate.enabled === true, n, "flag missing after the pass");
-  assert(after.hooks.Stop[0].hooks.length === 3, n, "hook count drifted");
-  ok(n);
-}
-{
-  const n = "AC-11 a consumer's own check-update.mjs wiring blocks any append";
-  const hooks = BASE_HOOKS();
-  hooks.Stop[0].hooks.push({ type: "command", command: "node ./scripts/skailr/check-update.mjs --target . || true" });
-  const dir = seed({ settings: settingsFixture({ enabled: true }, hooks) });
+  const n = "AC-11 root not an object → unsafe no-op";
+  const dir = seed({ settings: "[1,2,3]\n" });
   const before = bytesOf(dir);
-  const r = applyMig("autoupdate-stop-hook", dir);
-  assert(isNoWrite(r) && r.reason === "already-wired", n, JSON.stringify(r));
-  assert(before.equals(bytesOf(dir)), n, "appended despite existing wiring");
-  ok(n);
-}
-{
-  const n = "AC-11 a consumer's own check-update wiring in a SECOND Stop block also blocks";
-  const hooks = BASE_HOOKS();
-  hooks.Stop.push({ matcher: "Task", hooks: [{ type: "command", command: "node check-update.mjs" }] });
-  const dir = seed({ settings: settingsFixture({ enabled: true }, hooks) });
-  const before = bytesOf(dir);
-  const r = applyMig("autoupdate-stop-hook", dir);
-  assert(isNoWrite(r) && r.reason === "already-wired", n, JSON.stringify(r));
-  assert(before.equals(bytesOf(dir)), n, "appended despite wiring in another block");
-  ok(n);
-}
-{
-  const n = "AC-11 consumer-added third-party entries survive verbatim and in order";
-  const custom = { type: "command", command: "node tools/my-own-hook.mjs --loud" };
-  const hooks = BASE_HOOKS();
-  hooks.Stop[0].hooks.push(custom);
-  hooks.Stop.push({ matcher: "Task", hooks: [{ type: "command", command: "echo other-block" }] });
-  const dir = seed({ settings: settingsFixture({ enabled: true }, hooks) });
-  const r = applyMig("autoupdate-stop-hook", dir);
-  assert(r.status === "applied", n, JSON.stringify(r));
-  const after = jsonAt(dir, REL).hooks.Stop;
-  assert(JSON.stringify(after[0].hooks[2]) === JSON.stringify(custom), n, "third-party entry moved or changed");
-  assert(after[0].hooks[3].command === HOOK_CMD, n, "ours was not appended last");
-  assert(JSON.stringify(after[1]) === JSON.stringify(hooks.Stop[1]), n, "the second Stop block changed");
-  // and it stays put on the re-run
-  applyMig("autoupdate-stop-hook", dir);
-  assert(
-    JSON.stringify(jsonAt(dir, REL).hooks.Stop[0].hooks[2]) === JSON.stringify(custom),
-    n,
-    "third-party entry lost on the re-run"
-  );
-  ok(n);
-}
-for (const [label, hooks, reason] of [
-  ["hooks deleted", undefined, "no-container"],
-  ["hooks not an object", "nope", "no-container"],
-  ["Stop absent", { PreToolUse: [] }, "no-container"],
-  ["Stop empty", { Stop: [] }, "no-container"],
-  ["Stop not an array", { Stop: {} }, "no-container"],
-  ["only a matcher'd block", { Stop: [{ matcher: "Task", hooks: [] }] }, "no-default-block"],
-  ["block with no hooks array", { Stop: [{ matcher: "" }] }, "no-default-block"],
-]) {
-  const n = `AC-11 ${label} → ${reason}, no resurrection`;
-  const body =
-    JSON.stringify(
-      { "//autoUpdate": "x", autoUpdate: { enabled: true }, ...(hooks === undefined ? {} : { hooks }) },
-      null,
-      2
-    ) + "\n";
-  const dir = seed({ settings: body });
-  const before = bytesOf(dir);
-  const r = applyMig("autoupdate-stop-hook", dir);
-  assert(r.status === "skipped" && r.reason === reason, n, JSON.stringify(r));
-  assert(before.equals(bytesOf(dir)), n, "container was resurrected or file rewritten");
-  ok(n);
-}
-{
-  const n = "AC-11 root not an object → unsafe no-op for both migrations";
-  for (const id of ["autoupdate-enabled-default", "autoupdate-stop-hook"]) {
-    const dir = seed({ settings: "[1,2,3]\n" });
-    const before = bytesOf(dir);
-    const r = applyMig(id, dir);
-    assert(r.status === "skipped" && r.reason === "non-object-container", n, `${id}: ${JSON.stringify(r)}`);
-    assert(before.equals(bytesOf(dir)), n, `${id} rewrote a non-object root`);
-  }
+  const r = applyMig("autoupdate-enabled-default", dir);
+  assert(r.status === "skipped" && r.reason === "non-object-container", n, JSON.stringify(r));
+  assert(before.equals(bytesOf(dir)), n, "rewrote a non-object root");
   ok(n);
 }
 {
   const n = "AC-11 fresh install / missing / unparseable → never written";
   const fresh = seed({ settings: settingsFixture(undefined) });
   const beforeFresh = bytesOf(fresh);
-  for (const id of ["autoupdate-enabled-default", "autoupdate-stop-hook"]) {
-    const r = applyMig(id, fresh, []); // not pre-existing = copied by this very run
-    assert(r.status === "skipped" && r.reason === "not-pre-existing", n, JSON.stringify(r));
-  }
+  const r1 = applyMig("autoupdate-enabled-default", fresh, []); // not pre-existing = copied by this very run
+  assert(r1.status === "skipped" && r1.reason === "not-pre-existing", n, JSON.stringify(r1));
   assert(beforeFresh.equals(bytesOf(fresh)), n, "a freshly copied file was touched");
 
   const gone = seed({ settings: undefined });
-  const r2 = applyMig("autoupdate-stop-hook", gone);
+  const r2 = applyMig("autoupdate-enabled-default", gone);
   assert(r2.status === "skipped" && r2.reason === "missing-file", n, JSON.stringify(r2));
 
   const broken = seed({ settings: '{ "autoUpdate": \n' });
@@ -957,15 +839,10 @@ for (const [label, hooks, reason] of [
     const dir = seed({ settings: readFileSync(shipped, "utf8") });
     const before = bytesOf(dir);
     const scalar = applyMig("autoupdate-enabled-default", dir);
-    const hook = applyMig("autoupdate-stop-hook", dir);
     assert(scalar.status === "noop" && scalar.reason === "explicit", n, JSON.stringify(scalar));
-    assert(isNoWrite(hook) && hook.reason === "already-wired", n, JSON.stringify(hook));
     assert(before.equals(bytesOf(dir)), n, "the shipped template would be rewritten on upgrade");
     const tpl = jsonAt(dir, REL);
     assert(tpl.autoUpdate && tpl.autoUpdate.enabled === true, n, "template does not default autoUpdate on");
-    const cmds = tpl.hooks.Stop[0].hooks.map((e) => e.command);
-    assert(cmds.filter((c) => c.includes("check-update.mjs")).length === 1, n, "template wiring is not exactly 1");
-    assert(cmds.some((c) => c === HOOK_CMD), n, `template command drifted: ${cmds}`);
     ok(n);
   }
 }

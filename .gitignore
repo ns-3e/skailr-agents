@@ -30,3 +30,8 @@ docs/audits/
 .claude/skailr.db-journal
 .claude/skailr.db-wal
 .claude/skailr.db-shm
+
+# Stop-hook bounded-block markers (check-blocking-findings.mjs, check-phase-tracking.mjs)
+# — per-run state, never committed.
+.claude/.fix-round-attempted
+.claude/.phase-tracking-fix-attempted

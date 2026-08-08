@@ -1,48 +1,11 @@
 {
   "//telemetry": "Key `telemetry` defaults to enabled here (\"telemetry\": { \"enabled\": true }), so span telemetry (scripts/skailr/emit-telemetry.mjs) is on out of the box regardless of whether a `.skailr/` dir exists at repo root. To opt out, set \"telemetry\": { \"enabled\": false }. See .claude/skills/emit-telemetry/SKILL.md and .claude/program/schemas/telemetry-event.schema.json. install.sh copies this file only if absent, so your override survives upgrades.",
   "//autoUpdate": "Key `autoUpdate` defaults to enabled here (\"autoUpdate\": { \"enabled\": true }), so scripts/skailr/check-update.mjs checks npm at most once per 24h and prints a one-line notice when a newer skailr-agents exists. It never upgrades anything. To opt out, set \"autoUpdate\": { \"enabled\": false }. install.sh copies this file only if absent, so your override survives upgrades.",
+  "//note": "Hooks used to live in this file and never fired — Claude Code doesn't auto-load custom-named settings files, only .claude/settings.json / .claude/settings.local.json / ~/.claude/settings.json. Hooks moved to .claude/settings.json (2026-08-08). This file keeps its original, narrower job: two consumer-preference toggles that install.sh preserves on upgrade rather than overwriting.",
   "autoUpdate": {
     "enabled": true
   },
   "telemetry": {
     "enabled": true
-  },
-  "//hooksStop": "The first three Stop commands are advisory (|| true — they never block). check-blocking-findings.mjs is the one exception: it enforces yolo.md Phase 6b / build-program.md Phase D2 (fix open validator blocking findings before finishing) mechanically, since two live campaign runs proved the prose-only version of that rule doesn't reliably fire. It self-bounds to one block per report via a marker file — see the script's own doc comment.",
-  "//hooksUserPromptSubmit": "route-prompt.mjs is advisory only (never blocks) — a cheap heuristic pass at CLAUDE.md's route-intake chooser table, injected fresh before the model reasons about the prompt, because a live campaign showed plain-prompt self-routing via CLAUDE.md alone does not reliably happen.",
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/skailr/validate-channels.mjs --dir .claude/program/channels 2>/dev/null || true; node scripts/skailr/validate-channels.mjs --tmp 2>/dev/null || true"
-          },
-          {
-            "type": "command",
-            "command": "node scripts/skailr/check-experts.mjs 2>/dev/null || true"
-          },
-          {
-            "type": "command",
-            "command": "node scripts/skailr/check-update.mjs 2>/dev/null || true"
-          },
-          {
-            "type": "command",
-            "command": "node scripts/skailr/check-blocking-findings.mjs"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/skailr/route-prompt.mjs"
-          }
-        ]
-      }
-    ]
   }
 }

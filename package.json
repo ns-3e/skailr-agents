@@ -33,6 +33,7 @@
     ".claude/program/channels/program.md",
     ".claude/program/channels/feature.md",
     ".claude/program/schemas",
+    ".claude/settings.json",
     ".claude/settings.skailr.json",
     ".claude/model-routing.json",
     ".claude/intake.md",

@@ -18,10 +18,15 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
+// Hooks live in .claude/settings.json — the only settings filename Claude Code
+// actually auto-loads (settings.skailr.json is a pack-only, non-recognized name
+// used solely for the autoUpdate/telemetry toggles; see .claude/settings.json's
+// own "//why-this-file" note for how this was discovered, 2026-08-08).
 const SETTINGS = ".claude/settings.skailr.json";
+const HOOKS_SETTINGS = ".claude/settings.json";
 const CHECK_UPDATE = "scripts/skailr/check-update.mjs";
 const HOOK_SUFFIX = "2>/dev/null || true";
-const IDS = ["autoupdate-enabled-default", "autoupdate-stop-hook"];
+const IDS = ["autoupdate-enabled-default"];
 
 function readText(p) {
   try {
@@ -39,6 +44,7 @@ export function autoUpdateChecks({ root, sh = "", ps1 = "", exported = [] }) {
   const rows = [];
   const push = (status, name, detail) => rows.push({ status, name, detail });
   const settingsText = readText(join(root, SETTINGS));
+  const hooksSettingsText = readText(join(root, HOOKS_SETTINGS));
   const hasScript = existsSync(join(root, CHECK_UPDATE));
 
   // EC-10: a pack checkout that predates this feature carries NO trace of it anywhere —
@@ -51,7 +57,8 @@ export function autoUpdateChecks({ root, sh = "", ps1 = "", exported = [] }) {
     sh.includes("check-update.mjs") ||
     ps1.includes("check-update.mjs") ||
     (settingsText !== null &&
-      (settingsText.includes("check-update.mjs") || /"autoUpdate"\s*:/.test(settingsText)));
+      (settingsText.includes("check-update.mjs") || /"autoUpdate"\s*:/.test(settingsText))) ||
+    (hooksSettingsText !== null && hooksSettingsText.includes("check-update.mjs"));
   if (!traces) {
     const why = "checkout predates the update-check feature (no autoUpdate artifacts)";
     push("SKIP", "autoupdate settings default", why);
@@ -90,18 +97,33 @@ export function autoUpdateChecks({ root, sh = "", ps1 = "", exported = [] }) {
   );
 
   // ---- Row 2: wiring parity (script + template hook entry + both installers) ----
+  // Hooks live in HOOKS_SETTINGS (.claude/settings.json), not SETTINGS — see the
+  // const declarations above. Parsed independently so a SETTINGS parse failure
+  // (row 1's concern) never masks a HOOKS_SETTINGS problem or vice versa.
+  let hooksParseErr = null;
+  let hooksSettings = null;
+  if (hooksSettingsText === null) hooksParseErr = `${HOOKS_SETTINGS}: unreadable or absent`;
+  else {
+    try {
+      const j = JSON.parse(hooksSettingsText);
+      if (!j || typeof j !== "object" || Array.isArray(j)) hooksParseErr = `${HOOKS_SETTINGS}: root is not an object`;
+      else hooksSettings = j;
+    } catch (e) {
+      hooksParseErr = `${HOOKS_SETTINGS}: unparseable JSON (${String(e.message || e)})`;
+    }
+  }
   const wErrs = [];
   if (!hasScript) wErrs.push(`${CHECK_UPDATE}: missing`);
-  if (parseErr) wErrs.push(parseErr);
+  if (hooksParseErr) wErrs.push(hooksParseErr);
   else {
-    const stop = settings.hooks && typeof settings.hooks === "object" ? settings.hooks.Stop : undefined;
+    const stop = hooksSettings.hooks && typeof hooksSettings.hooks === "object" ? hooksSettings.hooks.Stop : undefined;
     const commands = (Array.isArray(stop) ? stop : [])
       .flatMap((b) => (b && Array.isArray(b.hooks) ? b.hooks : []))
       .map((h) => (h && typeof h.command === "string" ? h.command : ""));
     const entry = commands.find((c) => c.includes(CHECK_UPDATE));
-    if (!entry) wErrs.push(`${SETTINGS}: no Stop hook entry whose command contains ${CHECK_UPDATE}`);
+    if (!entry) wErrs.push(`${HOOKS_SETTINGS}: no Stop hook entry whose command contains ${CHECK_UPDATE}`);
     else if (!entry.trimEnd().endsWith(HOOK_SUFFIX))
-      wErrs.push(`${SETTINGS}: check-update Stop hook must end with "${HOOK_SUFFIX}", got "…${entry.slice(-30)}"`);
+      wErrs.push(`${HOOKS_SETTINGS}: check-update Stop hook must end with "${HOOK_SUFFIX}", got "…${entry.slice(-30)}"`);
   }
   for (const id of IDS) if (!exported.includes(id)) wErrs.push(`migrate.mjs: does not export migration ${id}`);
   for (const [label, text] of [

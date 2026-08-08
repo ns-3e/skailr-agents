@@ -10,7 +10,7 @@ Usage: ./install.sh <target-project-path> [--claude-only|--cursor-only]
 
 Copies the packaged agent library into a project:
   .claude/agents/  .claude/commands/  .claude/teams/  .claude/skills/
-  .claude/program/schemas/  .claude/settings.skailr.json  .claude/intake.md
+  .claude/program/schemas/  .claude/settings.json  .claude/settings.skailr.json  .claude/intake.md
   CLAUDE.md (plain-chat intake for Claude Code)
   scripts/skailr/  scripts/hooks/
   .cursor/rules/   .cursor/commands/
@@ -109,6 +109,19 @@ install_claude() {
     cp "$f" "$TARGET/.claude/program/schemas/"
     echo "  + .claude/program/schemas/$(basename "$f")"
   done
+
+  # settings.json carries the pack's hooks — the ONLY settings filename Claude Code
+  # actually auto-loads (.claude/settings.json / .claude/settings.local.json /
+  # ~/.claude/settings.json; confirmed against the official docs 2026-08-08 after
+  # discovering hooks in settings.skailr.json had never fired in any run). Always
+  # kept in sync with the pack, same as CLAUDE.md and model-routing.json below —
+  # consumers who want their own hooks on top should use settings.local.json
+  # (gitignored, higher precedence, Claude Code merges it automatically) rather than
+  # hand-editing this file, which the next install/update will overwrite.
+  if [[ -f "$SCRIPT_DIR/.claude/settings.json" ]]; then
+    cp "$SCRIPT_DIR/.claude/settings.json" "$TARGET/.claude/settings.json"
+    echo "  + .claude/settings.json"
+  fi
 
   # Copy settings.skailr.json only if absent: it may carry a consumer's telemetry
   # enable/disable choice (optional `telemetry.enabled` key), which a blind overwrite
@@ -256,7 +269,6 @@ assert_roster_untouched() {
 SKAILR_MIGRATIONS=(
   telemetry-enabled-default
   autoupdate-enabled-default
-  autoupdate-stop-hook
 )
 
 # Additive-only upgrade migrations. Runs AFTER the copy phase (so it sees final on-disk
