@@ -3,7 +3,7 @@
 // declared "api" entrypoint) plus reflects on the declared "db" entrypoint
 // using only its EXISTING stable export (`listAuditEvents`) for the audit
 // check — never reaches into agent-defined internals by name.
-import { discoverCreate, list, getById, create, discoverRevoke, req } from "./lib/probe.mjs";
+import { discoverCreate, list, getById, create, discoverRevoke, req, extractField } from "./lib/probe.mjs";
 
 function pushCase(cases, id, ok, detail) {
   cases.push({ id, ok, detail: detail !== undefined ? String(detail).slice(0, 800) : undefined });
@@ -53,8 +53,10 @@ export async function runHiddenTests(base, { db, seeded }) {
   // --- creation shows the raw key once; also create a second key under org B ---
   const keyA = discovered;
   const rB = await create(base, discovered.basePath, sessAdminB, { name: "grader-key-orgB" });
-  const idB = rB.json?.id;
-  const rawKeyB = Object.entries(rB.json || {}).find(([k, v]) => typeof v === "string" && /key/i.test(k) && v !== idB)?.[1];
+  const idB = extractField(rB.json, /^(id|key_?id|api_?key_?id)$/i, { minLen: 1 }) || rB.json?.id;
+  const rawKeyB =
+    extractField(rB.json, /^(api_?key|key)$/i) ||
+    extractField(rB.json, /key/i, { excludeNameRe: /id/i });
   pushCase(hf, "hf-create-shows-raw-key-once", typeof keyA.rawKey === "string" && keyA.rawKey.length >= 12, `rawKey length=${keyA.rawKey?.length}`);
 
   // --- hash-not-exposed: list must never include raw key or hash-shaped value ---

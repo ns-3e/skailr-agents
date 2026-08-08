@@ -40,14 +40,33 @@ async function req(base, method, path, { token, body } = {}) {
   return { status: res.status, json, text };
 }
 
-function extractField(json, nameRe, { excludeNameRe, minLen = 12 } = {}) {
-  if (!json || typeof json !== "object") return undefined;
-  for (const [k, v] of Object.entries(json)) {
-    if (typeof v !== "string") continue;
-    if (excludeNameRe && excludeNameRe.test(k)) continue;
-    if (nameRe.test(k) && v.length >= minLen) return v;
+// Searches `json` for a string field matching `nameRe`, preferring shallower
+// matches: every key at the current depth is checked before descending into
+// any nested object/array. This tolerates response envelopes that group
+// fields under a named object (e.g. `{ key, api_key: { id, ... } }`) instead
+// of putting everything at the top level — both are valid API designs and
+// the grader must not assume one over the other. Bounded depth + cycle guard
+// (mirrors the read-only db scan in hidden-tests.mjs) so a pathological or
+// self-referential body can't hang the probe.
+function extractField(json, nameRe, { excludeNameRe, minLen = 12, maxDepth = 4 } = {}) {
+  const seen = new Set();
+  function walk(obj, depth) {
+    if (!obj || typeof obj !== "object" || depth > maxDepth || seen.has(obj)) return undefined;
+    seen.add(obj);
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v !== "string") continue;
+      if (excludeNameRe && excludeNameRe.test(k)) continue;
+      if (nameRe.test(k) && v.length >= minLen) return v;
+    }
+    for (const v of Object.values(obj)) {
+      if (v && typeof v === "object") {
+        const found = walk(v, depth + 1);
+        if (found !== undefined) return found;
+      }
+    }
+    return undefined;
   }
-  return undefined;
+  return walk(json, 0);
 }
 
 /** Tries each CREATE_CANDIDATES base path; returns the first that yields a
@@ -99,4 +118,4 @@ export async function discoverRevoke(base, path, id, token) {
   return null;
 }
 
-export { req };
+export { req, extractField };

@@ -108,7 +108,7 @@ export function __resetDbForTests() {
 `;
 }
 
-function serverTs({ plantRevokedBug }) {
+function serverTs({ plantRevokedBug, nestedEnvelope }) {
   return `
 import http from "node:http";
 import {
@@ -189,7 +189,11 @@ async function handleCreateKey(req, res, auth) {
   const rawKey = "sk_" + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
   const rec = createApiKeyRecord({ orgId: auth.orgId, name: body.name, hash: hashSecret(rawKey) });
   addAuditEvent({ orgId: auth.orgId, actorUserId: auth.userId || "api-key", action: "api_key.created", target: rec.id });
-  sendJson(res, 201, { id: rec.id, name: rec.name, key: rawKey, createdAt: rec.createdAt });
+  ${
+    nestedEnvelope
+      ? "sendJson(res, 201, { key: rawKey, api_key: { id: rec.id, name: rec.name, createdAt: rec.createdAt } });"
+      : "sendJson(res, 201, { id: rec.id, name: rec.name, key: rawKey, createdAt: rec.createdAt });"
+  }
 }
 async function handleListKeys(req, res, auth) {
   const records = listApiKeysByOrg(auth.orgId);
@@ -246,7 +250,7 @@ function makeWorkspace(flavor) {
   fs.writeFileSync(path.join(dir, "src", "persistence", "db.ts"), dbTs());
   fs.writeFileSync(path.join(dir, "src", "auth", "hash.ts"), HASH_TS);
   // grader expects db.ts / hash.ts / server.ts at these exact relative paths
-  fs.writeFileSync(path.join(dir, "src", "http", "server.ts"), serverTs({ plantRevokedBug: flavor === "buggy" }));
+  fs.writeFileSync(path.join(dir, "src", "http", "server.ts"), serverTs({ plantRevokedBug: flavor === "buggy", nestedEnvelope: flavor === "nested" }));
   return dir;
 }
 
@@ -279,6 +283,30 @@ test("AC-4: fully correct synthetic workspace yields zero critical failures and 
   try {
     const result = runGraderCli(dir);
     assert.equal(result.workspace_frozen, true);
+    assert.deepEqual(result.critical_failures, []);
+    assert.equal(result.solved, true, JSON.stringify(result.tests.hidden_functional.cases));
+  } finally {
+    if (!process.env.KEEP_SELFTEST_DIR) fs.rmSync(dir, { recursive: true, force: true });
+    else console.error("kept:", dir);
+  }
+});
+
+// Regression test for a real false-negative found via a live campaign: an
+// otherwise-correct workspace whose create response nests the key metadata
+// under a named object (`{ key, api_key: { id, ... } }`) instead of putting
+// every field at the top level. Both shapes are valid API design and the
+// grader must not silently score the feature as "absent" just because it
+// picked the nested one — see probe.mjs's extractField doc comment.
+test("AC-4: create response with a nested envelope ({ key, api_key: { id, ... } }) is still discovered and graded correctly", () => {
+  const dir = makeWorkspace("nested");
+  try {
+    const result = runGraderCli(dir);
+    assert.equal(result.workspace_frozen, true);
+    assert.notEqual(
+      result.tests.hidden_functional.cases.find((c) => c.id === "hf-api-key-endpoint-discoverable")?.ok,
+      false,
+      "nested envelope must not be reported as feature absent"
+    );
     assert.deepEqual(result.critical_failures, []);
     assert.equal(result.solved, true, JSON.stringify(result.tests.hidden_functional.cases));
   } finally {
