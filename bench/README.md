@@ -19,6 +19,11 @@ to migrate to DuckDB/SQLite later (not built — see [V2 / not yet built](#v2--n
 
 ## Overview
 
+For a human-readable comparison built from real runs of this harness —
+vanilla Claude Code vs. previous Skailr dev builds vs. the current release —
+see [docs/BENCHMARKS.md](../docs/BENCHMARKS.md). This file documents the
+harness itself; that one documents what it found.
+
 - **Two arms, one difference.** Prompt, fixture, model, Claude Code version and
   limits are byte-identical across arms. The *only* variable is whether the
   Skailr pack is installed into the agent's workspace. `baseline` installs

@@ -53,7 +53,8 @@
     "docs/YOLO.md",
     "docs/experts.md",
     "docs/TELEMETRY.md",
-    "docs/UPDATE-CHECK.md"
+    "docs/UPDATE-CHECK.md",
+    "docs/BENCHMARKS.md"
   ],
   "repository": {
     "type": "git",

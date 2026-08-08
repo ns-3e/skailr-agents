@@ -466,6 +466,15 @@ Yes, when a run finishes successfully. Programs archive live runtime first (skil
 
 No. Engineering, content, legal, PM, design, marketing, and finance are built; new domains use the same registry + lead → workers + gate pattern.
 
+## Benchmarks
+
+Real (non-mock) [Skailr Bench](bench/README.md) runs comparing vanilla Claude
+Code, the previous Skailr dev builds, and this release — small sample sizes,
+every number links to a real `run.json`, no numbers invented. Includes a
+reproducible capability gap found on the `program-rbac` task that motivated
+1.14.0's hooks-enforcement fix. Full tables and caveats:
+[docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
 ---
 
 ## Contributing
