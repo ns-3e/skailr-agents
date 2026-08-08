@@ -13,6 +13,7 @@
 // hang forever.
 import fs from "node:fs";
 import path from "node:path";
+import { openDb, dbPath, listFindings } from "./lib/db.mjs";
 
 function readStdinJson() {
   try {
@@ -59,6 +60,52 @@ const CANDIDATES = [
 
 const input = readStdinJson();
 const cwd = input.cwd || process.cwd();
+
+// Prefer the DB (scripts/skailr/lib/db.mjs) when validator/program-validator
+// have written structured finding rows there — reliable by construction,
+// no regex heuristics needed. Only fall back to parsing the narrative
+// report's "## Blocking Findings" prose when the DB has no findings tracked
+// for this run at all (older workspace, or the writer hasn't been updated
+// to record structured findings yet).
+if (fs.existsSync(dbPath(cwd))) {
+  try {
+    const db = openDb(cwd);
+    const allFindings = listFindings(db);
+    if (allFindings.length > 0) {
+      const open = allFindings.filter((f) => f.blocking && f.status === "open");
+      if (open.length > 0) {
+        const marker = path.join(cwd, ".claude", ".fix-round-attempted");
+        if (!fs.existsSync(marker)) {
+          fs.mkdirSync(path.dirname(marker), { recursive: true });
+          fs.writeFileSync(marker, new Date().toISOString() + "\n", "utf8");
+          const summary = open
+            .map((f) => `- [${f.ref}] ${f.severity ? `${f.severity} — ` : ""}${f.summary}${f.location ? ` (${f.location})` : ""}${f.owner ? ` — owner: ${f.owner}` : ""}`)
+            .join("\n");
+          process.stdout.write(
+            JSON.stringify({
+              decision: "block",
+              reason: `${open.length} open blocking finding(s) in scripts/skailr/lib/db.mjs — fix them and re-run verification/validation once before finishing.`,
+              hookSpecificOutput: {
+                hookEventName: "Stop",
+                additionalContext:
+                  `BLOCKING: ${open.length} unresolved blocking finding(s) must be fixed before this run is complete:\n\n${summary}\n\n` +
+                  `Dispatch the owning engineer(s), then re-run verification and validation once. ` +
+                  `This is a bounded, one-time gate (see yolo.md Phase 6b / build-program.md Phase D2) — after this round, the run may finish regardless of outcome.`,
+              },
+            })
+          );
+          process.exit(0);
+        }
+      }
+      // DB has findings tracked (even if none currently open/blocking) — trust
+      // it and skip the markdown fallback below entirely.
+      process.exit(0);
+    }
+  } catch {
+    // DB exists but errored (corrupt, mid-write, etc.) — fall through to the
+    // markdown-parsing path rather than failing the hook.
+  }
+}
 
 for (const { report, marker } of CANDIDATES) {
   const reportPath = path.join(cwd, report);

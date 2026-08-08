@@ -314,6 +314,10 @@ append_gitignore() {
     "!.claude/program/channels/program.md"
     "!.claude/program/channels/feature.md"
     "!.claude/program/schemas/"
+    ".claude/skailr.db"
+    ".claude/skailr.db-journal"
+    ".claude/skailr.db-wal"
+    ".claude/skailr.db-shm"
     ".skailr/"
     "node_modules/"
   )

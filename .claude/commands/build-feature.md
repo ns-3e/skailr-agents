@@ -53,7 +53,7 @@ Create the feature branch if one does not exist: `feature/<slug-from-story-title
 
 Initialize a channel for the run: ensure `.claude/tmp/channels/` exists with a copy of (or pointer to) `PROTOCOL.md` and a `feature.md` board. On resume, do not reset existing channels — they are the append-only transcript.
 
-**Checkpoint rule:** mark each phase complete in `progress.md` before starting the next. For build, track tickets (and backend/frontend slice aggregates); leave `build` `in_progress` while any ticket is open/claimed.
+**Checkpoint rule:** mark each phase complete before starting the next, via skill `track-phase` (`db.mjs feature set-phase` then `db.mjs render progress`) — never a direct edit of `progress.md`'s Phases table. For build, track tickets (and backend/frontend slice aggregates) via `db.mjs ticket claim/resolve`; leave `build` `in_progress` while any ticket is open/claimed.
 
 ### Context handoff (build workers)
 

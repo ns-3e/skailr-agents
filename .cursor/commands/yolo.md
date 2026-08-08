@@ -57,7 +57,7 @@ Before decomposing work (intake or build) or dispatching engineers/tickets, run 
 - Still run **script gates** (ownership, channels). Mechanical truth is not optional in YOLO.
 - If a channel message is `type: contract-change` or addressed to `@human`: **do not halt the whole run**. As orchestrator, choose the smallest safe resolution, append a `type: decision` note to the channel with your rationale, update the affected artifact if needed, and continue. Only abort if the request is impossible (e.g. empty `$ARGUMENTS` on a fresh start, or the working tree has unrelated dirty changes that would make boundary checks meaningless).
 - Prefer a dedicated feature branch: `feature/<slug-from-story-title>`.
-- **Checkpoint after every phase** into `.claude/tmp/progress.md` before starting the next Task (skill `resume-from-feature-progress`). Claude Code usage limits can kill the session; disk progress is how the run resumes.
+- **Checkpoint after every phase** into `.claude/tmp/progress.md` before starting the next Task (skill `track-phase`, which writes `scripts/skailr/db.mjs` and renders the file — never hand-edit the Phases table; see `resume-from-feature-progress` for how resume reads it back). Claude Code usage limits can kill the session; disk progress is how the run resumes.
 
 ### Setup (new vs resume)
 
@@ -75,12 +75,12 @@ On a fresh start:
 
 - Write the raw request verbatim to `$ARTIFACT_ROOT/request.md`.
 - Write `$ARTIFACT_ROOT/mode.md` with a single line: `yolo`.
-- Seed `$ARTIFACT_ROOT/progress.md` from `.claude/program/schemas/feature-progress.template.md` (set `mode: yolo`, `status: researching`, feature slug, `updated` ISO timestamp).
+- `node scripts/skailr/db.mjs feature init --id <feature-slug> --mode yolo --artifact-root $ARTIFACT_ROOT --request "<one-line ask>"` then `node scripts/skailr/db.mjs render progress --feature-id <feature-slug> --name "<feature title>" --out $ARTIFACT_ROOT/progress.md` (skill `track-phase`) to seed `progress.md`.
 - Initialize channels: ensure `$ARTIFACT_ROOT/channels/` exists with `PROTOCOL.md` and a `feature.md` board.
 
 ### Checkpoint rule
 
-After each phase’s artifact exists and your checks pass, mark that phase `complete` in `progress.md` (and update frontmatter `status` / `updated`) **before** dispatching the next agent. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark tickets (and slice aggregates) complete as each resolves; mark `build` complete only after the board is complete (or both classic slices) + ownership/channel gates pass. Leave `build` `in_progress` while any ticket is open/claimed so resume continues the frontier.
+After each phase's artifact exists and your checks pass, mark that phase `complete` **before** dispatching the next agent — via skill `track-phase` (`db.mjs feature set-phase` then `db.mjs render progress`), never a direct edit of `progress.md`'s Phases table. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark tickets (and slice aggregates) complete as each resolves via `db.mjs ticket claim/resolve`; mark `build` complete only after the board is complete (or both classic slices) + ownership/channel gates pass. Leave `build` `in_progress` while any ticket is open/claimed so resume continues the frontier.
 
 ### Context handoff (build workers)
 

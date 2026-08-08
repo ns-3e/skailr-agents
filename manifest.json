@@ -550,6 +550,13 @@
       "cursor_path": null
     },
     {
+      "id": "skill-track-phase",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/track-phase/SKILL.md",
+      "cursor_path": null
+    },
+    {
       "id": "skill-write-handoff-and-yield",
       "tier": "skill",
       "type": "skill",

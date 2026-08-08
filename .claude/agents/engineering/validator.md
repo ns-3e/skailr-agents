@@ -156,3 +156,13 @@ Bullet paths actually read (story, spec, ui-spec, reports, diff). No essays.
 Estimated vs approximately consumed.
 ```
 
+**Also record each Blocking/Non-Blocking finding as a structured row**, so the Stop hook (`scripts/skailr/check-blocking-findings.mjs`) and any resume/query tooling can check them without re-parsing this file's prose. For each finding, right after writing the report:
+
+```bash
+node scripts/skailr/db.mjs finding add --ref <B-1|N-1|...> --feature-id <feature-id-from-mode.md-or-request> \
+  --summary "<one-line summary>" [--blocking] [--severity <CRITICAL|HIGH|medium|...>] \
+  [--location <file:line>] [--owner <role/ticket>] --cwd <repo-root>
+```
+
+If `--feature-id` is not obviously known (no `mode.md`/`ledger.md` establishing one yet), pass `--program-id <slug>` instead when this ran as a program workstream, or omit both for a bare standalone run — the finding still gets recorded and the hook still sees it (findings are not required to reference a registered feature/program row). This is additive to the markdown report, never a replacement — the narrative report stays the source of truth for reasoning; the DB row is only the machine-checkable fact of "does an open blocking finding exist."
+

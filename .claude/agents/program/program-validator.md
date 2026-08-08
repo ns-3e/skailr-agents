@@ -114,3 +114,13 @@ Bullet paths actually read. No essays.
 Estimated vs approximately consumed.
 ```
 
+**Also record each Blocking/Non-Blocking finding as a structured row**, so the Stop hook (`scripts/skailr/check-blocking-findings.mjs`) and any resume/query tooling can check them without re-parsing this file's prose. For each finding, right after writing the report:
+
+```bash
+node scripts/skailr/db.mjs finding add --ref <B-1|N-1|...> --program-id <program-slug-from-ledger.md> \
+  --summary "<one-line summary>" [--blocking] [--severity <CRITICAL|HIGH|medium|...>] \
+  [--location <file:line>] [--owner <workstream>] --cwd <repo-root>
+```
+
+This is additive to the markdown report, never a replacement — the narrative report stays the source of truth for reasoning; the DB row is only the machine-checkable fact of "does an open blocking finding exist."
+

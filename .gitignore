@@ -24,3 +24,9 @@ docs/audits/
 
 # bench/docker-run.sh output — regenerated per local run, never committed.
 /bench-docker-out/
+
+# scripts/skailr/lib/db.mjs runtime state — regenerated per run, never committed.
+.claude/skailr.db
+.claude/skailr.db-journal
+.claude/skailr.db-wal
+.claude/skailr.db-shm

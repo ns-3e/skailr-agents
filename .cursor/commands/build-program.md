@@ -41,6 +41,8 @@ Initialize channels: ensure `.claude/program/channels/` exists with `PROTOCOL.md
 
 **Script gates (mandatory before advancing any phase):** follow meta-skill `run-gated-pipeline` — `check-ownership.mjs`, `validate-channels.mjs`, `check-contracts.mjs` must exit 0 (or documented skip only when artifacts do not yet exist).
 
+**Phase/gate/contract tracking:** follow skill `track-phase` for every "Checkpoint" instruction below (Phases A–E) and every gate/contract change — write to `scripts/skailr/db.mjs`, then render `ledger.md`. Never hand-edit the Phases/Gates/Contract-versions tables directly.
+
 ### Context handoff (engineering features)
 
 Build workers may yield mid-ticket (skill `write-handoff-and-yield`). Paths live under the **active feature** artifact root: `.claude/program/workstreams/<ws>/features/<slug>/handoff/<ticket-id|slice>.md`.
@@ -55,7 +57,7 @@ Build workers may yield mid-ticket (skill `write-handoff-and-yield`). Paths live
 The kernel must exist before any workstream fans out. Dispatch the appropriate engineers (via the standard team agents) to build only the shared kernel defined in `plan.md` — shared types, core data model, cross-cutting auth, base scaffolding, shared primitives. When complete:
 - Run lint, typecheck, and the kernel's tests. Do not proceed on a red kernel — everything downstream inherits its breakage.
 - **Initialize the field guide.** Copy `.claude/program/schemas/field-guide.template.md` to `.claude/program/field-guide.md`, replacing `<slug>` in the frontmatter with the program slug. If the program is a resume and `field-guide.md` already exists, do not overwrite it — the existing entries are institutional memory for this run. If no template exists, create `field-guide.md` with the header and an empty Entries section.
-- **Freeze the kernel: it is now read-only to every workstream.** Record in the ledger that the kernel is built and frozen, with its commit.
+- **Freeze the kernel: it is now read-only to every workstream.** Record in the ledger that the kernel is built and frozen, with its commit — skill `track-phase`. If `ownership.json` isn't already frozen from planning, set it now: `node scripts/skailr/db.mjs ownership set --file <rules.json> --program-id <slug>` then `node scripts/skailr/db.mjs render ownership --program-id <slug> --out .claude/program/ownership.json` (`--file` takes the whole ruleset in one call — it replaces, never accumulates; see skill `track-phase`).
 
 ### Phase B — Parallel workstreams (just-in-time team disclosure)
 
