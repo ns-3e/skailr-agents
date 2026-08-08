@@ -142,6 +142,7 @@ Lead with: **YOLO program complete** (gates were skipped).
 3. **Blocking findings** — state whether the fix round (build-program Phase D2) ran and what it resolved; list anything still open one line each, full text only if ≤3 or user asks; path to program-validation-report
 4. **Workstream status** — one line per WS
 5. **Contracts / integration** — pass/fail one-liners + paths
+5a. **Model usage** — one line, qualitative (`default profile throughout` / `escalated N times: <where>, <why>`), pointer to `.claude/program/model-usage.md` for detail. Never state a dollar cost figure — nothing in this pipeline has visibility into actual API billing; a fabricated-looking `~$X.XX` is worse than no number.
 6. **Quiet skips / docs / experts / channels / archive** — pointers; omit empty; one line for archive path when archived
 7. **Next action** — one sentence
 

@@ -11,12 +11,22 @@ description: Determine the next incomplete feature phase from progress.md and re
 
 ## Procedure
 
+If `.claude/skailr.db` exists, query it directly — it's the source of truth `progress.md` is only rendered from, so this skips a parse-the-markdown-back-out round-trip and returns less text for the same information (includes a computed `next` field, same as the script below):
+
+```bash
+node scripts/skailr/db.mjs feature get --id <feature-slug> --json
+```
+
+Otherwise (no DB yet — older artifact root):
+
 ```bash
 # Standalone:
 node scripts/skailr/feature-status.mjs --json
 # Nested / explicit root:
 node scripts/skailr/feature-status.mjs --progress <ARTIFACT_ROOT>/progress.md --root <ARTIFACT_ROOT> --json
 ```
+
+Either way, this replaces reading `progress.md` as a file — never do both. Note the DB path covers phase status only — it does not (yet) include `board`/`handoffs`/`partialBuild`; when `next` is `build` and a ticket board is in play, also run `node scripts/skailr/ticket-status.mjs --root <ARTIFACT_ROOT> --json` (or `feature-status.mjs` if you need handoffs) alongside it rather than instead of it.
 
 `artifactRoot` in the JSON is the active feature root. Map `next` to the feature pipeline phase:
 

@@ -82,9 +82,15 @@ Set `build` to `in_progress`.
 When the board is complete (or both classic slices return, after draining yield loops):
 - Mark Tickets / Build slice rows complete only when final reports exist and no handoff remains.
 - Run `git diff --name-only` yourself and verify no file was touched by two concurrent writers. If one was, that is a merge hazard — stop and report it rather than proceeding.
-- **Script gate — ownership:** run `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` (or `--map $ARTIFACT_ROOT/ownership.json` if present). Non-zero exit → halt.
-- **Run the channel router** (skill `route-channels`). Also run `node scripts/skailr/validate-channels.mjs --tmp`. Scan `.claude/tmp/channels/feature.md` for `status: open` messages. Route each to its addressee, collect the answer, and re-dispatch any engineer that ended its turn waiting. If a message is `type: contract-change` or addressed to `@human` — here that means the spec's contract looks wrong, or an AC cannot be satisfied — **halt and surface it to the user** rather than letting the verifier discover it downstream (unless `mode.md` is `yolo`, then auto-decide per YOLO rules). Do not auto-change the spec's contract in gated mode.
-- Run the full test suite, lint, and typecheck. If the tree is red, re-invoke the responsible engineer once with the failures. Do not hand a red tree to the verifier.
+Run ownership, channel validation, and the project's test/lint/typecheck suite **as one chained Bash call** (`&&`-joined so a failure short-circuits the rest) rather than separate tool calls — each top-level Bash invocation costs a full context re-read at this point in the session:
+
+```bash
+node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md && node scripts/skailr/validate-channels.mjs --tmp && <project test command> && <project lint command> && <project typecheck command>
+```
+
+- **Script gate — ownership** (`--map $ARTIFACT_ROOT/ownership.json` fallback). Non-zero exit → halt.
+- **Channel router** (skill `route-channels`). Scan `.claude/tmp/channels/feature.md` for `status: open` messages the validate-channels output surfaces. Route each to its addressee, collect the answer, and re-dispatch any engineer that ended its turn waiting (that loop is inherently multi-turn — the batching above is only for the checks themselves). If a message is `type: contract-change` or addressed to `@human` — here that means the spec's contract looks wrong, or an AC cannot be satisfied — **halt and surface it to the user** rather than letting the verifier discover it downstream (unless `mode.md` is `yolo`, then auto-decide per YOLO rules). Do not auto-change the spec's contract in gated mode.
+- Test/lint/typecheck: if the tree is red, re-invoke the responsible engineer once with the failures. Do not hand a red tree to the verifier.
 
 Checkpoint: `build` → complete.
 

@@ -121,13 +121,20 @@ Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print 
 
 Invoke the `architect` subagent. It writes `.claude/tmp/spec.md` **and** mints `.claude/tmp/board.md` + `.claude/tmp/tickets/` (Process step 9).
 
-Verify before continuing:
-1. BACKEND and FRONTEND ownership globs are **disjoint** — run `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` when available; otherwise check manually. Overlap → send back to the architect once.
+Verify before continuing. Run the two mechanical checks (1, 5) **as one chained Bash call**, not two separate tool calls — every extra top-level Bash invocation costs a full context re-read at this point in the session, and there is no reason these two need separate turns:
+
+```bash
+node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md && node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT
+```
+
+1. BACKEND and FRONTEND ownership globs are **disjoint** (script above; falls back to `--map $ARTIFACT_ROOT/ownership.json`, or manual check if neither exists). Overlap → send back to the architect once.
 2. Every AC ID in `story.md` appears somewhere in `spec.md`.
 3. Every endpoint has request shape, response shape, and error cases.
 4. If `$ARTIFACT_ROOT/expert-<slug>.md` exists, the spec records every item in it as adopted or explicitly rejected with a reason. Silent omission is not acceptable; an honest rejection is.
-5. **Ticket board:** `board.md` exists; `node scripts/skailr/ticket-status.mjs validate --root $ARTIFACT_ROOT` exits 0; every story AC appears on at least one ticket. Fail → send architect back once. (If mint is missing entirely, continue with classic BE∥FE fallback in Phase 4.)
+5. **Ticket board:** `board.md` exists; the `ticket-status.mjs validate` call above exits 0; every story AC appears on at least one ticket. Fail → send architect back once. (If mint is missing entirely, continue with classic BE∥FE fallback in Phase 4.)
 6. **UX ui-spec:** If FRONTEND ownership is non-empty (or the story has UI-surface UX ACs), `$ARTIFACT_ROOT/ui-spec.md` must exist (or `spec.md` must state `N/A: no user-visible UI` with justification). Missing → send architect back once.
+
+(2, 3, 4, 6 are read-verification against files already in context, not separate tool calls — nothing to batch there.)
 
 Optionally write `.claude/tmp/ownership.json` for later enforcement.
 
@@ -146,9 +153,15 @@ Set `build` to `in_progress` in progress.md.
 When the board is complete (or both classic slices return, after draining yield loops):
 - Mark Tickets / Build slice rows complete when reports exist and no handoffs remain for those tickets/slices.
 - Run `git diff --name-only` and verify no file was touched by two concurrent writers. Merge hazard → stop and report (hard abort, not a human gate).
-- **Script gate — ownership:** `node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md` (or `--map $ARTIFACT_ROOT/ownership.json`). Non-zero → halt.
-- **Channel router** (skill `route-channels`). Run `node scripts/skailr/validate-channels.mjs --tmp`. For open messages, route and re-dispatch as usual. Apply YOLO rules above for `@human` / `contract-change`.
-- Run the full test suite, lint, and typecheck. If red, re-invoke the responsible engineer once. Do not hand a red tree to the verifier if one retry can fix it.
+Run ownership, channel validation, and the project's test/lint/typecheck suite **as one chained Bash call**, `&&`-joined so a failure short-circuits the rest — three (or more) separate top-level tool calls here is three (or more) extra full-context re-reads for checks that are each fast and don't need independent inspection between them:
+
+```bash
+node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md && node scripts/skailr/validate-channels.mjs --tmp && <project test command> && <project lint command> && <project typecheck command>
+```
+
+- **Script gate — ownership** (`--map $ARTIFACT_ROOT/ownership.json` fallback). Non-zero → halt.
+- **Channel router** (skill `route-channels`). For open messages the validate-channels output surfaces, route and re-dispatch as usual (that part is inherently multi-turn — the batching above is only for the checks themselves, not the dispatch loop it triggers). Apply YOLO rules above for `@human` / `contract-change`.
+- Test/lint/typecheck: if red, re-invoke the responsible engineer once. Do not hand a red tree to the verifier if one retry can fix it.
 
 Checkpoint: `build` → complete.
 
@@ -235,6 +248,7 @@ Then print, in this order:
 4. **Coverage** — one line (`All AC/EC pass` or count of gaps)
 5. **Tests** — unit + E2E totals
 6. **Files changed** — counts by slice, or path to engineer reports
+6a. **Model usage** — one line, qualitative (`on the default profile throughout` / `escalated once: <role> in <phase>, <why>`), pointer to `model-usage.md` for detail. Never state a dollar cost figure here — nothing in this pipeline has visibility into actual API billing, and a fabricated-looking `~$X.XX` is worse than no number at all. If the user wants real cost, that only exists in Anthropic's own usage dashboard or (for bench campaigns) the harness's own `run.json`.
 7. **Quiet skips** — paths only; omit if none
 8. **Documentation** — paths touched; omit if none
 9. **Experts** — slugs consulted/minted; omit if none

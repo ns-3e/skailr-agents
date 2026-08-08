@@ -156,9 +156,16 @@ switch (`${noun} ${verb}`) {
     setProgramPhase(db, need("id"), need("phase"), need("status"), { commitSha: args["commit-sha"] });
     printResult(args, { ok: true });
     break;
-  case "program get":
-    printResult(args, getProgram(db, need("id")));
+  case "program get": {
+    const program = getProgram(db, need("id"));
+    if (program) {
+      const notDone = program.phases.find((p) => p.status !== "done");
+      program.next = notDone ? notDone.phase : null;
+      program.complete = !notDone;
+    }
+    printResult(args, program);
     break;
+  }
 
   case "feature init":
     upsertFeature(db, {
@@ -175,9 +182,16 @@ switch (`${noun} ${verb}`) {
     setFeaturePhase(db, need("id"), need("phase"), need("status"), args.notes);
     printResult(args, { ok: true });
     break;
-  case "feature get":
-    printResult(args, getFeature(db, need("id")));
+  case "feature get": {
+    const feature = getFeature(db, need("id"));
+    if (feature) {
+      const notDone = feature.phases.find((p) => p.status !== "complete");
+      feature.next = notDone ? notDone.phase : null;
+      feature.complete = !notDone;
+    }
+    printResult(args, feature);
     break;
+  }
 
   case "contract freeze":
     freezeContract(db, { contractId: need("contract-id"), programId: need("program-id"), version: Number(need("version")), path: args.path });

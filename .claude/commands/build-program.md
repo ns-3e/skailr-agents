@@ -27,7 +27,7 @@ Also follow skill `emit-telemetry`: once at run start, mint and persist `trace_i
 
 ### Preflight and resume
 
-Run `node scripts/skailr/ledger-status.mjs` (skill `resume-from-ledger`) and read `.claude/program/ledger.md`. The ledger is the source of truth for where the program stands. If this is a resume, pick up at the first phase not marked complete — do not redo finished work. Confirm `plan.md` is approved and contracts are frozen. Confirm a clean working tree or a dedicated program branch `program/<slug>`; if there are unrelated uncommitted changes, stop and say so, because boundary checks and the aggregate diff review depend on a clean base.
+Run `node scripts/skailr/ledger-status.mjs --json` (skill `resume-from-ledger`) — its compact JSON is the source of truth for where the program stands; do not also Read the full `ledger.md` file on top of it, that's the same information at 10-50x the token cost for no added signal. If this is a resume, pick up at the first phase not marked complete — do not redo finished work. Confirm `plan.md` is approved and contracts are frozen. Confirm a clean working tree or a dedicated program branch `program/<slug>`; if there are unrelated uncommitted changes, stop and say so, because boundary checks and the aggregate diff review depend on a clean base.
 
 Initialize channels: ensure `.claude/program/channels/` exists with `PROTOCOL.md` and a `program.md`, and create an empty `ws-<name>.md` for each workstream in the plan (header + a pointer to PROTOCOL.md). On resume, do not reset existing channels — they are the append-only transcript.
 
@@ -46,7 +46,11 @@ Build workers may yield mid-ticket (skill `write-handoff-and-yield`). Paths live
 
 ### Phase A — Foundation (build and freeze the kernel)
 
-The kernel must exist before any workstream fans out. Dispatch the appropriate engineers (via the standard team agents) to build only the shared kernel defined in `plan.md` — shared types, core data model, cross-cutting auth, base scaffolding, shared primitives. When complete:
+The kernel must exist before any workstream fans out. Dispatch the appropriate engineers (via the standard team agents) to build only the shared kernel defined in `plan.md` — shared types, core data model, cross-cutting auth, base scaffolding, shared primitives.
+
+**Prefer one consolidated dispatch pass over one nested research→story→spec→build pipeline per kernel sub-item.** If the kernel decomposes into several small, closely-related sub-items (e.g. two domain types that share a file or a review), running each through its own separate researcher/story-writer/architect/engineer dispatch chain multiplies fixed per-dispatch orchestrator overhead (empirically ~700K-1.2M tokens of context re-read per dispatch in a long session) without proportional benefit. Reserve a full separate nested pipeline for kernel sub-items that are genuinely large, independent, or need their own research — not as the default shape for every item in the kernel list.
+
+When complete:
 - Run lint, typecheck, and the kernel's tests. Do not proceed on a red kernel — everything downstream inherits its breakage.
 - **Initialize the field guide.** Copy `.claude/program/schemas/field-guide.template.md` to `.claude/program/field-guide.md`, replacing `<slug>` in the frontmatter with the program slug. If the program is a resume and `field-guide.md` already exists, do not overwrite it — the existing entries are institutional memory for this run. If no template exists, create `field-guide.md` with the header and an empty Entries section.
 - **Freeze the kernel: it is now read-only to every workstream.** Record in the ledger that the kernel is built and frozen, with its commit — skill `track-phase`. If `ownership.json` isn't already frozen from planning, set it now: `node scripts/skailr/db.mjs ownership set --file <rules.json> --program-id <slug>` then `node scripts/skailr/db.mjs render ownership --program-id <slug> --out .claude/program/ownership.json` (`--file` takes the whole ruleset in one call — it replaces, never accumulates; see skill `track-phase`).
@@ -75,12 +79,18 @@ Give each team lead: read `brief.md`, `plan.md`, its consumed contracts, and the
 
 **Recovery mint (once, Phase B start only).** If `plan.md` Experts note says `matched: none` (or has no Experts note) but orientation + brief now show ≥ `mint_threshold` independent signals for a vertical, follow skill `consult-or-mint` once with `mode: consult-and-mint`, `trigger: build-consult`, `carry_to: plan.md`, then use the updated `matched:` for co-author/gate. Still threshold-gated; never mint on one signal.
 
-As each concurrency group completes, before advancing:
-- **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units. Run `node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json` (and `git diff --name-only` for engineering). A collision is a stop-and-report event, not something to merge through.
-- **Run the channel router** (skill `route-channels`; see below) and `node scripts/skailr/validate-channels.mjs` to drain any open questions, blockers, and contract-change requests the teams posted. Nothing advances while resolvable open messages remain.
-- Ensure consumer stubs exist when producers are not yet real: `node scripts/skailr/emit-stubs.mjs` (skill `emit-stubs`) after contracts freeze / as needed before a consumer group.
+As each concurrency group completes, before advancing, run the boundary check and channel validation **as one chained Bash call** (`&&`-joined) rather than separate tool calls — each top-level Bash invocation costs a full context re-read at this point in the session:
+
+```bash
+node scripts/skailr/check-ownership.mjs --map .claude/program/ownership.json && git diff --name-only && node scripts/skailr/validate-channels.mjs
+```
+
+(Append `&& node scripts/skailr/emit-stubs.mjs` to the same chain on the specific transitions where consumer stubs are actually needed — after contracts freeze / before a consumer group — rather than a separate call.)
+
+- **Boundary check across the whole group.** Confirm no owned unit was written by two workstreams and no workstream wrote into the frozen kernel or another team's units (the ownership + `git diff` output above). A collision is a stop-and-report event, not something to merge through.
+- **Channel router** (skill `route-channels`; see below): drain any open questions, blockers, and contract-change requests the `validate-channels` output surfaces. Nothing advances while resolvable open messages remain (that drain loop is inherently multi-turn — the batching above is only for the checks themselves).
 - Then unblock and dispatch the next concurrency group whose dependencies are now satisfied.
-- Update the ledger at every transition.
+- Update the ledger at every transition — skill `track-phase`.
 
 ### Channel router (how cross-agent questions get resolved)
 
@@ -165,6 +175,7 @@ Execute this command for the current request. Follow resume/setup rules in §4.
 2. **Blocking findings** — state whether Phase D2's fix round ran and what it resolved; list anything still open one line each, full text only if ≤3 or user asks; path to program-validation-report (under archive if already archived)
 3. **Workstream status** — one line per WS
 4. **Contracts / integration** — pass/fail + paths
+4a. **Model usage** — one line, qualitative (`default profile throughout` / `escalated N times: <where>, <why>`), pointer to `.claude/program/model-usage.md` for detail. Never state a dollar cost figure — nothing in this pipeline has visibility into actual API billing; a fabricated-looking `~$X.XX` is worse than no number.
 5. **Quiet skips / docs / experts / channels / archive** — pointers; omit empty; one line for archive path when archived
 6. **Next action** — one sentence
 

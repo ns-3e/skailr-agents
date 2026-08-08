@@ -11,11 +11,19 @@ description: Determine the next incomplete program phase from ledger.md and resu
 
 ## Procedure
 
+If `.claude/skailr.db` exists, query it directly — it's the source of truth `ledger.md` is only rendered from, so this skips a parse-the-markdown-back-out round-trip and returns less text for the same information:
+
+```bash
+node scripts/skailr/db.mjs program get --id <program-slug> --json
+```
+
+Otherwise (no DB yet — older artifact root):
+
 ```bash
 node scripts/skailr/ledger-status.mjs --json
 ```
 
-Map `next` to `/build-program` phase (A–E). Do not reset channels. Re-run script gates before advancing.
+Either way, this replaces reading `ledger.md` as a file — never do both. Both forms return a computed `next` field. Map it to `/build-program` phase (A–E). Do not reset channels. Re-run script gates before advancing.
 
 If `.claude/program/mode.md` is `yolo`, resume with YOLO auto-decide rules for `@human` / `contract-change` (do not halt the whole run). Never archive an incomplete ledger on resume. When the ledger is already `complete`, the orchestrator follows skill `archive-program-state` (then cleanup) before the final report — that is completion hygiene, not resume.
 
