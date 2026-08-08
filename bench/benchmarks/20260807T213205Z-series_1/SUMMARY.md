@@ -1,3 +1,8 @@
+> **⚠️ RETRACTED 2026-08-08 — do not cite these numbers.** The `skailr` arm's
+> `feature-api-keys`/`program-rbac` runs show 0 tool calls and 0 diff bytes —
+> a broken headless-mode self-routing invocation, not a real result. See
+> [`RETRACTED.md`](RETRACTED.md) for the full root cause and fix.
+
 # Benchmark campaign: 20260807T213205Z-series_1
 
 - Generated: 2026-08-07T21:32:05.045Z

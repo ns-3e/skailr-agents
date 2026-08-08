@@ -40,6 +40,7 @@ campaigns are run and graded.
 ## How results get here
 
 The `bench-smoke` GitHub Actions workflow (manual `workflow_dispatch`) runs a
-real smoke campaign (1 rep × all tasks × both arms) on a **self-hosted runner**
-authenticated with a Claude Code subscription token, then runs
-`scripts/publish-campaign.mjs` and commits the distilled output here.
+real smoke campaign (1 rep × all tasks × both arms) on a GitHub-hosted
+`ubuntu-latest` runner, authenticated with a Claude Code subscription token,
+then runs `scripts/publish-campaign.mjs` and commits the distilled output
+here.

@@ -4,7 +4,14 @@ class: program
 fixture: bench/fixtures/program-rbac
 fixture_sha: 10fd79781ad721cbdfbc10fc341facb3e1164345
 grader: bench/graders/program-rbac
+limits:
+  max_budget_usd: 50
+  wall_clock_timeout_min: 180
+# See feature-api-keys.yaml for why the explicit slash command is load-bearing
+# (headless -p mode self-routing failure) rather than a style preference.
 prompt: |
+  /yolo-program
+
   Implement organization team invitations and role-based access control.
   Product requirements:
   Administrators can:

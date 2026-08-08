@@ -25,6 +25,12 @@ docs/audits/
 # bench/docker-run.sh output — regenerated per local run, never committed.
 /bench-docker-out/
 
+# bench/src/aggregate.mjs's getCachedAggregate() writes this into whatever campaign
+# dir it's pointed at (including a committed bench/benchmarks/<label>/ one if you
+# run `bench:report`/`bench:compare` locally against it) — a regenerable cache,
+# never the source of truth, never committed.
+bench/benchmarks/*/.aggregate-cache.json
+
 # scripts/skailr/lib/db.mjs runtime state — regenerated per run, never committed.
 .claude/skailr.db
 .claude/skailr.db-journal

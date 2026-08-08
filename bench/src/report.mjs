@@ -92,6 +92,32 @@ function subagentCostOf(record) {
   }
 }
 
+// Anthropic's eval-design guidance ("Demystifying evals for AI agents") calls
+// out two anti-patterns to catch automatically rather than trust a headline
+// number at face value: (a) 0% pass@k is most often a broken task/harness
+// invocation, not an incapable agent — the exact failure a real campaign
+// shipped when a self-routing prompt hit a headless-mode confirmation gate
+// and exited with 0 tool calls (see README "Known issues"); (b) a
+// saturated 100% pass rate signals the task has "graduated" and stopped
+// discriminating, which is worth flagging rather than silently celebrating.
+function detectRowWarnings(r) {
+  const warnings = [];
+  if (r.tool_calls_median === 0 && r.solve_rate === 0) {
+    warnings.push(
+      "BROKEN RUN: 0 tool calls with 0% solve rate — this is almost certainly a failed/aborted " +
+        "invocation (e.g. a self-routing prompt that hit a confirmation gate in headless mode), " +
+        "not a real capability result. Read the transcript before trusting this row."
+    );
+  }
+  if (r.solve_rate === 1 && r.n >= 3) {
+    warnings.push(
+      `SATURATED: ${r.n} runs, 100% solve rate — this task no longer discriminates between arms; ` +
+        "consider it a regression check rather than a capability signal, and prioritize new/harder tasks."
+    );
+  }
+  return warnings;
+}
+
 /** Headline table: one row per (task_id, arm, campaign/version). */
 export function buildHeadlineRows(campaigns) {
   const rows = [];
@@ -127,6 +153,7 @@ export function buildHeadlineRows(campaigns) {
       });
     }
   }
+  for (const r of rows) r.warnings = detectRowWarnings(r);
   return rows;
 }
 
@@ -369,6 +396,15 @@ function renderMarkdown({ refA, refB, banner, rows, kpisA, kpisB, verdict, paret
       `| ${r.version} | ${r.task_id} | ${r.arm} | ${r.n} | ${fmtNum(r.quality_median)} | ${fmtCI(r.quality_ci)} | ${fmtPct(r.solve_rate)} | ${fmtCI(r.solve_rate_ci)} | ${fmtNum(r.wall_clock_s_median, 1)} | ${fmtNum(r.cost_usd_median, 4)} | ${fmtNum(r.tokens_in_median, 0)} | ${fmtNum(r.tokens_out_median, 0)} | ${fmtNum(r.tokens_cache_median, 0)} | ${fmtNum(r.tool_calls_median, 0)} | ${r.subagent_cost_usd_median === null ? "—" : fmtNum(r.subagent_cost_usd_median, 4)} |`
     );
   }
+  const warnedRows = rows.filter((r) => r.warnings.length);
+  if (warnedRows.length) {
+    lines.push("");
+    lines.push("## Warnings");
+    lines.push("");
+    for (const r of warnedRows) {
+      for (const w of r.warnings) lines.push(`- **${r.version} / ${r.task_id} / ${r.arm}**: ${w}`);
+    }
+  }
   lines.push("");
   lines.push("## Top KPIs");
   lines.push("");
@@ -434,7 +470,15 @@ function renderHtml({ refA, refB, banner, rows, kpisA, kpisB, verdict, pareto, d
     .verdict-REJECT { color: #b00020; font-weight: bold; }
     .verdict-INCONCLUSIVE { color: #806000; font-weight: bold; }
     code { background: #f2f2f2; padding: 0.1rem 0.3rem; }
+    .warnings { background: #fdecea; border: 1px solid #f5a89a; padding: 1rem; margin-bottom: 1.5rem; }
+    .warnings li { margin-bottom: 0.5rem; }
   `;
+  const warnedRows = rows.filter((r) => r.warnings.length);
+  const warningsSection = warnedRows.length
+    ? `<div class="warnings"><h2>Warnings</h2><ul>${warnedRows
+        .flatMap((r) => r.warnings.map((w) => `<li><strong>${escapeHtml(r.version)} / ${escapeHtml(r.task_id)} / ${escapeHtml(r.arm)}</strong>: ${escapeHtml(w)}</li>`))
+        .join("\n")}</ul></div>`
+    : "";
   const headlineRows = rows
     .map(
       (r) =>
@@ -490,6 +534,7 @@ ${banner ? `<div class="banner">WARNING: cross-series comparison. ${escapeHtml(b
 <tbody>
 ${headlineRows}
 </tbody></table>
+${warningsSection}
 <h2>Top KPIs</h2>
 <table><thead><tr><th>Version</th><th>Arm</th><th>Solve Rate</th><th>Median Quality</th><th>Cost/Solve (USD)</th><th>Quality-Adjusted Cost (USD)</th></tr></thead>
 <tbody>
@@ -519,7 +564,7 @@ function renderCsv(rows) {
     "version", "task_id", "arm", "n", "quality_median", "quality_ci_lo", "quality_ci_hi",
     "solve_rate", "solve_rate_ci_lo", "solve_rate_ci_hi", "wall_clock_s_median", "cost_usd_median",
     "tokens_in_median", "tokens_out_median", "tokens_cache_median", "tool_calls_median",
-    "subagent_cost_usd_median", "cost_per_solve_usd", "quality_adjusted_cost_usd",
+    "subagent_cost_usd_median", "cost_per_solve_usd", "quality_adjusted_cost_usd", "warnings",
   ];
   const lines = [headers.join(",")];
   for (const r of rows) {
@@ -529,6 +574,7 @@ function renderCsv(rows) {
         r.solve_rate, r.solve_rate_ci?.lo, r.solve_rate_ci?.hi, r.wall_clock_s_median, r.cost_usd_median,
         r.tokens_in_median, r.tokens_out_median, r.tokens_cache_median, r.tool_calls_median,
         r.subagent_cost_usd_median, r.cost_per_solve_usd, r.quality_adjusted_cost_usd,
+        r.warnings?.length ? `"${r.warnings.join(" | ").replace(/"/g, '""')}"` : "",
       ]
         .map((v) => (v === null || v === undefined ? "" : v))
         .join(",")

@@ -1,4 +1,6 @@
 {
+  "retracted": true,
+  "retracted_reason": "skailr-arm runs for feature-api-keys/program-rbac had 0 tool calls and 0 diff bytes — a broken headless-mode self-routing invocation, not a real result. See 20260807T213205Z-series_1/RETRACTED.md. This pointer will be replaced by a corrected campaign.",
   "label": "20260807T213205Z-series_1",
   "generated_at": "2026-08-07T21:32:05.045Z",
   "n_runs": 6,

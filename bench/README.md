@@ -401,11 +401,31 @@ is **correct and runnable**, proven via **mock mode** + committed
   (0 isolation leaks), AC-4 (planted defect flips `solved=false`, quality high),
   AC-5 (compare → all sections + verdict), AC-6 (both cost fields +
   `pricing_table_version`, 2% delta), AC-7 (model change forks series + banner).
-- **Not yet exercised against live spend:** the real Claude Code invocation
-  (`claude.mjs` real path) and live OTel export. The real-mode code path is
-  identical in shape to the mock path but has never been run against a real
-  model. Treat first-real-campaign as the moment to confirm live flags, OTel
-  output, and the cost tolerance band.
+- **Exercised against live spend** as of 2026-08-08: real campaigns have run
+  end-to-end via the Docker harness (`bench/docker-run.sh`) against the
+  pinned `claude` CLI version, including a full A/B comparison across all
+  three tasks. See "Known issues" below for a failure mode those runs
+  surfaced and fixed.
+
+## Known issues
+
+- **Task prompts must carry an explicit slash command (`/yolo`,
+  `/yolo-program`, `/patch`), never a plain-language ask.** A plain prompt
+  relies on this repo's own `CLAUDE.md` intake-routing skill to self-route,
+  and that skill's confirmation gates (e.g. "offer `/map-repo` first... build
+  immediately if declined") expect a human reply that never arrives in
+  headless `-p` mode — the run just asks a question and exits cleanly with 0
+  tool calls, 0 files edited. A real published campaign
+  (`bench/benchmarks/20260807T213205Z-series_1`, retracted) shipped exactly
+  this failure as a "Skailr loses badly" result: `feature-api-keys` and
+  `program-rbac`'s skailr-arm runs both showed `termination_reason: "finish"`,
+  `tool_calls: 0`, `diff_bytes: 0` — a broken invocation, not a capability
+  signal. All `bench/tasks/*.yaml` now hard-code the slash command in the
+  prompt itself so this can't silently recur. When reading any *older*
+  campaign result, treat `tool_calls: 0` combined with `solved: false` and a
+  short `wall_clock_s` as a broken-run signature to investigate, not a real
+  score — `src/report.mjs` now flags this pattern automatically (see
+  "Reading reports").
 
 ## V2 / not yet built
 

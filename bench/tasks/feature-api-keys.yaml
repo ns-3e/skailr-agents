@@ -4,7 +4,18 @@ class: cross-cutting
 fixture: bench/fixtures/feature-api-keys
 fixture_sha: 0d4cb2091b49d018629817e586f78de9ab43ceb4
 grader: bench/graders/feature-api-keys
+limits:
+  max_budget_usd: 50
+  wall_clock_timeout_min: 180
+# The explicit /yolo is load-bearing, not stylistic: a plain-language prompt relies
+# on this repo's own CLAUDE.md intake-routing skill to self-route, and that skill's
+# confirmation gates ("build immediately if declined") expect a human reply that
+# never arrives in headless -p mode — the run just asks a question and exits with
+# 0 tool calls. A real published campaign shipped exactly that failure as a
+# "Skailr loses" result before this was caught; see bench/README.md "Known issues".
 prompt: |
+  /yolo
+
   Add organization-scoped API keys.
   An organization administrator must be able to create, list, and revoke API keys.
   Requirements:
