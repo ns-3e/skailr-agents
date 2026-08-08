@@ -180,9 +180,22 @@ When FE shipped user-visible UI (FRONTEND ownership non-empty or `ui-spec.md` ex
 
 Checkpoint: `validate` → complete.
 
+### Phase 6b — Fix blocking findings (bounded, one round)
+
+**Do not proceed to docs with an open `## Blocking Findings` entry in `validation-report.md`.** A blocking finding is a defect YOLO's own gate found and did not fix — shipping past it silently defeats the point of running validation at all.
+
+If `validation-report.md` has one or more blocking findings (regardless of the verdict label — "SHIP WITH FIXES" still means something is blocking):
+
+1. For each blocking finding, read its stated `Owner` (a ticket id / role) and `Concrete fix`. Dispatch that owning engineer with the finding's exact text (location, what's wrong, the suggested fix) — same Task-dispatch shape as Phase 4, scoped strictly to the files the finding names. Do not let a fix touch files outside the finding's own location unless the finding explicitly says so.
+2. A finding whose `Owner` is process/tooling, not application code (e.g. a broken gate script), is not a code-fix dispatch — log it in `progress.md` Notes and leave it for a human to pick up; it does not block re-validation.
+3. After all application-code fixes land, re-run **Phase 5 verification and Phase 6 validation from scratch** — a fix that touches auth/security-adjacent code needs the same real verification a first-pass implementation would get, not a rubber stamp. This is the *one* re-validation round; do not loop a third time.
+4. If `validation-report.md` still has a blocking finding after this one round, stop trying to fix it — proceed to Phase 7 in DO-NOT-SHIP/reconcile mode and surface the still-open finding prominently in the final report. Do not spend a third round chasing it.
+
+Checkpoint: log the fix round (or its absence, if there was nothing blocking) in `progress.md` Notes before moving on.
+
 ### Phase 7 — Documentation
 
-Invoke `program-documenter` as in `/build-feature`. If the validator said DO NOT SHIP, reconcile-only; hold new release notes until blocking findings are fixed.
+Invoke `program-documenter` as in `/build-feature`. If a blocking finding is still open after Phase 6b's one fix round, reconcile-only; hold new release notes until it's fixed by a human.
 
 Checkpoint: `docs` → complete; frontmatter `status: complete`.
 
@@ -202,6 +215,7 @@ Own agent worktree caches + retire that worktree only. No-op on a shared main ch
 - Never write application code yourself.
 - Never suppress a finding to make YOLO look clean.
 - Never skip validation because verification passed.
+- Never proceed to docs with an open blocking finding without having run the Phase 6b fix-and-revalidate round first — that round is not optional, and it happens automatically, not on user request (YOLO skips human gates; it does not skip its own gate).
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it in the final report rather than inventing a pass.
 - YOLO skips **human** gates only. Script gates, ownership disjointness, and honest validation stay on.
 - Keep `progress.md` current at every transition so usage-limit deaths can resume via `/continue-feature` or re-invoking `/yolo` with no new request.
@@ -224,7 +238,7 @@ Then print, in this order:
 
 1. **Verdict** — SHIP / SHIP WITH FIXES / DO NOT SHIP (one line)
 2. **Assumptions** — bullets from story + spec (paths if long)
-3. **Blocking findings** — one line each (`id | location | owner | fix`); full text only if ≤3 blockers or the user asks. Always include path to `validation-report.md` (or program equivalent)
+3. **Blocking findings** — state whether Phase 6b's fix round ran and what it resolved; list anything still open one line each (`id | location | owner | fix`), full text only if ≤3 or the user asks. Always include path to `validation-report.md` (or program equivalent)
 4. **Coverage** — one line (`All AC/EC pass` or count of gaps)
 5. **Tests** — unit + E2E totals
 6. **Files changed** — counts by slice, or path to engineer reports
@@ -234,5 +248,5 @@ Then print, in this order:
 10. **Channels** — pointer to channel file only
 11. **Next action** — one sentence
 
-Offer to fix blockers and re-run verify/validate, or to open the PR.
+If a blocking finding is still open after Phase 6b's one fix round, say so plainly and name exactly what a human needs to do — do not offer to try again automatically (one round already ran; a second automated attempt at the same finding is not YOLO's job). Otherwise, offer to open the PR.
 

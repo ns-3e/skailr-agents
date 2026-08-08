@@ -126,11 +126,24 @@ Authority is computed, never chosen: `binding` requires **all three** of `gate_m
 
 Invoke the `program-validator`. It holds the whole delivered program against the original brief, reads the aggregate diff, and writes `program-validation-report.md`. Pass it every verdict file; it cites them as evidence in its own sign-off. The expert supplies evidence, not a parallel authority — there is exactly one sign-off role per tier and adding a second would make it ambiguous who actually said no.
 
+### Phase D2 — Fix blocking findings (bounded, one round)
+
+**Do not advance to documentation with an open blocking finding in `program-validation-report.md`** — same principle as Phase C's DOES NOT COMPOSE handling: a finding names the owning workstream, so fix it the same way you'd fix an integration failure, not by shipping past it.
+
+If the report has one or more blocking findings:
+
+1. Group findings by the workstream/team the finding names as owner. Dispatch each owning team with that finding's exact text (location, what's wrong, suggested fix), scoped strictly to the files it names — same shape as the Phase C re-integrate dispatch.
+2. A finding whose owner is process/tooling rather than a workstream (a broken gate script, a contract description bug) is not a code-fix dispatch — log it in the ledger and leave it for a human; it does not block re-validation.
+3. After fixes land, re-run **Phase C integration and Phase D program validation from scratch** — a fix that touches integration boundaries needs the same real cross-team verification a first-pass build would get. This is the *one* re-validation round; do not loop a third time.
+4. If `program-validation-report.md` still has a blocking finding after this round, stop — proceed to Phase E in DO-NOT-SHIP/reconcile mode and surface the still-open finding prominently in the final report.
+
+Log the fix round (or its absence) in the ledger before moving on.
+
 ### Phase E — Documentation
 
 Invoke the `program-documenter`. It reads the brief, the frozen contracts, the integration report, every workstream report, the aggregate diff, and any doc-anchors the engineers left, then produces or reconciles the release documentation — changelog, API references, README/architecture/runbook/user-guide updates as the change warrants. It documents what the diff shows was actually built, not what the brief planned, and surfaces any contract-vs-implementation drift as a finding rather than documenting around it.
 
-Run this after validation so the documenter can note anything the validator flagged, and so docs describe the finally-landed state. If the validator's verdict is DO NOT SHIP, still run the documenter in reconcile-only mode to keep existing docs from going stale, but hold new release notes until the blocking findings are resolved.
+Run this after validation (and after Phase D2's fix round, if one ran) so the documenter can note anything the validator flagged, and so docs describe the finally-landed state. If a blocking finding is still open after Phase D2, still run the documenter in reconcile-only mode to keep existing docs from going stale, but hold new release notes until a human resolves it.
 
 ### Rules for you as orchestrator
 
@@ -138,6 +151,7 @@ Run this after validation so the documenter can note anything the validator flag
 - Never advance a phase on a red tree or an unresolved boundary collision.
 - Never let a team alter a frozen contract; route every contract change through the architect and the user.
 - Never skip integration because each team passed locally, and never skip program validation because integration passed — each catches what the others structurally cannot.
+- Never advance to documentation with an open blocking finding without having run the Phase D2 fix-and-revalidate round first.
 - Keep the ledger current at every transition; it is what lets this run across sessions without losing its place.
 - Honor mid-slice `YIELD:` handoffs (skill `write-handoff-and-yield`): fresh Task re-dispatch; never treat a yield as slice completion.
 - If any agent's output does not conform to its contract, re-invoke once with the specific gap; if it fails twice, surface it rather than papering over it.
@@ -154,7 +168,7 @@ Execute this command for the current request. Follow resume/setup rules in §4.
 ### Final report to the user
 
 1. **Verdict** — one line
-2. **Blocking findings** — one line each; full text only if ≤3 or user asks; path to program-validation-report (under archive if already archived)
+2. **Blocking findings** — state whether Phase D2's fix round ran and what it resolved; list anything still open one line each, full text only if ≤3 or user asks; path to program-validation-report (under archive if already archived)
 3. **Workstream status** — one line per WS
 4. **Contracts / integration** — pass/fail + paths
 5. **Quiet skips / docs / experts / channels / archive** — pointers; omit empty; one line for archive path when archived
