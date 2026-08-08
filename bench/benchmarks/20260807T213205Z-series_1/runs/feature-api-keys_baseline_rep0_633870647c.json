@@ -1,0 +1,120 @@
+{
+  "identity": {
+    "run_id": "feature-api-keys_baseline_rep0_633870647c",
+    "series_id": "series_1355e0a7d637",
+    "task_id": "feature-api-keys",
+    "task_version": "1.0",
+    "arm": "baseline",
+    "skailr_sha": null,
+    "skailr_version": null,
+    "fixture_sha": "0d4cb2091b49d018629817e586f78de9ab43ceb4",
+    "timestamp": "2026-08-07T21:09:50.841Z"
+  },
+  "environment": {
+    "claude_code_version": "2.1.224",
+    "model_id": "claude-sonnet-4-5-20250929",
+    "os": "linux-6.12.54-linuxkit",
+    "container": null,
+    "node_version": "22.23.2"
+  },
+  "outcome": {
+    "solved": true,
+    "termination_reason": "finish",
+    "visible_tests": {
+      "passed": 1,
+      "failed": 0,
+      "total": 1
+    },
+    "hidden_tests": {
+      "passed": 11,
+      "failed": 0,
+      "total": 11
+    },
+    "regression": {
+      "passed": 3,
+      "failed": 0,
+      "total": 3
+    },
+    "critical_failures": []
+  },
+  "quality": {
+    "quality_score": 94,
+    "subscores": {
+      "functional": 100,
+      "regression": 100,
+      "security": 100,
+      "static": 0,
+      "scope": 100,
+      "maintainability": 80
+    }
+  },
+  "time": {
+    "wall_clock_s": 423.792,
+    "claude_active_s": 423.792,
+    "time_to_first_edit_s": null,
+    "grader_s": 0
+  },
+  "usage": {
+    "tokens": {
+      "input": 345,
+      "output": 23768,
+      "cache_read": 1977840,
+      "cache_create": 46473
+    },
+    "by_model": {
+      "claude-sonnet-4-5-20250929": {
+        "input": 345,
+        "output": 23768,
+        "cache_read": 1977840,
+        "cache_create": 46473
+      }
+    },
+    "by_source": {
+      "main": {
+        "input": 345,
+        "output": 23768,
+        "cache_read": 1977840,
+        "cache_create": 46473
+      },
+      "subagent": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      },
+      "auxiliary": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      }
+    },
+    "by_agent": {}
+  },
+  "cost": {
+    "cost_reported_usd": 1.230513,
+    "cost_reconstructed_usd": 1.125181,
+    "pricing_table_version": "2026-08"
+  },
+  "trajectory": {
+    "model_requests": 97,
+    "tool_calls": 0,
+    "failed_tool_calls": 0,
+    "retries": 0,
+    "compactions": 0
+  },
+  "code": {
+    "files_read": 0,
+    "files_edited": 3,
+    "lines_added": 185,
+    "lines_removed": 5,
+    "diff_bytes": 8438
+  },
+  "process": {
+    "test_executions": 0,
+    "test_failures": 0,
+    "repair_loops": 0
+  },
+  "skailr_diagnostics": null,
+  "failure_stage": "none"
+}

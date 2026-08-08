@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Skailr Bench Comparison: results vs results</title>
+<style>
+    body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 2rem; color: #1a1a1a; }
+    h1, h2, h3 { color: #111; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; font-size: 0.9rem; }
+    th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f2f2f2; }
+    .banner { background: #fff3cd; border: 1px solid #ffcc00; padding: 1rem; margin-bottom: 1.5rem; font-weight: bold; }
+    .verdict-ACCEPT { color: #0a7d00; font-weight: bold; }
+    .verdict-REJECT { color: #b00020; font-weight: bold; }
+    .verdict-INCONCLUSIVE { color: #806000; font-weight: bold; }
+    code { background: #f2f2f2; padding: 0.1rem 0.3rem; }
+  </style>
+</head>
+<body>
+<h1>Skailr Bench Comparison: results vs results</h1>
+
+<h2>Headline Table</h2>
+<table><thead><tr><th>Version</th><th>Task</th><th>Arm</th><th>n</th><th>Quality (median)</th><th>Quality CI</th><th>Solve Rate</th><th>Solve Rate CI</th><th>Wall (s, median)</th><th>Cost (USD, median)</th><th>Tokens in</th><th>Tokens out</th><th>Tokens cache</th><th>Tool calls</th><th>Subagent cost (USD)</th></tr></thead>
+<tbody>
+<tr><td>results</td><td>feature-api-keys</td><td>baseline</td><td>1</td><td>94.00</td><td>[94.00, 94.00]</td><td>100.0%</td><td>[1.00, 1.00]</td><td>423.8</td><td>1.1252</td><td>345</td><td>23768</td><td>2024313</td><td>0</td><td>0.0000</td></tr>
+<tr><td>results</td><td>feature-api-keys</td><td>skailr</td><td>1</td><td>24.00</td><td>[24.00, 24.00]</td><td>0.0%</td><td>[0.00, 0.00]</td><td>30.2</td><td>0.0963</td><td>25</td><td>1264</td><td>92670</td><td>0</td><td>0.0000</td></tr>
+<tr><td>results</td><td>patch-webhook</td><td>baseline</td><td>1</td><td>95.00</td><td>[95.00, 95.00]</td><td>100.0%</td><td>[1.00, 1.00]</td><td>132.1</td><td>0.4006</td><td>145</td><td>7597</td><td>649656</td><td>0</td><td>0.0000</td></tr>
+<tr><td>results</td><td>patch-webhook</td><td>skailr</td><td>1</td><td>80.00</td><td>[80.00, 80.00]</td><td>0.0%</td><td>[0.00, 0.00]</td><td>280.5</td><td>0.3765</td><td>131</td><td>5021</td><td>633428</td><td>0</td><td>0.0000</td></tr>
+<tr><td>results</td><td>program-rbac</td><td>baseline</td><td>1</td><td>88.25</td><td>[88.25, 88.25]</td><td>0.0%</td><td>[0.00, 0.00]</td><td>449.7</td><td>1.3223</td><td>285</td><td>32708</td><td>1973304</td><td>0</td><td>0.0000</td></tr>
+<tr><td>results</td><td>program-rbac</td><td>skailr</td><td>1</td><td>23.50</td><td>[23.50, 23.50]</td><td>0.0%</td><td>[0.00, 0.00]</td><td>32.8</td><td>0.1050</td><td>33</td><td>1189</td><td>125346</td><td>0</td><td>0.0000</td></tr>
+</tbody></table>
+<h2>Top KPIs</h2>
+<table><thead><tr><th>Version</th><th>Arm</th><th>Solve Rate</th><th>Median Quality</th><th>Cost/Solve (USD)</th><th>Quality-Adjusted Cost (USD)</th></tr></thead>
+<tbody>
+<tr><td>results</td><td>baseline</td><td>66.7%</td><td>94.00</td><td>1.4240</td><td>1.5149</td></tr>
+<tr><td>results</td><td>skailr</td><td>0.0%</td><td>24.00</td><td>—</td><td>—</td></tr>
+</tbody></table>
+<h2>Promotion Verdict</h2>
+<p class="verdict-N/A">N/A</p>
+<p>single-campaign report — no comparison performed</p>
+<table><thead><tr><th>Task</th><th>Quality delta</th><th>Significant?</th><th>Solve-rate delta</th><th>Significant?</th><th>Cost/solve delta</th><th>Wall delta (s)</th></tr></thead>
+<tbody>
+
+</tbody></table>
+<h2>Pareto Frontier (quality vs cost/solve, arm=skailr, across stored versions)</h2>
+<table><thead><tr><th>Version</th><th>Quality</th><th>Cost/Solve (USD)</th><th>Pareto-optimal</th></tr></thead>
+<tbody>
+
+</tbody></table>
+<h2>Diagnostics</h2>
+
+    <h3>results</h3>
+    <ul>
+      <li>Cost/tokens by agent role: <code>{}</code></li>
+      <li>Cache read/create ratio: 26.093</li>
+      <li>Compactions (median): 0.0</li>
+      <li>Contract-change events (skailr arm): 0</li>
+      <li>Gate failures (skailr arm): 0</li>
+      <li>Validator catch rate by task class: <code>{&quot;cross-cutting&quot;:0,&quot;patch&quot;:0,&quot;program&quot;:0}</code></li>
+      <li>Failure-stage distribution: <code>{&quot;none&quot;:2,&quot;validation&quot;:4}</code></li>
+      <li>Duplicate file reads: not derivable from run.json (no per-file read log in the frozen contract)</li>
+    </ul>
+
+    <h3>results</h3>
+    <ul>
+      <li>Cost/tokens by agent role: <code>{}</code></li>
+      <li>Cache read/create ratio: 26.093</li>
+      <li>Compactions (median): 0.0</li>
+      <li>Contract-change events (skailr arm): 0</li>
+      <li>Gate failures (skailr arm): 0</li>
+      <li>Validator catch rate by task class: <code>{&quot;cross-cutting&quot;:0,&quot;patch&quot;:0,&quot;program&quot;:0}</code></li>
+      <li>Failure-stage distribution: <code>{&quot;none&quot;:2,&quot;validation&quot;:4}</code></li>
+      <li>Duplicate file reads: not derivable from run.json (no per-file read log in the frozen contract)</li>
+    </ul>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "label": "20260807T213205Z-series_1",
+  "generated_at": "2026-08-07T21:32:05.045Z",
+  "n_runs": 6,
+  "tasks": [
+    "feature-api-keys",
+    "patch-webhook",
+    "program-rbac"
+  ],
+  "arms": [
+    "baseline",
+    "skailr"
+  ],
+  "series_ids": [
+    "series_1355e0a7d637"
+  ],
+  "cross_series": false,
+  "model_id": "claude-sonnet-4-5-20250929",
+  "claude_code_version": "2.1.224",
+  "skailr_sha": "1380bcf6920996db2c3dba83151d38953962b127",
+  "skailr_version": "1.13.0"
+}

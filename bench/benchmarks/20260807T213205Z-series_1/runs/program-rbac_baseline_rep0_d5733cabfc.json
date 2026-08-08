@@ -1,0 +1,123 @@
+{
+  "identity": {
+    "run_id": "program-rbac_baseline_rep0_d5733cabfc",
+    "series_id": "series_1355e0a7d637",
+    "task_id": "program-rbac",
+    "task_version": "1.0",
+    "arm": "baseline",
+    "skailr_sha": null,
+    "skailr_version": null,
+    "fixture_sha": "10fd79781ad721cbdfbc10fc341facb3e1164345",
+    "timestamp": "2026-08-07T21:16:57.816Z"
+  },
+  "environment": {
+    "claude_code_version": "2.1.224",
+    "model_id": "claude-sonnet-4-5-20250929",
+    "os": "linux-6.12.54-linuxkit",
+    "container": null,
+    "node_version": "22.23.2"
+  },
+  "outcome": {
+    "solved": false,
+    "termination_reason": "finish",
+    "visible_tests": {
+      "passed": 1,
+      "failed": 0,
+      "total": 1
+    },
+    "hidden_tests": {
+      "passed": 9,
+      "failed": 1,
+      "total": 10
+    },
+    "regression": {
+      "passed": 2,
+      "failed": 0,
+      "total": 2
+    },
+    "critical_failures": [
+      "invitation-single-use",
+      "audit-events-emitted"
+    ]
+  },
+  "quality": {
+    "quality_score": 88.25,
+    "subscores": {
+      "functional": 90,
+      "regression": 100,
+      "security": 100,
+      "static": 0,
+      "scope": 100,
+      "maintainability": 85
+    }
+  },
+  "time": {
+    "wall_clock_s": 449.686,
+    "claude_active_s": 449.686,
+    "time_to_first_edit_s": null,
+    "grader_s": 0
+  },
+  "usage": {
+    "tokens": {
+      "input": 285,
+      "output": 32708,
+      "cache_read": 1904083,
+      "cache_create": 69221
+    },
+    "by_model": {
+      "claude-sonnet-4-5-20250929": {
+        "input": 285,
+        "output": 32708,
+        "cache_read": 1904083,
+        "cache_create": 69221
+      }
+    },
+    "by_source": {
+      "main": {
+        "input": 285,
+        "output": 32708,
+        "cache_read": 1904083,
+        "cache_create": 69221
+      },
+      "subagent": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      },
+      "auxiliary": {
+        "input": 0,
+        "output": 0,
+        "cache_read": 0,
+        "cache_create": 0
+      }
+    },
+    "by_agent": {}
+  },
+  "cost": {
+    "cost_reported_usd": 1.4789208999999999,
+    "cost_reconstructed_usd": 1.322279,
+    "pricing_table_version": "2026-08"
+  },
+  "trajectory": {
+    "model_requests": 112,
+    "tool_calls": 0,
+    "failed_tool_calls": 0,
+    "retries": 0,
+    "compactions": 0
+  },
+  "code": {
+    "files_read": 0,
+    "files_edited": 6,
+    "lines_added": 368,
+    "lines_removed": 11,
+    "diff_bytes": 18322
+  },
+  "process": {
+    "test_executions": 0,
+    "test_failures": 0,
+    "repair_loops": 0
+  },
+  "skailr_diagnostics": null,
+  "failure_stage": "validation"
+}

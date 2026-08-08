@@ -1,0 +1,7 @@
+version,task_id,arm,n,quality_median,quality_ci_lo,quality_ci_hi,solve_rate,solve_rate_ci_lo,solve_rate_ci_hi,wall_clock_s_median,cost_usd_median,tokens_in_median,tokens_out_median,tokens_cache_median,tool_calls_median,subagent_cost_usd_median,cost_per_solve_usd,quality_adjusted_cost_usd
+results,feature-api-keys,baseline,1,94,94,94,1,1,1,423.792,1.125181,345,23768,2024313,0,0,1.125181,1.197001
+results,feature-api-keys,skailr,1,24,24,24,0,0,0,30.169,0.096316,25,1264,92670,0,0,,
+results,patch-webhook,baseline,1,95,95,95,1,1,1,132.114,0.400608,145,7597,649656,0,0,0.400608,0.421693
+results,patch-webhook,skailr,1,80,80,80,0,0,0,280.493,0.376488,131,5021,633428,0,0,,
+results,program-rbac,baseline,1,88.25,88.25,88.25,0,0,0,449.686,1.322279,285,32708,1973304,0,0,,
+results,program-rbac,skailr,1,23.5,23.5,23.5,0,0,0,32.808,0.105045,33,1189,125346,0,0,,

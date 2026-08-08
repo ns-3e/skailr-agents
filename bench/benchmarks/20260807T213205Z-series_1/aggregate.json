@@ -1,0 +1,315 @@
+{
+  "campaign_dir": "/home/bench/work/repo/bench/results",
+  "n_runs": 6,
+  "series_ids": [
+    "series_1355e0a7d637"
+  ],
+  "groups": [
+    {
+      "task_id": "feature-api-keys",
+      "arm": "baseline",
+      "n": 1,
+      "solved_count": 1,
+      "solve_rate": 1,
+      "solve_rate_ci": {
+        "lo": 1,
+        "hi": 1,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 94,
+        "p25": 94,
+        "p75": 94,
+        "mean": 94,
+        "min": 94,
+        "max": 94,
+        "ci": {
+          "lo": 94,
+          "hi": 94,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 1.125181,
+        "p25": 1.125181,
+        "p75": 1.125181,
+        "mean": 1.125181,
+        "min": 1.125181,
+        "max": 1.125181
+      },
+      "wall_clock_s": {
+        "median": 423.792,
+        "p25": 423.792,
+        "p75": 423.792,
+        "mean": 423.792,
+        "min": 423.792,
+        "max": 423.792
+      },
+      "tokens_total": {
+        "median": 2048426,
+        "p25": 2048426,
+        "p75": 2048426,
+        "mean": 2048426,
+        "min": 2048426,
+        "max": 2048426
+      },
+      "cost_per_solve_usd": 1.125181,
+      "quality_adjusted_cost_usd": 1.197001
+    },
+    {
+      "task_id": "feature-api-keys",
+      "arm": "skailr",
+      "n": 1,
+      "solved_count": 0,
+      "solve_rate": 0,
+      "solve_rate_ci": {
+        "lo": 0,
+        "hi": 0,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 24,
+        "p25": 24,
+        "p75": 24,
+        "mean": 24,
+        "min": 24,
+        "max": 24,
+        "ci": {
+          "lo": 24,
+          "hi": 24,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 0.096316,
+        "p25": 0.096316,
+        "p75": 0.096316,
+        "mean": 0.096316,
+        "min": 0.096316,
+        "max": 0.096316
+      },
+      "wall_clock_s": {
+        "median": 30.169,
+        "p25": 30.169,
+        "p75": 30.169,
+        "mean": 30.169,
+        "min": 30.169,
+        "max": 30.169
+      },
+      "tokens_total": {
+        "median": 93959,
+        "p25": 93959,
+        "p75": 93959,
+        "mean": 93959,
+        "min": 93959,
+        "max": 93959
+      },
+      "cost_per_solve_usd": null,
+      "quality_adjusted_cost_usd": null
+    },
+    {
+      "task_id": "patch-webhook",
+      "arm": "baseline",
+      "n": 1,
+      "solved_count": 1,
+      "solve_rate": 1,
+      "solve_rate_ci": {
+        "lo": 1,
+        "hi": 1,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 95,
+        "p25": 95,
+        "p75": 95,
+        "mean": 95,
+        "min": 95,
+        "max": 95,
+        "ci": {
+          "lo": 95,
+          "hi": 95,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 0.400608,
+        "p25": 0.400608,
+        "p75": 0.400608,
+        "mean": 0.400608,
+        "min": 0.400608,
+        "max": 0.400608
+      },
+      "wall_clock_s": {
+        "median": 132.114,
+        "p25": 132.114,
+        "p75": 132.114,
+        "mean": 132.114,
+        "min": 132.114,
+        "max": 132.114
+      },
+      "tokens_total": {
+        "median": 657398,
+        "p25": 657398,
+        "p75": 657398,
+        "mean": 657398,
+        "min": 657398,
+        "max": 657398
+      },
+      "cost_per_solve_usd": 0.400608,
+      "quality_adjusted_cost_usd": 0.421693
+    },
+    {
+      "task_id": "patch-webhook",
+      "arm": "skailr",
+      "n": 1,
+      "solved_count": 0,
+      "solve_rate": 0,
+      "solve_rate_ci": {
+        "lo": 0,
+        "hi": 0,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 80,
+        "p25": 80,
+        "p75": 80,
+        "mean": 80,
+        "min": 80,
+        "max": 80,
+        "ci": {
+          "lo": 80,
+          "hi": 80,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 0.376488,
+        "p25": 0.376488,
+        "p75": 0.376488,
+        "mean": 0.376488,
+        "min": 0.376488,
+        "max": 0.376488
+      },
+      "wall_clock_s": {
+        "median": 280.493,
+        "p25": 280.493,
+        "p75": 280.493,
+        "mean": 280.493,
+        "min": 280.493,
+        "max": 280.493
+      },
+      "tokens_total": {
+        "median": 638580,
+        "p25": 638580,
+        "p75": 638580,
+        "mean": 638580,
+        "min": 638580,
+        "max": 638580
+      },
+      "cost_per_solve_usd": null,
+      "quality_adjusted_cost_usd": null
+    },
+    {
+      "task_id": "program-rbac",
+      "arm": "baseline",
+      "n": 1,
+      "solved_count": 0,
+      "solve_rate": 0,
+      "solve_rate_ci": {
+        "lo": 0,
+        "hi": 0,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 88.25,
+        "p25": 88.25,
+        "p75": 88.25,
+        "mean": 88.25,
+        "min": 88.25,
+        "max": 88.25,
+        "ci": {
+          "lo": 88.25,
+          "hi": 88.25,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 1.322279,
+        "p25": 1.322279,
+        "p75": 1.322279,
+        "mean": 1.322279,
+        "min": 1.322279,
+        "max": 1.322279
+      },
+      "wall_clock_s": {
+        "median": 449.686,
+        "p25": 449.686,
+        "p75": 449.686,
+        "mean": 449.686,
+        "min": 449.686,
+        "max": 449.686
+      },
+      "tokens_total": {
+        "median": 2006297,
+        "p25": 2006297,
+        "p75": 2006297,
+        "mean": 2006297,
+        "min": 2006297,
+        "max": 2006297
+      },
+      "cost_per_solve_usd": null,
+      "quality_adjusted_cost_usd": null
+    },
+    {
+      "task_id": "program-rbac",
+      "arm": "skailr",
+      "n": 1,
+      "solved_count": 0,
+      "solve_rate": 0,
+      "solve_rate_ci": {
+        "lo": 0,
+        "hi": 0,
+        "resamples": 1000
+      },
+      "quality": {
+        "median": 23.5,
+        "p25": 23.5,
+        "p75": 23.5,
+        "mean": 23.5,
+        "min": 23.5,
+        "max": 23.5,
+        "ci": {
+          "lo": 23.5,
+          "hi": 23.5,
+          "resamples": 1000
+        }
+      },
+      "cost_usd": {
+        "median": 0.105045,
+        "p25": 0.105045,
+        "p75": 0.105045,
+        "mean": 0.105045,
+        "min": 0.105045,
+        "max": 0.105045
+      },
+      "wall_clock_s": {
+        "median": 32.808,
+        "p25": 32.808,
+        "p75": 32.808,
+        "mean": 32.808,
+        "min": 32.808,
+        "max": 32.808
+      },
+      "tokens_total": {
+        "median": 126568,
+        "p25": 126568,
+        "p75": 126568,
+        "mean": 126568,
+        "min": 126568,
+        "max": 126568
+      },
+      "cost_per_solve_usd": null,
+      "quality_adjusted_cost_usd": null
+    }
+  ]
+}
