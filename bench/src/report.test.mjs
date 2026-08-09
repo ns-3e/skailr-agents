@@ -14,6 +14,7 @@ import {
   computeParetoFrontier,
   loadCampaign,
   resolveCampaignDir,
+  detectRowWarnings,
 } from "./report.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,6 +26,26 @@ const CROSS = path.join(SYNTHETIC, "cross-series-v2");
 function mkTmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bench-report-"));
 }
+
+test("BUG-2 AC: detectRowWarnings still flags the genuine broken-run signature (0 tool calls, 0% solve, short wall clock)", () => {
+  const r = { tool_calls_median: 0, solve_rate: 0, wall_clock_s_median: 4, n: 3 };
+  const warnings = detectRowWarnings(r);
+  assert.ok(warnings.some((w) => w.startsWith("BROKEN RUN")));
+});
+
+test("BUG-2 AC: detectRowWarnings no longer flags a real, long-running, solved-false run as broken just because tool_calls was mis-extracted as 0", () => {
+  // Mirrors a real captured run: 0 tool_calls was a telemetry-extraction bug
+  // (see telemetry.mjs), not a broken invocation — the run ran for 75 minutes.
+  const r = { tool_calls_median: 0, solve_rate: 0, wall_clock_s_median: 4500, n: 1 };
+  const warnings = detectRowWarnings(r);
+  assert.equal(warnings.some((w) => w.startsWith("BROKEN RUN")), false);
+});
+
+test("BUG-2 AC: detectRowWarnings does not flag a row once tool_calls is correctly counted as nonzero", () => {
+  const r = { tool_calls_median: 42, solve_rate: 0, wall_clock_s_median: 4, n: 1 };
+  const warnings = detectRowWarnings(r);
+  assert.equal(warnings.some((w) => w.startsWith("BROKEN RUN")), false);
+});
 
 test("robustness: resolveCampaignDir resolves bare synthetic labels but THROWS on a bogus ref (no phantom dir)", () => {
   assert.equal(resolveCampaignDir("v1.11.0"), V1_11);

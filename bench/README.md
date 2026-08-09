@@ -183,8 +183,9 @@ locally.
 bench/
   config.yaml            pinned env + defaults + per-category pricing table (FR-1)
   package.json           the 5 FR-11 scripts; zero deps
-  tasks/*.yaml           one per task: prompt, fixture ref, grader ref, limits,
-                         critical_requirements  (patch-webhook, feature-api-keys, program-rbac)
+  tasks/*.yaml           one per task: prompt, optional command, fixture ref,
+                         grader ref, limits, critical_requirements
+                         (patch-webhook, feature-api-keys, program-rbac)
   fixtures/<task>/       offline TS repos (plain files + .fixture-sha + fixture.manifest.json),
                          passing visible tests
   graders/<task>/        hidden-tests + rubric.yaml + grade.mjs (+ lib/) — kept
@@ -266,8 +267,16 @@ Three seams, all contract-shaped:
    path-reachable from the fixture.
 3. **Task** — `bench/tasks/<task-id>.yaml` per the `task-config` contract:
    `id`, `version`, `class`, `fixture`, `fixture_sha`, `grader`, `prompt`
-   (byte-identical across arms — block scalars preserved), `limits`, `setup`,
-   `critical_requirements`.
+   (the arm-agnostic task body — byte-identical across arms, block scalars
+   preserved), an optional `command` (the leading Skailr slash command, e.g.
+   `/patch`), `limits`, `setup`, `critical_requirements`. When `command` is
+   set, `claude.mjs`'s `buildLaunchPrompt(task, arm)` — not the YAML — builds
+   what's actually sent to the CLI: `command`+`prompt` on the `skailr` arm,
+   a plain-language framing line + `prompt` on `baseline` (vanilla Claude
+   Code has no such command and its slash-command parser would otherwise
+   intercept an unrecognized leading `/word` line and exit in seconds with 0
+   tool calls — see "Known issues"). Never bake a slash command into `prompt`
+   itself.
 4. Run `npm run bench:verify-isolation` — must stay green.
 
 **`critical_requirements` vocabulary** is a shared ID set across the task YAML,
@@ -414,7 +423,7 @@ is **correct and runnable**, proven via **mock mode** + committed
 
 ## Known issues
 
-- **Task prompts must carry an explicit slash command (`/yolo`,
+- **Skailr-arm prompts must carry an explicit slash command (`/yolo`,
   `/yolo-program`, `/patch`), never a plain-language ask.** A plain prompt
   relies on this repo's own `CLAUDE.md` intake-routing skill to self-route,
   and that skill's confirmation gates (e.g. "offer `/map-repo` first... build
@@ -425,12 +434,22 @@ is **correct and runnable**, proven via **mock mode** + committed
   this failure as a "Skailr loses badly" result: `feature-api-keys` and
   `program-rbac`'s skailr-arm runs both showed `termination_reason: "finish"`,
   `tool_calls: 0`, `diff_bytes: 0` — a broken invocation, not a capability
-  signal. All `bench/tasks/*.yaml` now hard-code the slash command in the
-  prompt itself so this can't silently recur. When reading any *older*
-  campaign result, treat `tool_calls: 0` combined with `solved: false` and a
-  short `wall_clock_s` as a broken-run signature to investigate, not a real
-  score — `src/report.mjs` now flags this pattern automatically (see
-  "Reading reports").
+  signal. Every `bench/tasks/*.yaml` sets `command:` to the required slash
+  command so this can't silently recur. When reading any *older* campaign
+  result, treat `tool_calls: 0` combined with `solved: false` and a short
+  `wall_clock_s` as a broken-run signature to investigate, not a real score —
+  `src/report.mjs` flags this pattern automatically (see "Reading reports").
+- **Baseline-arm runs failed instantly when `command` was baked into the
+  literal first line of `prompt`.** Before `buildLaunchPrompt` existed,
+  `bench/tasks/*.yaml` hard-coded the skailr slash command as `prompt`'s
+  literal first line. On the `baseline` arm (nothing installed) vanilla
+  Claude Code's slash-command parser intercepted that line and replied
+  "Unknown command: /patch. Did you mean /batch?" before any task work
+  started — every baseline rep terminated in ~4s at $0, 0 tool calls, across
+  all three tasks. Fixed by moving the slash command into a separate,
+  optional `command` task-config field sent only on the `skailr` arm;
+  `claude.mjs`'s `buildLaunchPrompt` sends a plain-language framing line +
+  the same task body on `baseline` instead. See "Adding a task" above.
 
 ## V2 / not yet built
 

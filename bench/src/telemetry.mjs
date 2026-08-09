@@ -82,13 +82,55 @@ export function readOtelRecords(runDir) {
   return records;
 }
 
+// DOC: tool-call counting from the raw stream-json event list. Two event
+// shapes must both be handled:
+//   1. Mock-mode shape (mock.mjs) — flat top-level `{type:"tool_use",ok}`
+//      events. Kept for back-compat with existing mock fixtures/tests.
+//   2. Real Claude Code stream-json shape (verified 2026-08-08 against a
+//      live non-mock run's stdout.log) — there is NO top-level
+//      `type:"tool_use"` event at all. Tool-use blocks are nested inside
+//      `{type:"assistant", message:{content:[{type:"tool_use",...}]}}`
+//      events, and their results as `{type:"user", message:{content:
+//      [{type:"tool_result", is_error}]}}`. This is true for BOTH the
+//      top-level agent's own tool calls AND every subagent dispatched via
+//      the Task/Agent tool — subagent turns appear in the SAME flat
+//      stdout.log, distinguished only by a `parent_tool_use_id` +
+//      `subagent_type` field on the `assistant` event, not by a different
+//      event shape. Counting only shape (1) is why every real Skailr-arm
+//      run.json previously reported `trajectory.tool_calls: 0` regardless
+//      of real work done (files edited, tokens spent, up to 114 turns) —
+//      the fallback path never matched shape (2) at all, main OR subagent.
+//      Fixed by counting both shapes.
+export function countToolCallsInEvents(events) {
+  let toolCalls = 0;
+  let failedToolCalls = 0;
+  for (const e of events) {
+    if (e.type === "tool_use") {
+      toolCalls++;
+      if (e.ok === false) failedToolCalls++;
+      continue;
+    }
+    const content = e.message?.content;
+    if (!Array.isArray(content)) continue;
+    if (e.type === "assistant") {
+      for (const block of content) {
+        if (block && block.type === "tool_use") toolCalls++;
+      }
+    } else if (e.type === "user") {
+      for (const block of content) {
+        if (block && block.type === "tool_result" && block.is_error === true) failedToolCalls++;
+      }
+    }
+  }
+  return { toolCalls, failedToolCalls };
+}
+
 /** Degraded fallback: one "main" telemetry record derived from the
  * stream-json result event's usage block, when no real/mock otel records
  * exist. See top-of-file OTEL MECHANISM CHOICE. */
 export function deriveFallbackTelemetry({ sessionId, promptId, model, resultEvent, events = [] }) {
   const usage = resultEvent?.usage || {};
-  const toolCalls = events.filter((e) => e.type === "tool_use").length;
-  const failedToolCalls = events.filter((e) => e.type === "tool_use" && e.ok === false).length;
+  const { toolCalls, failedToolCalls } = countToolCallsInEvents(events);
   return [
     {
       session_id: sessionId,

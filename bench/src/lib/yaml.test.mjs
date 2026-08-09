@@ -109,10 +109,11 @@ test("yaml: folded chomp keep (>+) folds and preserves trailing blank lines", ()
   assert.equal(out.next, 1);
 });
 
-test("yaml: real task file patch-webhook.yaml loads full multi-line prompt", () => {
+test("yaml: real task file patch-webhook.yaml loads full multi-line prompt + separate command field", () => {
   const text = readFileSync(path.join(tasksDir, "patch-webhook.yaml"), "utf8");
   const obj = parseYaml(text);
-  assert.ok(obj.prompt.startsWith("/patch"));
+  assert.equal(obj.command, "/patch");
+  assert.ok(!obj.prompt.startsWith("/patch"));
   assert.ok(obj.prompt.includes("Fix the duplicate webhook processing bug."));
   assert.ok(obj.prompt.includes("Add appropriate tests."));
   assert.ok(obj.prompt.split("\n").length > 5);

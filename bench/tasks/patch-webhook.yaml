@@ -7,11 +7,16 @@ grader: bench/graders/patch-webhook
 limits:
   max_budget_usd: 15
   wall_clock_timeout_min: 60
-# See feature-api-keys.yaml for why the explicit slash command is load-bearing
-# (headless -p mode self-routing failure) rather than a style preference.
+# `command` is the leading Skailr slash command load-bearing for the skailr
+# arm only (see feature-api-keys.yaml for why it's load-bearing rather than a
+# style preference — headless -p mode self-routing failure). `prompt` below
+# is the arm-agnostic task body: run.mjs/claude.mjs (buildLaunchPrompt)
+# prepend `command` only for the skailr arm and a plain-language framing line
+# for baseline, since vanilla Claude Code's slash-command parser would
+# otherwise intercept an unrecognized leading `/word` line and exit
+# immediately. See bench/README.md "Arms + installArm / prompt construction".
+command: /patch
 prompt: |
-  /patch
-
   Fix the duplicate webhook processing bug.
   POST /webhooks receives events containing a unique event_id. The same event may
   be delivered more than once, including concurrently.

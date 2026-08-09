@@ -3,8 +3,16 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { invokeClaude, isMockMode, classifyTermination } from "./claude.mjs";
+import { invokeClaude, isMockMode, classifyTermination, buildLaunchPrompt } from "./claude.mjs";
 import { validate } from "./schema/validate.mjs";
+import { parseYaml } from "./lib/yaml.mjs";
+
+const TASKS_DIR = path.resolve(import.meta.dirname, "..", "tasks");
+const TASK_IDS = ["patch-webhook", "feature-api-keys", "program-rbac"];
+
+function loadTask(id) {
+  return parseYaml(fs.readFileSync(path.join(TASKS_DIR, `${id}.yaml`), "utf8"));
+}
 
 function mkTmp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "bench-claude-"));
@@ -90,6 +98,41 @@ test("classifyTermination: error result with a cost figure -> budget", () => {
     "budget"
   );
 });
+
+test("buildLaunchPrompt: no task.command -> prompt passed through unchanged on both arms", () => {
+  const task = { prompt: "do the thing" };
+  assert.equal(buildLaunchPrompt(task, "baseline"), "do the thing");
+  assert.equal(buildLaunchPrompt(task, "skailr"), "do the thing");
+});
+
+test("buildLaunchPrompt: skailr arm prepends task.command as the literal leading line", () => {
+  const task = { command: "/patch", prompt: "Fix the bug." };
+  const sent = buildLaunchPrompt(task, "skailr");
+  assert.ok(sent.startsWith("/patch\n"));
+  assert.ok(sent.includes("Fix the bug."));
+});
+
+test("buildLaunchPrompt: baseline arm never starts with a slash command (bug: CLI intercepted /patch as unrecognized)", () => {
+  const task = { command: "/patch", prompt: "Fix the bug." };
+  const sent = buildLaunchPrompt(task, "baseline");
+  assert.equal(sent.startsWith("/"), false);
+  assert.ok(sent.includes("Fix the bug."));
+});
+
+for (const id of TASK_IDS) {
+  test(`bug-1 AC: ${id}.yaml — baseline launch input does not start with an unrecognized leading slash command`, () => {
+    const task = loadTask(id);
+    assert.ok(task.command, `${id}.yaml must declare a command`);
+    const sent = buildLaunchPrompt(task, "baseline");
+    assert.equal(sent.startsWith("/"), false);
+  });
+
+  test(`bug-1 AC: ${id}.yaml — skailr launch input still starts with the task's intended slash command`, () => {
+    const task = loadTask(id);
+    const sent = buildLaunchPrompt(task, "skailr");
+    assert.ok(sent.startsWith(`${task.command}\n`));
+  });
+}
 
 test("classifyTermination: no result event, nonzero exit -> nonzero_exit", () => {
   assert.equal(

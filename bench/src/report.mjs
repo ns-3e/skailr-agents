@@ -100,13 +100,28 @@ function subagentCostOf(record) {
 // and exited with 0 tool calls (see README "Known issues"); (b) a
 // saturated 100% pass rate signals the task has "graduated" and stopped
 // discriminating, which is worth flagging rather than silently celebrating.
-function detectRowWarnings(r) {
+//
+// DOC: the tool_calls==0 check is now gated on a tiny wall_clock_s too
+// (BROKEN_RUN_MAX_WALL_CLOCK_S). Before the telemetry-extraction fix (see
+// telemetry.mjs countToolCallsInEvents), every real Skailr-arm run.json
+// reported tool_calls:0 even for long, genuinely-worked runs (up to 75 min /
+// 114 turns) — so this heuristic previously false-flagged real, solved-false
+// work as a broken invocation. A truly broken invocation (unrecognized
+// slash command, confirmation-gate stall) terminates in seconds; a real
+// attempt that simply failed to solve the task does not. Requiring BOTH
+// 0 tool calls AND a short wall clock keeps the genuine broken-run signature
+// while dropping that false-positive path.
+const BROKEN_RUN_MAX_WALL_CLOCK_S = 30;
+
+export function detectRowWarnings(r) {
   const warnings = [];
-  if (r.tool_calls_median === 0 && r.solve_rate === 0) {
+  if (r.tool_calls_median === 0 && r.solve_rate === 0 && r.wall_clock_s_median < BROKEN_RUN_MAX_WALL_CLOCK_S) {
     warnings.push(
-      "BROKEN RUN: 0 tool calls with 0% solve rate — this is almost certainly a failed/aborted " +
-        "invocation (e.g. a self-routing prompt that hit a confirmation gate in headless mode), " +
-        "not a real capability result. Read the transcript before trusting this row."
+      "BROKEN RUN: 0 tool calls with 0% solve rate in under " +
+        `${BROKEN_RUN_MAX_WALL_CLOCK_S}s — this is almost certainly a failed/aborted ` +
+        "invocation (e.g. a self-routing prompt that hit a confirmation gate in headless mode, " +
+        "or an unrecognized leading slash command), not a real capability result. Read the " +
+        "transcript before trusting this row."
     );
   }
   if (r.solve_rate === 1 && r.n >= 3) {

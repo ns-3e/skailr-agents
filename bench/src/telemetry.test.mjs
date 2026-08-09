@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildTelemetryEnv, readOtelRecords, deriveFallbackTelemetry, foldUsage, foldTrajectory, computeCost, buildTelemetry } from "./telemetry.mjs";
+import { buildTelemetryEnv, readOtelRecords, deriveFallbackTelemetry, foldUsage, foldTrajectory, computeCost, buildTelemetry, countToolCallsInEvents } from "./telemetry.mjs";
 import { writeMockRun } from "./lib/mock.mjs";
 import { reconstructCost } from "./lib/pricing.mjs";
 
@@ -49,6 +49,61 @@ test("telemetry: deriveFallbackTelemetry builds a single main-source record from
   assert.equal(rec.tokens.input, 100);
   assert.equal(rec.tool_calls, 2);
   assert.equal(rec.failed_tool_calls, 1);
+});
+
+// Real-shape (non-mock) synthetic transcript, verified against an actual
+// non-mock Skailr-arm stdout.log (2026-08-08): top-level tool_use blocks are
+// nested inside `assistant.message.content[]`, and Task/Agent-dispatched
+// subagent turns appear INLINE in the same flat event list, distinguished
+// only by `parent_tool_use_id` + `subagent_type` — never a separate
+// top-level `type:"tool_use"` event (that shape is mock-only).
+function realShapeAssistantToolUse({ toolName, parentToolUseId = null, subagentType = null }) {
+  const e = { type: "assistant", message: { role: "assistant", content: [{ type: "tool_use", name: toolName, id: `toolu_${toolName}` }] } };
+  if (parentToolUseId) e.parent_tool_use_id = parentToolUseId;
+  if (subagentType) e.subagent_type = subagentType;
+  return e;
+}
+function realShapeToolResult({ toolUseId, isError = false }) {
+  return { type: "user", message: { role: "user", content: [{ type: "tool_result", tool_use_id: toolUseId, is_error: isError }] } };
+}
+
+test("BUG-2 AC: countToolCallsInEvents counts real-shape nested tool_use blocks from the top-level agent", () => {
+  const events = [
+    { type: "system", subtype: "init" },
+    realShapeAssistantToolUse({ toolName: "Read" }),
+    realShapeToolResult({ toolUseId: "toolu_Read" }),
+    realShapeAssistantToolUse({ toolName: "Edit" }),
+    realShapeToolResult({ toolUseId: "toolu_Edit" }),
+  ];
+  const { toolCalls, failedToolCalls } = countToolCallsInEvents(events);
+  assert.equal(toolCalls, 2);
+  assert.equal(failedToolCalls, 0);
+});
+
+test("BUG-2 AC: countToolCallsInEvents also counts subagent tool_use blocks (Task/Agent dispatch, parent_tool_use_id set) inline in the same flat transcript", () => {
+  const events = [
+    realShapeAssistantToolUse({ toolName: "Agent" }), // dispatch itself
+    realShapeAssistantToolUse({ toolName: "Read", parentToolUseId: "toolu_Agent", subagentType: "researcher" }),
+    realShapeToolResult({ toolUseId: "toolu_Read", isError: false }),
+    realShapeAssistantToolUse({ toolName: "Bash", parentToolUseId: "toolu_Agent", subagentType: "researcher" }),
+    realShapeToolResult({ toolUseId: "toolu_Bash", isError: true }),
+    realShapeToolResult({ toolUseId: "toolu_Agent" }),
+  ];
+  const { toolCalls, failedToolCalls } = countToolCallsInEvents(events);
+  assert.equal(toolCalls, 3); // Agent + subagent Read + subagent Bash
+  assert.equal(failedToolCalls, 1);
+});
+
+test("BUG-2 AC: deriveFallbackTelemetry on a real-shape transcript with subagent activity no longer reports tool_calls:0", () => {
+  const resultEvent = { usage: { input_tokens: 500, output_tokens: 200, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } };
+  const events = [
+    realShapeAssistantToolUse({ toolName: "Agent" }),
+    realShapeAssistantToolUse({ toolName: "Write", parentToolUseId: "toolu_Agent", subagentType: "backend-engineer" }),
+    realShapeToolResult({ toolUseId: "toolu_Write" }),
+  ];
+  const [rec] = deriveFallbackTelemetry({ sessionId: "s1", promptId: "p1", model: "m", resultEvent, events });
+  assert.equal(rec.tool_calls, 2);
+  assert.notEqual(rec.tool_calls, 0);
 });
 
 test("telemetry: foldUsage sums tokens across records into tokens/by_model/by_source/by_agent, zero-filling unused sources", () => {

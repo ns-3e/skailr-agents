@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import { loadAndVerifyConfig, getLiveEnv } from "./lib/config.mjs";
 import { deriveSeriesId, deriveRunId } from "./lib/ids.mjs";
 import { ensureDir, atomicWriteJson, atomicWriteValidatedJson, markReadOnly } from "./lib/fsutil.mjs";
-import { invokeClaude } from "./claude.mjs";
+import { invokeClaude, buildLaunchPrompt } from "./claude.mjs";
 import { buildTelemetryEnv, buildTelemetry } from "./telemetry.mjs";
 import { runGraderProcess } from "./grade.mjs";
 
@@ -36,8 +36,12 @@ export class InstallArmError extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// installArm — install-arm contract (Q2). The ONLY place baseline/skailr
-// differ; keeps the agent prompt byte-identical across arms.
+// installArm — install-arm contract (Q2). The workspace-materialization
+// difference between baseline/skailr. The *task-authored* prompt
+// (task.prompt) is byte-identical across arms; the leading Skailr
+// slash-command line (task.command) is the one deliberate, code-constructed
+// per-arm difference in what's actually sent to the CLI — see
+// buildLaunchPrompt in claude.mjs.
 // ---------------------------------------------------------------------------
 export async function installArm(arm, ref, workspace, opts = {}) {
   const skailrRepoRoot = opts.skailrRepoRoot || SKAILR_REPO_ROOT;
@@ -416,7 +420,7 @@ export async function runOne(opts) {
     const timeoutMs = (task.limits?.wall_clock_timeout_min ?? config.defaults.wall_clock_timeout_min ?? 45) * 60 * 1000;
     try {
       claudeResult = await invokeClaude({
-        prompt: task.prompt, model: config.model, cwd: workspace, runDir,
+        prompt: buildLaunchPrompt(task, arm), model: config.model, cwd: workspace, runDir,
         maxBudgetUsd, timeoutMs, env, mock, flavor, claudeBin, maxTurns,
       });
       stage(`terminate:${claudeResult.termination_reason}`);

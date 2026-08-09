@@ -75,6 +75,30 @@ export function isMockMode(opts = {}) {
   return opts.mock === true || process.env.BENCH_MOCK === "1";
 }
 
+// DOC: per-arm launch-prompt construction (fixes the baseline-arm bug where a
+// bare Skailr-only slash command as the literal first line of a task prompt
+// made the CLI's slash-command parser intercept it before any task work
+// started — "Unknown command: /patch. Did you mean /batch?" — a ~4s, $0,
+// zero-tool-call run on every baseline rep). `task.prompt` (the task body) is
+// arm-agnostic and stored once in task.yaml; `task.command` (e.g. "/patch")
+// is the optional leading Skailr slash command, sent ONLY on the skailr arm
+// so its mandated engineer-dispatch discipline still fires. The baseline arm
+// gets an equivalent plain-language framing line instead of the slash
+// command line, so a vanilla agent still attempts the identical task body
+// fairly. This keeps the single `prompt:` field in task.yaml as the one
+// authored value; the two variants are constructed here, not duplicated in
+// YAML. See bench/README.md "Adding a task" + "Arms + installArm".
+const BASELINE_FRAMING =
+  "You are a software engineer with edit access to this repository. " +
+  "Complete the following task directly and autonomously (do not ask for " +
+  "confirmation), including tests, and leave the repository in a working state.";
+
+export function buildLaunchPrompt(task, arm) {
+  if (!task.command) return task.prompt;
+  if (arm === "skailr") return `${task.command}\n\n${task.prompt}`;
+  return `${BASELINE_FRAMING}\n\n${task.prompt}`;
+}
+
 /**
  * Classify how the process ended into the run-json termination_reason enum.
  * Heuristic where the CLI gives us no authoritative signal (see DEVIATION
