@@ -10,11 +10,11 @@ cell) and run-to-run variance is large — in some cases larger than the
 differences being compared. Treat every "delta" on this page as a lead
 worth investigating, not a settled result. See [Caveats](#caveats).
 
-## 2026-08-09 update: lean pass landed, not yet re-benchmarked
+## 2026-08-09 update: v1.15.0 re-benchmarked — mixed, not a clean win
 
-Everything below this note is the campaign data that motivated a benchmark-driven
-efficiency pass (`IMPROVEMENT-BACKLOG.md`, L-1..L-7) — the fixed points, not something
-this note revises. What changed, mechanically:
+Everything below this note through "Skailr 1.14.0 real campaigns: what we found" is
+the campaign data that motivated a benchmark-driven efficiency pass
+(`IMPROVEMENT-BACKLOG.md`, L-1..L-7). What changed, mechanically:
 
 - **De-taxed per-dispatch bookkeeping** (`route-models`, `emit-telemetry`): the routing
   file is now read once per run instead of before every Task; telemetry span wrapping
@@ -47,31 +47,47 @@ this note revises. What changed, mechanically:
   turn, not an incremental delta); no sound per-source split is derivable from
   stream-json alone.
 
-**Not done here:** no numbers on this page were rerun or corrected. The `resultEvent`
-fix in particular means historical `cost_reported_usd` figures for real, multi-checkpoint
-skailr-arm runs below may be understated — flagged, not retroactively recomputed, since
-that requires either re-deriving from each run's raw `stdout.log` or a fresh campaign.
-A real before/after `bench/docker-run.sh` run (starting with `patch-webhook`, where the
-inline-fix path most directly applies) is the natural next step and is not simulated or
-estimated on this page. `program-rbac`'s identical 6/6 failure is a capability gap this
-pass does not address — see "The real program-rbac finding" below.
+**Now re-benchmarked**, real spend, `bench/docker-run.sh --smoke --skailr-ref v1.15.0`
+(`skailr_sha` `494d1f91`, matches `git rev-parse v1.15.0` exactly), one campaign
+(`20260809T170839Z-series_1`), all 3 tasks × both arms × 1 rep. Result is genuinely
+mixed, not the clean efficiency win the prediction implied:
+
+- **`patch-webhook`: the predicted win, observed.** Skailr solved it (95.0, tied
+  vanilla exactly) and for the first time **beat vanilla on wall time** (273.5s vs
+  364.9s) and cost ($0.83 vs $0.96 reported). `cost_reported_usd`/`cost_reconstructed_usd`
+  landed at a 1.12x ratio — the tightest a skailr-arm run has ever shown, in line with
+  little-to-no subagent work on this run.
+- **`feature-api-keys`: regressed.** 1.14.0 solved this 2/2 (92.5 both). 1.15.0's single
+  real run **failed** (87.05, `hf-authenticate-with-api-key` returns 403 — API-key
+  authentication itself doesn't work — plus a security-validation miss on
+  `sec-create-missing-name-handled`). Not something this pass predicted or explains; see
+  [Skailr 1.15.0 real campaign: what we found](#skailr-1150-real-campaign-what-we-found).
+- **`program-rbac`: unchanged.** Seventh Skailr run in a row (and third vanilla run in a
+  row) to fail on the identical two critical requirements. Not addressed by this pass, as
+  flagged when it shipped.
+
+n=1 per task on the new arm — this is a lead on both the `patch-webhook` win and the
+`feature-api-keys` regression, not a settled verdict on either. See
+[Caveats](#caveats).
 
 ## What's being compared
 
 | Column | What it is | Real bench data? |
 | --- | --- | --- |
-| **Vanilla Claude Code** | Plain `claude` CLI, no Skailr installed | Yes — 1 real run per task, all three from the 2026-08-09 campaign, the **first campaign in which the baseline arm actually ran** (it previously died in ~4s on every task to a harness bug, now fixed and verified — see [Baseline arm: broken, then fixed and verified](#baseline-arm-broken-then-fixed-and-verified)) |
+| **Vanilla Claude Code** | Plain `claude` CLI, no Skailr installed | Yes — 2–3 real runs per task now, across three campaigns (see [Raw run index](#raw-run-index)); the two most recent (2026-08-09, both post the baseline-arm fix) are what the headline tables show |
 | **Skailr — pre-1.14.0** | Skailr installed at post-1.13.0 development commits (`1380bcf`, `3851750`, `36d3b02` — all dated 2026-08-07/08, after the `v1.13.0` tag but before `v1.14.0`) | Yes — 3–4 real runs per task |
-| **Skailr 1.14.0** | The current release, ref `v1.14.0` (sha `4e8dec88`) | Yes — 2 real Skailr-arm runs per task, across two sequential real-spend campaigns: `20260808T215547Z-series_1` (skailr arm only; its baseline arm was broken and is excluded) and `20260809T023850Z-series_1` (both arms real). |
+| **Skailr 1.14.0** | Ref `v1.14.0` (sha `4e8dec88`) | Yes — 2 real Skailr-arm runs per task, across two sequential real-spend campaigns: `20260808T215547Z-series_1` (skailr arm only; its baseline arm was broken and is excluded) and `20260809T023850Z-series_1` (both arms real). |
+| **Skailr 1.15.0** | The current release, ref `v1.15.0` (sha `494d1f91`) | Yes — 1 real Skailr-arm run per task, from `20260809T170839Z-series_1` — see [Skailr 1.15.0 real campaign: what we found](#skailr-1150-real-campaign-what-we-found). |
 
 The "pre-1.14.0" column is not a single tagged release — it's every real dev-build
 run available locally as of this writing, spanning the period where 1.13.0's
 five orchestrator-efficiency fixes landed but before 1.14.0's hooks-loading fix.
-The 1.14.0 column below is from two real sequential (`--parallel 1`), 1-rep-per-arm
+The 1.14.0 column is from two real sequential (`--parallel 1`), 1-rep-per-arm
 ("smoke") campaigns run 2026-08-08 and 2026-08-09 via `bench/docker-run.sh` — see
 [Skailr 1.14.0 real campaigns: what we found](#skailr-1140-real-campaigns-what-we-found).
-The Vanilla column is from the 2026-08-09 campaign only, the first one whose
-baseline arm was able to attempt the tasks at all.
+The 1.15.0 column is from one such campaign run 2026-08-09, after the lean pass. The
+Vanilla column in the headline tables uses the most recent 2026-08-09 baseline runs
+(the same-day run alongside 1.15.0), the second working baseline campaign.
 
 ## Headline table
 
@@ -81,46 +97,53 @@ median/spread to report — treat as a single data point, not a distribution.
 
 ### `feature-api-keys` (class: cross-cutting — add org-scoped API keys with security requirements)
 
-| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=4) | Skailr 1.14.0 (n=2) |
-| --- | --- | --- | --- |
-| Solved | ✅ (100%) | 3/4 (75%) | 2/2 (100%) |
-| Quality (median) | 99.0 | 92.0 (range 30–95; one run failed all 4 security checks) | 92.5 (both runs, identical) |
-| Cost | $1.11 | $6.59 median (range $0.41–$10.44) | $0.37 and $2.61 |
-| Wall time | 405s | 2765s median (range 2678–4094s) | 3133s and 3423s |
+| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=4) | Skailr 1.14.0 (n=2) | Skailr 1.15.0 (n=1) |
+| --- | --- | --- | --- | --- |
+| Solved | ✅ (100%) | 3/4 (75%) | 2/2 (100%) | ❌ (0%) |
+| Quality | 94.0 | 92.0 median (range 30–95; one run failed all 4 security checks) | 92.5 (both runs, identical) | 87.05 |
+| Cost | $0.93 | $6.59 median (range $0.41–$10.44) | $0.37 and $2.61 | $9.73 |
+| Wall time | 349.8s | 2765s median (range 2678–4094s) | 3133s and 3423s | 2700.9s |
 
 Both 1.14.0 runs solved it with no critical failures, and both scored exactly
 **92.5**, with the same subscore breakdown (security 75, static 0, everything
 else 100) — see [Two identical repeat scores](#two-identical-repeat-scores).
-The real vanilla run solved it too, and scored higher (99.0: security 100,
-static 100, maintainability 80) in about 1/8th the wall time and at lower cost.
-n=1 vs n=2; one vanilla data point is a lead, not a verdict.
+**The 1.15.0 run regressed: it failed.** `hf-authenticate-with-api-key` returns
+403 (API-key authentication itself doesn't work end-to-end) and
+`sec-create-missing-name-handled` returns 201 instead of rejecting the request —
+see [Skailr 1.15.0 real campaign: what we found](#skailr-1150-real-campaign-what-we-found).
+The vanilla run also solved it, at 94.0 (functional 100, security 100, static 0,
+maintainability 80) — a different vanilla run than the 99.0 figure earlier
+versions of this page cited; see [Caveats](#caveats). n=1 per arm on both the
+newest vanilla and 1.15.0 rows — leads, not verdicts.
 [Raw runs →](#raw-run-index)
 
 ### `program-rbac` (class: program — multi-workstream org invitations + RBAC)
 
-| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=4) | Skailr 1.14.0 (n=2) |
-| --- | --- | --- | --- |
-| Solved | ❌ (0%) | 0/4 (0%) | 0/2 (0%) |
-| Quality (median) | 88.25 | 87.9 (range 23.5–89.0) | 88.25 (both runs, identical) |
-| Cost | $1.56 | $4.60 median (range $2.79–$7.87) | $4.70 and $14.81 |
-| Wall time | 518s | 3921s median (range 2477–5752s) | 3444s and 4481s |
+| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=4) | Skailr 1.14.0 (n=2) | Skailr 1.15.0 (n=1) |
+| --- | --- | --- | --- | --- |
+| Solved | ❌ (0%) | 0/4 (0%) | 0/2 (0%) | ❌ (0%) |
+| Quality | 88.25 | 87.9 median (range 23.5–89.0) | 88.25 (both runs, identical) | 94.0 |
+| Cost | $1.34 | $4.60 median (range $2.79–$7.87) | $4.70 and $14.81 | $12.61 |
+| Wall time | 505.95s | 3921s median (range 2477–5752s) | 3444s and 4481s | 3620.4s |
 
-**Sixth Skailr run in a row to fail this task**, on the identical two critical
+**Seventh Skailr run in a row to fail this task**, on the identical two critical
 requirements every prior run failed: `invitation-single-use` and
-`audit-events-emitted`. **And the first real vanilla run on this task fails on
-exactly those same two requirements**, at the same 88.25 quality score — which
-materially changes how this result should be read. See
+`audit-events-emitted`. **Third vanilla run in a row to fail it the same way too**,
+now at the identical 88.25 quality score on all three vanilla attempts. The 1.15.0
+skailr run scores highest of any skailr attempt yet (94.0 — `static` hit 100 for the
+first time; every prior skailr run on this task scored 0 on `static`) while still
+missing the same two critical checks. See
 [The real program-rbac finding](#the-real-program-rbac-finding).
 [Raw runs →](#raw-run-index)
 
 ### `patch-webhook` (class: patch — fix a duplicate-webhook-processing bug)
 
-| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=1) | Skailr 1.14.0 (n=2) |
-| --- | --- | --- | --- |
-| Solved | ✅ (100%) | ❌ (0%) | 1/2 (50%) |
-| Quality | 95.0 | 80.0 | 95.0 (solved run) and 80.0 (failed run) |
-| Cost | $0.50 | $0.45 | $0.40 and $1.33 |
-| Wall time | 151s | 281s | 474s and 447s |
+| | Vanilla Claude Code (n=1) | Skailr — pre-1.14.0 (n=1) | Skailr 1.14.0 (n=2) | Skailr 1.15.0 (n=1) |
+| --- | --- | --- | --- | --- |
+| Solved | ✅ (100%) | ❌ (0%) | 1/2 (50%) | ✅ (100%) |
+| Quality | 95.0 | 80.0 | 95.0 (solved run) and 80.0 (failed run) | 95.0 |
+| Cost | $0.96 | $0.45 | $0.40 and $1.33 | $0.83 |
+| Wall time | 364.9s | 281s | 474s and 447s | 273.5s |
 
 The pre-1.14.0 failure here predated the task-prompt fix that sends an explicit
 `/patch` on the skailr arm (originally hard-coded as the prompt's first line;
@@ -139,45 +162,59 @@ The grader and fixture were untouched by that patch. Read this cell as n=2 with
 one solve and one miss, i.e. the run-to-run variance this page keeps warning
 about, not as a regression.
 
-The real vanilla run (95.0, 151s) is within noise of the older, pre-regression
-vanilla number for this task (95.0, 132s) — an independent sanity check that the
-repaired baseline arm reproduces the earlier baseline result.
+**The 1.15.0 run solved it and, for the first time, beat vanilla on both wall
+time and cost** (273.5s/$0.83 vs vanilla's 364.9s/$0.96 in the same campaign) —
+the result the inline-fix carve-out (`IMPROVEMENT-BACKLOG.md` L-2) predicted. n=1
+on the new arm; see
+[Skailr 1.15.0 real campaign: what we found](#skailr-1150-real-campaign-what-we-found).
+
+This campaign's vanilla run (95.0, 364.9s) scored identically to every prior
+vanilla run on this task but took over twice as long as the two before it (151s,
+132s) — the run-to-run wall-time variance this page keeps warning about applies
+to the baseline arm too, not just skailr.
 
 ## The real program-rbac finding
 
 The interesting result on this page isn't an efficiency number — it's that
-**six independent Skailr attempts at `program-rbac` now, across three
-different sets of fixes including 1.14.0 itself, have all failed the
+**seven independent Skailr attempts at `program-rbac` now, across four
+different sets of fixes including 1.14.0 and 1.15.0, have all failed the
 identical two critical requirements**: `invitation-single-use` and
 `audit-events-emitted`. That rules out "unlucky variance" as the explanation
 and points at a reproducible failure on exactly those two requirements.
 
-### …and vanilla Claude Code fails it the same way
+### …and vanilla Claude Code fails it the same way, three times now
 
-The 2026-08-09 campaign produced the **first real vanilla data point on this
-task**, and it fails `invitation-single-use` and `audit-events-emitted` too —
-the same two requirements, at the same 88.25 quality score, `solved=false`
-([`program-rbac_baseline_rep0_bf907f888c`](#raw-run-index)).
+The 2026-08-09 campaigns have produced **three real vanilla data points on this
+task now** (an earlier run in `20260807T213205Z-series_1`, the 2026-08-09
+`bf907f888c` run, and today's `f64b957a86` run alongside 1.15.0), and all three
+fail `invitation-single-use` and `audit-events-emitted` — the same two
+requirements, at the identical 88.25 quality score every time, `solved=false`
+(see [Raw run index](#raw-run-index)).
 
 This page previously framed the repeated failure as a Skailr-specific,
-reproducible capability gap in the multi-workstream pipeline. One vanilla data
-point does not support that framing as stated, and it does not refute it either:
+reproducible capability gap in the multi-workstream pipeline. Three consistent
+vanilla data points make that framing harder to sustain as stated, though they
+don't fully refute it either:
 
-- The two arms reached the same failing outcome by very different routes —
-  vanilla in 518s with 49 tool calls and no subagents at all, Skailr in 3444s
-  with 397 tool calls across a multi-workstream orchestration. Identical
-  outcomes from non-identical processes are weak evidence about either process.
-- What it *does* establish is that these two requirements are not obviously
-  reachable by a plain agent on this fixture either. The failure may reflect
-  genuine task difficulty, or an over-strict / mis-specified grader probe or
-  fixture, rather than anything about how work is split across workstreams.
+- The two arms reach the same failing outcome by very different routes —
+  vanilla in ~500s with ~45-55 tool calls and no subagents at all, Skailr in
+  3400-4500s with 380-400+ tool calls across a multi-workstream orchestration.
+  Identical outcomes from non-identical processes remain weaker evidence about
+  either process than three identical vanilla scores are individually striking.
+- What it *does* establish, now more strongly with n=3 on the vanilla side, is
+  that these two requirements are not reliably reachable by a plain agent on
+  this fixture either. The failure increasingly looks like genuine task
+  difficulty or an over-strict / mis-specified grader probe or fixture, rather
+  than something specific to how work is split across workstreams.
 
-**Open question, both ways.** Skailr is not vindicated by this (it still fails,
-six for six, and far more expensively); the earlier Skailr-specific reading is
-not debunked by this (n=1 on the vanilla side). The next useful step is reading
+**Open question, leaning one way now.** Skailr is not vindicated by this (it
+still fails, seven for seven, and far more expensively); the earlier
+Skailr-specific reading is weaker than it was (n=3 vanilla failures, all
+identical, is a real pattern, not a fluke). The next useful step is reading
 the two critical probes against both arms' actual diffs to decide whether the
 requirement is unmet or unmeetable. Until that happens, treat "reproducible gap
-in the multi-workstream pipeline" as unconfirmed rather than established.
+in the multi-workstream pipeline" as unconfirmed rather than established — but
+lean toward "task/fixture issue" more than this page did before.
 
 ### Phantom completion: present in the 2026-08-08 run, absent in the 2026-08-09 one
 
@@ -374,6 +411,98 @@ That is direct evidence the extraction now handles real Claude Code stream-json
 reachable by counting subagent activity), not just the unit tests shipped with
 the fix. No `BROKEN RUN` warning was emitted for any of the 6.
 
+## Skailr 1.15.0: what changed
+
+The lean pass (`IMPROVEMENT-BACKLOG.md` L-1..L-7, full mechanism trace in the
+top-of-page note) touches per-dispatch bookkeeping overhead and `/yolo`/`/patch`
+verification proportionality — nothing in the validate→fix-loop or
+phase-tracking enforcement hooks that 1.14.0 added. `program-rbac`'s repeated
+failure traces to those enforcement mechanisms doing their job correctly against
+a task the pipeline can't actually finish cleanly (see
+[The real program-rbac finding](#the-real-program-rbac-finding)), which 1.15.0
+doesn't touch — consistent with the unchanged 7th-for-7th result below. Full
+change list: [CHANGELOG.md § 1.15.0](../CHANGELOG.md).
+
+## Skailr 1.15.0 real campaign: what we found
+
+One real campaign, `20260809T170839Z-series_1`, run via
+`bench/docker-run.sh --smoke --skailr-ref v1.15.0`, all 3 tasks × both arms × 1
+rep, sequential, real spend (~$26.40 total across all 6 runs, `cost_reported_usd`
+summed). `skailr_sha` on both skailr-arm runs is
+`494d1f913283b39bce9e1677c44cf2bbb2d15848`, which matches `git rev-parse v1.15.0`
+exactly. Local-only, gitignored, not committed — see
+[Raw run index](#raw-run-index) for per-run paths. Like the 2026-08-09 1.14.0
+campaign, this campaign's own generated `SUMMARY.md`/`report.md` mislabels
+`Runs: 8` (the same uncorrected results-directory-pollution bug — see
+[Caveats](#caveats)); every number below was read from the 6 real runs'
+`run.json`/`grader.json` by hand, bypassing that aggregate.
+
+### `patch-webhook`: the predicted win, observed
+
+This is the one task where the campaign matches the prediction cleanly. Skailr
+solved it (95.0, tied vanilla exactly) with 37 tool calls — same as this
+campaign's vanilla run, down from 81 on the last real 1.14.0 attempt — and beat
+vanilla on both wall time (273.5s vs 364.9s) and cost ($0.83 vs $0.96 reported).
+`skailr_diagnostics.agents_spawned` reads `0` on this run. This is the first time
+in any real campaign on this page that the skailr arm has beaten vanilla on
+wall-clock time.
+
+### `feature-api-keys`: an unpredicted regression
+
+1.14.0 solved this task cleanly, twice (92.5 both runs). The single 1.15.0 run
+**failed** at 87.05 — one hidden test miss (`hf-authenticate-with-api-key`,
+`status=403`: authenticating a request with an API key doesn't actually work)
+and one security-subscore miss (`sec-create-missing-name-handled`,
+`status=201`: creating a key with a missing name is accepted instead of
+rejected, dropping the security subscore to 75/100). Neither failure mode
+appears in any prior run of this task, on either arm. Nothing in the L-1..L-7
+change list touches request-authentication or input-validation logic, so this
+reads as a real functional miss on this particular run rather than a
+mechanically-explained consequence of the lean pass — but n=1 means it could
+also be ordinary run-to-run variance (this task's pre-1.14.0 quality range was
+already 30–95). Worth a repeat run before concluding either way.
+
+### `program-rbac`: unchanged, as expected
+
+Seventh Skailr run in a row to fail on `invitation-single-use` and
+`audit-events-emitted` — see
+[The real program-rbac finding](#the-real-program-rbac-finding). Notably, this
+run scored the highest of any skailr attempt on this task yet (94.0): `static`
+hit 100 for the first time (every prior skailr run on this task scored 0 on
+`static`), and `maintainability` hit 100. Quality went up while the same two
+critical requirements still failed — a reminder that the composite quality
+score and the critical-failure gate are measuring different things, and a high
+quality score here does not mean the task is closer to solved.
+
+### Cost divergence widened — a consequence of the L-5 fix, not a new bug
+
+`cost_reported_usd` / `cost_reconstructed_usd` ratios this campaign:
+
+| Task | Arm | Reported | Reconstructed | Ratio |
+| --- | --- | --- | --- | --- |
+| feature-api-keys | baseline | $0.9322 | $0.8332 | 1.12x |
+| feature-api-keys | skailr | $9.7299 | $0.1460 | 66.6x |
+| patch-webhook | baseline | $0.9589 | $0.8557 | 1.12x |
+| patch-webhook | skailr | $0.8268 | $0.7353 | 1.12x |
+| program-rbac | baseline | $1.3424 | $1.2186 | 1.10x |
+| program-rbac | skailr | $12.6086 | $0.5911 | 21.3x |
+
+Baseline stays tight at ~1.10-1.12x across every task, as it always has. Skailr
+is tight too (1.12x) on the one run with no subagent activity
+(`patch-webhook`, `agents_spawned: 0`), and wildly divergent (21x, 67x) on the
+two runs that spawned 3 subagents each (`tool_calls` 346 and 379). That is the
+cleanest within-campaign evidence yet for the standing hypothesis in
+[Caveats](#caveats): `usage.by_source.subagent` reads zero, so
+`cost_reconstructed_usd` structurally can't see subagent token spend, while
+`cost_reported_usd` (via the L-5 `.findLast()` fix, already active for this
+campaign) now correctly captures the CLI's true final cumulative
+`total_cost_usd`, subagents included. **The gap is larger than any seen in the
+1.14.0 campaigns (max ~7.6x there) precisely because L-5 made the reported side
+more correct, not less** — 1.14.0's smaller ratios were partly an artifact of
+`cost_reported_usd` itself being understated by the first-not-last bug L-5
+fixed. `usage.by_source.subagent` itself is still unfixed (L-6, informational,
+no sound fix identified) and remains the thing to watch.
+
 ## Caveats
 
 - **n is small everywhere.** Program-rbac's pre-1.14.0 cost range ($2.79–$7.87)
@@ -382,33 +511,40 @@ the fix. No `BROKEN RUN` warning was emitted for any of the 6.
   signal.
 - **The pre-1.14.0 column is not one version.** It blends three different
   commits across the 1.13.0→1.14.0 development window (see the table above).
-- **Vanilla Claude Code is still n=1 per task** — now from the 2026-08-09
-  campaign, the first with a working baseline arm. These numbers replaced the
-  earlier frozen vanilla figures, which came from a different campaign
-  ([bench/benchmarks/20260807T213205Z-series_1](../bench/benchmarks/20260807T213205Z-series_1/SUMMARY.md))
-  and a different harness era; that campaign's Skailr-arm numbers are retracted
-  (broken headless-mode self-routing invocation, unrelated to this page's
-  pre-1.14.0 column, which comes from local Docker runs using corrected
-  prompts) — see
+- **Vanilla Claude Code is n=1 per task in the headline tables, n=2-3 across all
+  campaigns on this page.** The headline tables use the most recent 2026-08-09
+  baseline runs (the same-day campaign alongside 1.15.0). Two earlier vanilla
+  campaigns exist — the first working-baseline campaign (also 2026-08-09, run
+  alongside 1.14.0) and the original
+  ([bench/benchmarks/20260807T213205Z-series_1](../bench/benchmarks/20260807T213205Z-series_1/SUMMARY.md)),
+  a different harness era whose Skailr-arm numbers are retracted (broken
+  headless-mode self-routing invocation, unrelated to this page's pre-1.14.0
+  column, which comes from local Docker runs using corrected prompts) — see
   [RETRACTED.md](../bench/benchmarks/20260807T213205Z-series_1/RETRACTED.md).
   Its baseline-arm numbers were never retracted and are retained for provenance
-  in the [Raw run index](#raw-run-index).
+  in the [Raw run index](#raw-run-index). All available vanilla runs are listed
+  there; only the newest per task feeds the headline tables.
 - **Cost figures are `cost_reported_usd`**, not `cost_reconstructed_usd`, and
   the two diverge a lot more on the Skailr arm than the baseline arm: baseline
-  runs are close (ratio ~1.1x), Skailr runs are not (ratio 3.5x–5.2x across
-  the runs spot-checked here) — almost certainly a subagent-cost-accounting
-  gap in reconstruction, not a real 3–5x pricing difference. The 2026-08-08
-  `program-rbac` run widens this further: reported $14.81 vs. reconstructed
-  $1.96 (~7.6x). The 2026-08-09 campaign reproduces the same split cleanly —
-  baseline 1.10x–1.14x on all three tasks, skailr 1.9x (`patch-webhook`),
-  4.9x (`feature-api-keys`), 6.9x (`program-rbac`). Open question in the
-  harness, not resolved on this page. One concrete lead, newly noticed while
-  writing this up: `usage.by_source.subagent` reads **all zeros** even on the
-  2026-08-09 `program-rbac` skailr run, whose transcript contains 1124
-  `subagent_type` events and 776 tool calls tagged with a
-  `parent_tool_use_id`. So subagent token usage is not being attributed —
-  which is exactly the input `cost_reconstructed_usd` is computed from, and
-  would explain the divergence being large only on the skailr arm.
+  runs are close (ratio ~1.1x), Skailr runs are not — and the gap has gotten
+  *bigger* release over release, not smaller. The 2026-08-08 `program-rbac` run:
+  reported $14.81 vs. reconstructed $1.96 (~7.6x). The 2026-08-09 1.14.0
+  campaign: baseline 1.10x–1.14x on all three tasks, skailr 1.9x
+  (`patch-webhook`), 4.9x (`feature-api-keys`), 6.9x (`program-rbac`). The
+  2026-08-09 **1.15.0** campaign: baseline still 1.10x-1.12x, skailr 1.12x on
+  the one run with no subagents (`patch-webhook`) and **21.3x–66.6x** on the
+  two runs that spawned subagents (`program-rbac`, `feature-api-keys`) — see
+  [Skailr 1.15.0 real campaign: what we found](#skailr-1150-real-campaign-what-we-found)
+  for the full table and why this is L-5's `.findLast()` fix making
+  `cost_reported_usd` *more* correct, not a new bug. Root cause, not resolved
+  in the harness: `usage.by_source.subagent` reads **all zeros** even on runs
+  with hundreds of subagent-tagged tool calls (e.g. the 2026-08-09 1.14.0
+  `program-rbac` skailr run: 1124 `subagent_type` events, 776
+  `parent_tool_use_id`-tagged tool calls, all attributed zero tokens). So
+  subagent token usage is never counted into `cost_reconstructed_usd`, while
+  `cost_reported_usd` (the CLI's own `total_cost_usd`) always includes it —
+  the divergence tracks how much subagent work a run did, not a Skailr version
+  effect.
 - **The 1.14.0 column is n=2 per task, Skailr arm only** (one run from each
   campaign). The 2026-08-08 campaign's baseline arm broke (see
   [Baseline arm: broken, then fixed and verified](#baseline-arm-broken-then-fixed-and-verified))
@@ -420,6 +556,14 @@ the fix. No `BROKEN RUN` warning was emitted for any of the 6.
   both are now verified against real spend by the 2026-08-09 campaign — but the
   fixes are not retroactive: the 2026-08-08 artifacts still show the broken
   baseline runs and the understated `tool_calls`.
+- **The 1.15.0 column is n=1 per task**, both arms, from one 2026-08-09
+  campaign (`20260809T170839Z-series_1`) — the smallest sample of any column on
+  this page. Treat the `patch-webhook` win and the `feature-api-keys` regression
+  both as leads pending a repeat run, not settled results. Note there are now
+  **two different real campaigns both dated 2026-08-09** on this page — one
+  paired with 1.14.0 (`20260809T023850Z-series_1`), one paired with 1.15.0
+  (`20260809T170839Z-series_1`) — distinguished by label/series throughout, not
+  by date alone.
 - **Results directories are not campaign-scoped, so generated campaign reports
   can be polluted — read `run.json` directly.** Every local run, mock
   (`BENCH_MOCK`) or real, from every commit ever tested on the machine, lands in
@@ -428,13 +572,16 @@ the fix. No `BROKEN RUN` warning was emitted for any of the 6.
   (`listRunRecords` in `bench/src/aggregate.mjs` recurses and takes *every*
   `run.json` it finds, then groups by task/arm). Each `run.json` does carry an
   `identity.series_id`, but nothing filters on it, and mock runs are not marked
-  in a way the aggregator excludes. This bit the 2026-08-09 campaign itself: its own generated
-  `SUMMARY.md`/`report.md` report **`Runs: 8`** for a 3-task × 2-arm × 1-rep
-  smoke campaign that produced exactly **6** runs, having silently mixed in 2
-  stale mock-run directories. **Every 2026-08-09 number on this page was taken
-  by hand-verifying each of the 6 real runs' `run.json`/`grader.json`
-  individually, bypassing that aggregate** — as should be done for any campaign
-  until the harness gains run provenance. Tracked in
+  in a way the aggregator excludes. This bit **both** 2026-08-09 campaigns: each
+  one's own generated `SUMMARY.md`/`report.md` reports **`Runs: 8`** for a
+  3-task × 2-arm × 1-rep smoke campaign that produced exactly **6** runs, having
+  silently mixed in 2 stale directories from a prior run (real, real-but-older,
+  or mock, depending on what happened to be sitting in `results/` at the time).
+  **Every 2026-08-09 number on this page — for both the 1.14.0 and the 1.15.0
+  campaign — was taken by hand-verifying each of the 6 real runs'
+  `run.json`/`grader.json` individually, bypassing that aggregate** — as should
+  be done for any campaign until the harness gains run provenance. Still not
+  fixed as of 1.15.0; tracked in
   [bench/README.md → Known issues](../bench/README.md#known-issues).
 
 ## Raw run index
@@ -490,3 +637,26 @@ that run's `run.json`/`grader.json`, not from the campaign's own (polluted,
 
 Full skailr-arm sha on all three: `4e8dec8812f82103cfb6cf5a8501779b6c7bb638`
 (`git rev-parse v1.14.0`).
+
+**1.15.0 real campaign — both arms real** (`20260809T170839Z-series_1`,
+`series_1355e0a7d637`; local-only, not committed —
+`bench-docker-out/results/<run_id>/run.json`). Each row was read directly from
+that run's `run.json`/`grader.json`, not from the campaign's own (polluted,
+`Runs: 8`) aggregate — see [Caveats](#caveats):
+
+| Task | Arm | run_id | skailr_sha | solved | quality | cost (reported) | cost (reconstructed) | wall (s) | tool calls | critical failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| feature-api-keys | baseline | `feature-api-keys_baseline_rep0_3dce128372` | n/a | true | 94.00 | $0.9322 | $0.8332 | 349.8 | 43 | — |
+| feature-api-keys | skailr | `feature-api-keys_skailr_rep0_72b42ecd07` | `494d1f91` | false | 87.05 | $9.7299 | $0.1460 | 2700.9 | 346 | none (hidden-test miss: `hf-authenticate-with-api-key`) |
+| patch-webhook | baseline | `patch-webhook_baseline_rep0_7da59f27f7` | n/a | true | 95.00 | $0.9589 | $0.8557 | 364.9 | 37 | — |
+| patch-webhook | skailr | `patch-webhook_skailr_rep0_305187a1b1` | `494d1f91` | true | 95.00 | $0.8268 | $0.7353 | 273.5 | 37 | — |
+| program-rbac | baseline | `program-rbac_baseline_rep0_f64b957a86` | n/a | false | 88.25 | $1.3424 | $1.2186 | 505.95 | 44 | `invitation-single-use`, `audit-events-emitted` |
+| program-rbac | skailr | `program-rbac_skailr_rep0_e72ca38f75` | `494d1f91` | false | 94.00 | $12.6086 | $0.5911 | 3620.4 | 379 | `invitation-single-use`, `audit-events-emitted` |
+
+Full skailr-arm sha on both: `494d1f913283b39bce9e1677c44cf2bbb2d15848`
+(`git rev-parse v1.15.0`). Total real spend across all 6 runs (`cost_reported_usd`
+summed): ~$26.40, well under the campaign's `--max-campaign-usd 250` guard (raised
+from the harness default of 100 to clear this campaign's $230 worst-case ceiling —
+`program-rbac`'s and `feature-api-keys`' per-task `max_budget_usd` overrides of $50
+each, × 2 arms, dominate that ceiling; actual spend landed far below it, consistent
+with every prior campaign on this page).
