@@ -450,6 +450,25 @@ is **correct and runnable**, proven via **mock mode** + committed
   optional `command` task-config field sent only on the `skailr` arm;
   `claude.mjs`'s `buildLaunchPrompt` sends a plain-language framing line +
   the same task body on `baseline` instead. See "Adding a task" above.
+  Verified against real spend on 2026-08-09: all three baseline reps
+  attempted their task, with real wall time, cost and tool calls (see
+  [docs/BENCHMARKS.md](../docs/BENCHMARKS.md)).
+- **Results directories are not campaign-scoped, so a campaign's own generated
+  report can silently include foreign runs.** Every run — mock (`BENCH_MOCK`)
+  or real, from any commit, from any invocation — writes into one flat
+  `results/<task>_<arm>_rep<N>_<hash>/` namespace, and `listRunRecords` in
+  `src/aggregate.mjs` walks the entire results tree and takes *every*
+  `run.json` it finds before grouping by task/arm. `publish-campaign.mjs`
+  (and therefore `SUMMARY.md`, `report.md`, `aggregate.json`) inherits that:
+  it reports on whatever is in the directory, not on the runs the campaign
+  just produced. `run.json` records `identity.series_id`, but nothing filters
+  on it, and mock runs are not excluded. Observed 2026-08-09: a 3-task ×
+  2-arm × 1-rep smoke campaign produced 6 runs and published `Runs: 8`,
+  having pulled in 2 stale mock-run directories with matching task/arm names.
+  **Until this is fixed, either point `--results-dir` at a per-campaign
+  directory, or verify each run's `run.json`/`grader.json` by hand and treat
+  the generated aggregate as untrusted.** A `series_id` (or campaign-id)
+  filter in `listRunRecords`' callers is the obvious fix; it is not built.
 
 ## V2 / not yet built
 
