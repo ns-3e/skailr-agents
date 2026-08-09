@@ -9,7 +9,16 @@ description: Emit `span.start`/`span.end` telemetry around every subagent Task d
 
 Before and after **every** `Task` (subagent) dispatch — in the 11 orchestrator commands, in the nested-dispatch skills (`run-ticket-board`, `run-feature-queue`), and in every lead agent that dispatches its own workers. Pairs with skill `route-models` (same dispatch points).
 
-The script self-gates: when telemetry is disabled it prints a `{"disabled":true}` handle and `span-end` no-ops. So the calls below are **unconditional** — never branch on enabled/disabled in prose. Every fault is swallowed and every subcommand exits 0; instrumentation never changes the caller's own exit behavior.
+The script self-gates: when telemetry is disabled it prints a `{"disabled":true}` handle and `span-end` no-ops. So the calls below are **unconditional in prose** — never write an `if telemetry enabled` branch — but pass **`--tier`** on every `span-start` so the script's own gating (driven by `.claude/settings.skailr.json`'s `telemetry.scope`) can decide, mechanically, whether this tier actually emits:
+
+| Command tier | `--tier` value |
+|---|---|
+| `/patch` | `patch` |
+| `/yolo`, **standalone** (`ARTIFACT_ROOT=.claude/tmp`, no program parent) | `feature-yolo` |
+| `/yolo`, **nested under a program** (dispatched via `run-feature-queue`, `ARTIFACT_ROOT=.claude/program/workstreams/<ws>/features/<slug>`) | omit `--tier` — it's part of the program-tier run already being tracked |
+| everything else (`/ship-feature`, `/build-feature`, `/continue-feature`, `/map-repo`, `/yolo-program`, `/discover`, `/plan-program`, `/build-program`, `/continue-program`) | omit `--tier` |
+
+Default scope is `"program-only"`: `patch` and `feature-yolo` tiers are gated off (span-start returns `{"disabled":true}`, no file write, no-op span-end) unless the consumer sets `telemetry.scope: "all"`; every command that omits `--tier` stays on regardless of scope, so this default only affects the two tiers above. This exists because real campaign data (`docs/BENCHMARKS.md`) showed span wrapping costs 2 Bash calls per dispatch across the 6-7+ dispatches a typical single-feature run makes, for a signal (subagent cost/token attribution) that was itself broken until fixed in `bench/`. Every fault is swallowed and every subcommand exits 0; instrumentation never changes the caller's own exit behavior.
 
 ## Mint the trace once per run
 
@@ -43,6 +52,7 @@ HANDLE=$(node scripts/skailr/emit-telemetry.mjs span-start \
   --parent-span-id "<PARENT_SPAN_ID or omit>" \
   --agent-role <worker-role> \
   --agent-name <worker-name> \
+  --tier <patch|feature-yolo, or omit per the table above> \
   <hierarchy flags per table below>)
 ```
 
@@ -87,10 +97,13 @@ Root dispatch from `/patch` (no parent, repo tier):
 
 ```bash
 H=$(node scripts/skailr/emit-telemetry.mjs span-start --emitter-id patch \
-  --trace-id "$TRACE_ID" --agent-role engineer --agent-name backend-engineer)
+  --trace-id "$TRACE_ID" --agent-role engineer --agent-name backend-engineer --tier patch)
 # ... dispatch the Task, await DONE: ...
 node scripts/skailr/emit-telemetry.mjs span-end --handle "$H" --status ok
 ```
+
+(`--tier patch` means this call returns `{"disabled":true}` under the default `program-only`
+scope — the caller still issues it unconditionally per "When to use" above; the script decides.)
 
 Nested worker dispatch from a lead (parent = lead's span_id; trace from telemetry.json):
 

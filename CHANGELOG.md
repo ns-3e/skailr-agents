@@ -2,6 +2,35 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.15.0] — 2026-08-09
+
+Benchmark-driven lean pass. `docs/BENCHMARKS.md`'s real (non-mock) Docker campaign data
+showed Skailr losing to vanilla Claude Code on cost and wall-time on every task, and on
+quality on two of three — traced to a fixed per-dispatch bookkeeping tax applied
+regardless of task size. Full mechanism trace and rationale per item:
+`IMPROVEMENT-BACKLOG.md` L-1..L-7.
+
+### Changed
+
+- **Telemetry now defaults to `"program-only"` scope, not blanket-on.** `.claude/settings.skailr.json`'s `telemetry.enabled` boolean is replaced by `telemetry.scope` (`"program-only"` default / `"all"` / `"off"`). Under the default, `/patch` and standalone `/yolo` skip span-start/span-end wrapping entirely (2 Bash calls removed per Task dispatch, across 6-7+ dispatches on a typical feature run); `/yolo-program` and the other program/gated-pipeline commands are unaffected. `scripts/skailr/emit-telemetry.mjs` gates on a new `--tier` flag (`patch` / `feature-yolo` / omitted) crossed with scope. **An existing project's explicit `"telemetry": { "enabled": true|false }` still wins outright and is unaffected by this change** — no migration ships in this release, so already-installed repos keep today's always-on behavior until they adopt `telemetry.scope` by hand; only fresh installs pick up the new default automatically. [.claude/skills/emit-telemetry/SKILL.md](.claude/skills/emit-telemetry/SKILL.md)
+- **`route-models` reads `model-routing.json` once per command run instead of before every Task dispatch**, caching the role→model map; re-consulted only on an escalate/downgrade event. The per-dispatch usage-log append is unchanged.
+- **`/yolo`'s verification and documentation phases are now proportional to risk, not unconditional.** `e2e-verifier`/`validator` skip (logged, not silent) only when the board has exactly one ticket, nothing matches a new sensitive-surface list (auth, security, payment, billing, crypto, compliance, permission, rbac, secret, token, password, session), and the change isn't e2e-covered/user-visible; any ownership/contract failure, engineer-flagged risk, or sensitivity match forces the full path unconditionally. `program-documenter` runs only when the diff touches a documented public surface. The single-ticket ticket-board claim/resolve ceremony is skipped in favor of direct dispatch — board coordination only earns its keep at ≥2 parallel tickets.
+- **`/patch`'s `consult-or-mint` and `program-documenter` are now conditional** on the same sensitive-surface / public-surface-diff checks, instead of running on every patch unconditionally.
+
+### Added
+
+- **Guarded inline-fix carve-out for `/patch`.** A bounded fix below `fit-test`'s own spawn floor (~10k tokens), touching no sensitive-surface path, and confined to a single owner is now implemented by the orchestrator directly (Read/Edit, no Task dispatch) instead of always spawning an engineer subagent — the likely driver of the `patch-webhook` benchmark task's 3.4x tool-call ratio against vanilla Claude Code. Anything bigger, ambiguous, cross-owner, or sensitive still dispatches exactly as before; the decision is always logged in `patch-report.md`, never silent. Scoped to `/patch` only — `/yolo`/`/yolo-program` keep "never write application code yourself" unchanged.
+
+### Fixed
+
+- **`bench/src/claude.mjs` was selecting the *first* `result` event in a real Claude Code session instead of the last.** A single real (non-mock) `claude -p` process — one `spawn()` call, never `--resume`-chained — emits multiple `result`-shaped events over its own lifetime: verified on a real transcript, one untagged interim status mid-stream plus several tagged `origin:{"kind":"task-notification"}` (one per background Task completing), `total_cost_usd` rising monotonically across all of them ($2.61 → $12.70 across 7 events). The only reliable "true final result" signal is stream position, confirmed by that event's own text (`"**YOLO run complete**..."`) — `.find()` grabbed the first (an early interim status, not the run's outcome), understating `cost_reported_usd` and every `usage.tokens` figure derived from it on any run with more than one. Fixed to `.findLast()`. Mock mode always emits exactly one, so this was invisible to the existing test suite and to every mock-mode number ever reported.
+
+### Known limitations
+
+- **This pass is not verified against a fresh `bench/` campaign.** No numbers in `docs/BENCHMARKS.md` were rerun; the expected direction (fewer tool calls, lower cost/time on patch- and single-ticket-feature-class tasks) is documented as a prediction, not a result. `docs/BENCHMARKS.md`'s 2026-08-09 forward-note has the full caveat.
+- **`usage.by_source.subagent` stays honestly zero-filled** — investigated and rejected a naive per-turn-usage-summation fix (per-turn `usage` is cumulative context size at that turn, not an incremental delta; summing overcounts by ~26x on a real transcript). No sound per-source split is derivable from stream-json alone. Documented in `bench/src/telemetry.mjs`'s top-of-file comment.
+- **Existing installs do not pick up the new `telemetry.scope` default without a migration** (see Changed above) — this release does not add one; `scripts/skailr/migrate.mjs` is unchanged.
+
 ## [1.14.0] — 2026-08-08
 
 ### Fixed

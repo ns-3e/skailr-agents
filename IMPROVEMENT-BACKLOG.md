@@ -4,6 +4,10 @@ Source: `docs/audits/2026-08-02-audit.md`. Sequenced in recommended order. Effor
 S (<½ day) / M (1–2 days) / L (multi-day). Every entry lists the invariant(s) it
 touches; none violates one.
 
+**Status (2026-08-09):** L-1..L-6 landed (benchmark-driven lean pass — see that
+section below). L-7 is informational: this pass is not yet verified against a fresh
+`bench/` campaign.
+
 **Status (2026-08-02, third pass):**
 DONE: B-1 (`doctor.mjs`, in CI; caught install.ps1 missing expert/expert-scout rules),
 B-2 (`check-blocks.mjs`, in CI, now 6 blocks), B-3 (`status.mjs` + `ledger-status`
@@ -199,3 +203,144 @@ handles ambiguity by falling through (0 or 2+ matches → no expert route). Mech
 overlap detection would need NL-band comparison — LLM-in-a-gate, which invariant 8
 forbids. Recommend keeping the fall-through design and documenting it as the guard;
 flagging because the audit prompt asked for overlap detection.
+
+---
+
+## 2026-08-09 — Lean Skailr pass (benchmark-driven)
+
+Source: `docs/BENCHMARKS.md`'s real (non-mock) Docker campaign data, which showed
+Skailr losing to vanilla Claude Code on cost and wall-time on every task, and on
+quality on two of three, driven by a fixed per-dispatch bookkeeping tax applied
+regardless of task size (traced through `.claude/commands/patch.md` and `yolo.md`
+and the skills they invoke — see the plan this pass executed for the full mechanism
+trace). Landed in one pass, no items deferred.
+
+## L-1 — De-tax `route-models` and `emit-telemetry` per dispatch — **S, high impact, low risk**
+**Problem.** `route-models` re-read `model-routing.json` before every single Task
+dispatch despite the file never changing mid-run. `emit-telemetry` wrapped every
+dispatch in 2 Bash calls (span-start/span-end) at every command tier by default, for a
+signal (`usage.by_source.subagent`) that was itself broken (L-6) — real campaigns showed
+6-7+ dispatches per feature, so this was 12-14+ pure-overhead tool calls per run with no
+offsetting benefit.
+**Change.** `route-models`: read the routing file once at Setup, cache the role→model
+map, re-consult only on escalate/downgrade. `emit-telemetry`: new `telemetry.scope`
+config (`.claude/settings.skailr.json`) — `"program-only"` (new default) skips span
+wrapping on `/patch` (`--tier patch`) and standalone `/yolo` (`--tier feature-yolo`);
+`/yolo-program` and the other program/gated-pipeline commands (which omit `--tier`)
+keep it on, since that's where an operator plausibly wants span-level visibility into a
+long multi-workstream run. `scripts/skailr/emit-telemetry.mjs`'s `isEnabled()` gates on
+tier + scope; legacy `telemetry.enabled: true/false` still wins if set explicitly.
+**Files.** `.claude/skills/route-models/SKILL.md`, `.claude/skills/emit-telemetry/SKILL.md`,
+`.claude/settings.skailr.json`, `scripts/skailr/emit-telemetry.mjs`, `patch.md`, `yolo.md`.
+**Invariants.** None touched — purely a caching/scoping change to when existing
+mechanisms fire, not what they enforce.
+
+## L-2 — Guarded inline-fix carve-out for `/patch` — **M, highest measured impact, guarded risk**
+**Problem.** `/patch`'s absolute "never write application code yourself" rule forced
+even a one-line bug fix through a full subagent spawn — fresh context, re-explores the
+repo, reports back — the likely explanation for the `patch-webhook` benchmark task's
+3.4x tool-call ratio vs. vanilla Claude Code and a functional regression in one run.
+`fit-test`'s own numeric defaults already state a spawn floor ("~10k tokens — below →
+inline, don't spawn") that `patch.md` was silently overriding for the orchestrator
+itself.
+**Change.** New "Inline vs dispatch" decision in Phase 1: the orchestrator implements
+the fix directly (Read/Edit, no Task) only when fit-test estimates below the spawn
+floor **and** no touched path matches a sensitive-surface list (auth, security,
+payment, billing, crypto, compliance, permission, rbac, secret, token, password,
+session — `ownership.json` role tags preferred, keyword match as fallback) **and** the
+fix stays within a single owner's paths. Otherwise, dispatch as before (unchanged
+default). Either path logs which one was taken in `patch-report.md`; ownership/contract
+gates run unchanged regardless. Scoped to `/patch` only — `/yolo`/`/yolo-program` keep
+the rule unchanged (different risk profile at multi-ticket/multi-owner scale).
+**Files.** `.claude/commands/patch.md`.
+**Invariants.** Narrows (does not remove) the role-separation rule for the one tier
+where its cost was empirically not paying for itself; explicitly guarded to preserve it
+everywhere else.
+
+## L-3 — Proportional verification/docs in `/yolo` — **M, high impact, guarded risk**
+**Problem.** Phases 5 (`e2e-verifier`), 6 (`validator`), and 7 (`program-documenter`)
+ran unconditionally on every feature regardless of ticket count or surface — a
+single-ticket, non-sensitive feature paid the same 3 extra subagent dispatches as a
+multi-workstream security feature.
+**Change.** Phase 5/6 skip (with a logged reason) only when the board had exactly one
+ticket, nothing matches the sensitive-surface list from L-2, and (for Phase 5
+specifically) the change isn't e2e-covered/user-visible; any ownership/contract
+failure, engineer-flagged risk, or sensitivity match forces the full path
+unconditionally — this is a risk gate, not a downgrade. Phase 7 runs only when the diff
+touches a documented public surface. Phase 4's ticket-board ceremony (claim/resolve) is
+skipped for a single-ticket board — direct dispatch instead, since board coordination
+only earns its keep at ≥2 parallel tickets.
+**Files.** `.claude/commands/yolo.md`.
+**Invariants.** None touched — script gates (ownership, channels) stay unconditional;
+only the *subagent verification/docs* dispatches become risk-proportional.
+
+## L-4 — `/patch`'s remaining unconditional overhead — **S, medium impact, low risk**
+**Problem.** `consult-or-mint` and `program-documenter` ran unconditionally on every
+patch even though patch explicitly commits to staying cheaper than `/yolo`.
+**Change.** Both now gate on the sensitive-surface list from L-2 (consult) / a
+documented-public-surface check (docs) instead of running every time.
+**Files.** `.claude/commands/patch.md`.
+**Invariants.** None.
+
+## L-5 — Fixed `resultEvent` selection picking the FIRST `result` event, not the last — **S, high impact, low risk**
+**Problem.** Found while investigating L-6: a single real (non-mock) `claude -p`
+process (one `spawn()` call, never `--resume`-chained) emits **multiple**
+`result`-shaped events over its own lifetime, not one. Verified on a real
+`feature-api-keys` skailr-arm transcript (7 result events, one `spawn()` call): one
+untagged interim result mid-stream (`"T-001 and T-003 dispatched in parallel..."`,
+`is_error:false`) plus six tagged `origin:{"kind":"task-notification"}`, one per
+background Task completing (e.g. `"T-003 (frontend console) complete."`),
+`total_cost_usd` rising monotonically across all seven ($2.61 → $12.70). Neither the
+untagged one nor the origin tag reliably marks "the true final result" — the untagged
+one at line 614 was *not* final (1000+ more events followed it). The only reliable
+signal is stream position: the truly last `result` event, confirmed by its own text
+(`"**YOLO run complete**..."`) and by being the last line before the process exited.
+Both `invokeClaude()` call sites used `events.find((e) => e.type === "result")`, which
+returns the *first* match — an early interim status, not the run's outcome — silently
+understating `cost_reported_usd` (the figure `docs/BENCHMARKS.md` treats as
+authoritative) and every `usage.tokens` figure derived from it. Mock mode only ever
+emits one, so this was invisible to the existing test suite.
+**Change.** `events.findLast((e) => e.type === "result")` at both call sites in
+`bench/src/claude.mjs` — the last event holds the correct cumulative total for the
+whole session (main + every Task-dispatched subagent; Claude Code's own accounting
+already rolls subagent spend into the running total shown at each interim result).
+**Files.** `bench/src/claude.mjs`.
+**Invariants.** N/A (bench harness, not the pack).
+**Note.** This means historical `cost_reported_usd`/`usage.tokens` figures already
+published in `docs/BENCHMARKS.md` for real (non-mock) skailr-arm runs with more than
+one `result` event may be understated. Not retroactively corrected here — no
+fabricated numbers; real re-verification needs a fresh `bench/docker-run.sh` campaign.
+
+## L-6 — `usage.by_source.subagent` always zero: real limitation, not fixed further — **informational**
+**Problem.** `docs/BENCHMARKS.md` flagged `usage.by_source.subagent` reading all zeros
+despite real subagent activity in the transcript, framing it as an extraction bug to
+fix.
+**Investigation.** Tried the obvious fix — sum each `assistant` event's own
+`message.usage`, bucketed main vs. subagent by `parent_tool_use_id`/`subagent_type` —
+and rejected it: verified against a real transcript that per-turn `usage` reflects
+cumulative context size *at that turn* (mostly `cache_read`), not an incremental
+per-turn delta, so summing across many turns overcounts by ~26x. No sound per-source
+split is derivable from stream-json alone; only a single session-level total is
+available (see L-5), and it correctly can't be attributed to main vs. subagent without
+a different data source (e.g. real per-agent OTel spans, if Claude Code ever exports
+them).
+**Change.** Documented the limitation precisely in `bench/src/telemetry.mjs`'s
+top-of-file comment so it reads as an honest, investigated data boundary rather than an
+open bug to keep chasing. No code change beyond the comment (L-5 is the real fix that
+was in reach).
+**Files.** `bench/src/telemetry.mjs`.
+**Invariants.** N/A.
+
+## L-7 — Benchmarks: what this pass predicts vs. what needs a real re-run — **informational**
+This pass is not verified against a fresh bench campaign (no re-run was executed as
+part of implementation — see `docs/BENCHMARKS.md`'s forward-note). Expected direction,
+not a claimed result: fewer tool calls per run (route-models/telemetry de-tax removes a
+fixed multiple of the dispatch count; the inline-fix path removes a whole subagent
+round-trip on trivial patches), lower cost/wall-time on `patch-webhook` and
+single-ticket `feature`-class tasks, and corrected (likely higher, per L-5) cost
+figures on any multi-checkpoint real run. Quality/solve-rate should be unaffected on
+sensitive-surface or multi-ticket work (full path preserved there) and is the thing
+most worth watching on the tasks where the fast path now applies. `program-rbac`'s
+6/6 identical failure is a capability gap this pass does not address — see
+`docs/BENCHMARKS.md`'s "The real program-rbac finding" for the next step (read the two
+failing probes against both arms' diffs).

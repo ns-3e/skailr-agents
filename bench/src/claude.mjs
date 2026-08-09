@@ -158,7 +158,21 @@ export async function invokeClaude(opts) {
   if (isMockMode(opts)) {
     const started = Date.now();
     const { events } = writeMockRun(runDir, { sessionId, promptId, model, flavor });
-    const resultEvent = events.find((e) => e.type === "result") || null;
+    // Real Claude Code emits multiple `result`-shaped events within a SINGLE process
+    // (one spawn() call below, never --resume-chained): confirmed on a real
+    // feature-api-keys transcript — an untagged interim result mid-stream (line 614,
+    // "T-001 and T-003 dispatched in parallel...", is_error:false, num_turns:48) plus
+    // six more tagged `origin:{"kind":"task-notification"}`, one per background Task
+    // completion (e.g. "T-003 (frontend console) complete."), total_cost_usd rising
+    // 2.61 -> 12.70 across all seven. Neither the untagged one nor the origin tag
+    // reliably marks "the true final result" (the untagged one at line 614 was NOT
+    // final — 1000+ more events followed it); the only reliable signal is stream
+    // position: whichever `result` event is literally LAST — confirmed by its own
+    // text, "**YOLO run complete**...", and by being the last line before the process
+    // exited. `.find()` was grabbing the FIRST (an early interim status, not the run's
+    // outcome), understating cost_reported_usd and usage.tokens on any run with more
+    // than one. Mock mode only ever emits one, so this is a no-op there.
+    const resultEvent = events.findLast((e) => e.type === "result") || null;
     fs.writeFileSync(stdoutPath, events.map((e) => JSON.stringify(e)).join("\n") + "\n", "utf8");
     fs.writeFileSync(stderrPath, "", "utf8");
     if (resultEvent) fs.writeFileSync(resultPath, JSON.stringify(resultEvent, null, 2) + "\n", "utf8");
@@ -249,7 +263,9 @@ export async function invokeClaude(opts) {
     child.on("close", (exitCode, signal) => {
       clearTimeout(timer);
       stdoutStream.end(); stderrStream.end(); eventsStream.end();
-      const resultEvent = events.find((e) => e.type === "result") || null;
+      // See the mock-mode branch above for the verified mechanism: pick the LAST
+      // `result` event (true run outcome), not the first (an early interim status).
+      const resultEvent = events.findLast((e) => e.type === "result") || null;
       if (resultEvent) fs.writeFileSync(resultPath, JSON.stringify(resultEvent, null, 2) + "\n", "utf8");
       const wall_clock_s = (Date.now() - started) / 1000;
       const termination_reason = classifyTermination({

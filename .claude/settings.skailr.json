@@ -1,11 +1,11 @@
 {
-  "//telemetry": "Key `telemetry` defaults to enabled here (\"telemetry\": { \"enabled\": true }), so span telemetry (scripts/skailr/emit-telemetry.mjs) is on out of the box regardless of whether a `.skailr/` dir exists at repo root. To opt out, set \"telemetry\": { \"enabled\": false }. See .claude/skills/emit-telemetry/SKILL.md and .claude/program/schemas/telemetry-event.schema.json. install.sh copies this file only if absent, so your override survives upgrades.",
+  "//telemetry": "Key `telemetry.scope` controls which command tiers wrap Task dispatches in span-start/span-end telemetry (scripts/skailr/emit-telemetry.mjs). Default is \"program-only\": /yolo-program, /build-program, /discover, /plan-program, /continue-program keep telemetry on (a long multi-workstream run is where span-level visibility earns its keep); /patch and /yolo skip it by default — real campaign data (docs/BENCHMARKS.md) showed span wrapping adds 2 Bash calls per dispatch across 6-7+ dispatches on a typical single-feature run for a signal (subagent cost attribution) that was itself broken until this same pass fixed it in bench/. Set \"scope\": \"all\" to re-enable everywhere, or \"scope\": \"off\" to disable entirely. See .claude/skills/emit-telemetry/SKILL.md and .claude/program/schemas/telemetry-event.schema.json. install.sh copies this file only if absent, so your override survives upgrades.",
   "//autoUpdate": "Key `autoUpdate` defaults to enabled here (\"autoUpdate\": { \"enabled\": true }), so scripts/skailr/check-update.mjs checks npm at most once per 24h and prints a one-line notice when a newer skailr-agents exists. It never upgrades anything. To opt out, set \"autoUpdate\": { \"enabled\": false }. install.sh copies this file only if absent, so your override survives upgrades.",
-  "//note": "Hooks used to live in this file and never fired — Claude Code doesn't auto-load custom-named settings files, only .claude/settings.json / .claude/settings.local.json / ~/.claude/settings.json. Hooks moved to .claude/settings.json (2026-08-08). This file keeps its original, narrower job: two consumer-preference toggles that install.sh preserves on upgrade rather than overwriting.",
+  "//note": "Hooks used to live in this file and never fired — Claude Code doesn't auto-load custom-named settings files, only .claude/settings.json / .claude/settings.local.json / ~/.claude/settings.json. Hooks moved to .claude/settings.json (2026-08-08). This file keeps its original, narrower job: consumer-preference toggles that install.sh preserves on upgrade rather than overwriting.",
   "autoUpdate": {
     "enabled": true
   },
   "telemetry": {
-    "enabled": true
+    "scope": "program-only"
   }
 }

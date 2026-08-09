@@ -7,13 +7,13 @@ description: Resolve which model to use for each Task dispatch from model-routin
 
 ## When to use
 
-Before every `Task` (subagent) dispatch in orchestrator commands (`/ship-feature`, `/build-feature`, `/yolo`, `/build-program`, portfolio commands, channel re-dispatches).
+Once per command run (Setup), then applied before every `Task` (subagent) dispatch in orchestrator commands (`/ship-feature`, `/build-feature`, `/yolo`, `/build-program`, portfolio commands, channel re-dispatches) — see "Resolve model" below for what's cached vs. re-checked per dispatch.
 
 ## Resolve model
 
-1. Read `.claude/model-routing.json`.
-2. Take `profiles[active].roles[<agent-name>]`, falling back to `profiles[active].default`.
-3. Apply escalate / downgrade rules below.
+1. **Once per command run, at Setup:** Read `.claude/model-routing.json` and cache `profiles[active].roles` (the whole role→model map) plus `profiles[active].default` in your own context. The file does not change mid-run — do not re-Read it before each dispatch; look up the cached map instead.
+2. Per dispatch: take the cached `roles[<agent-name>]`, falling back to the cached `default`.
+3. Apply escalate / downgrade rules below. An escalate/downgrade event is the only reason to re-consult the file (e.g. confirming `protected` status for a role you haven't checked yet in this run).
 4. **Claude Code:** invoke the named agent (frontmatter `model:` should already match the active profile after `apply-model-routing.mjs`). If you must override for a one-off escalate, say so in the Task prompt.
 5. **Cursor:** pass the resolved model as the Task `model` parameter. Role defaults are also listed in `.cursor/model-routing.md` and on each `.cursor/rules/<agent>.mdc`.
 

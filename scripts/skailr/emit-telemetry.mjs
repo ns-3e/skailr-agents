@@ -30,13 +30,25 @@ const MAX_ATTR_BYTES = 1024; // 1 KiB serialized attrs (AC-21)
 const TAIL = 256 * 1024; // emit_seq tail-scan window (AC-15)
 
 // ---------- gating (AC-17) ----------
-function isEnabled() {
+// `--tier` (optional; caller-supplied, e.g. "patch" / "feature-yolo") is only
+// consulted under the new `telemetry.scope: "program-only"` default so that any
+// caller not yet passing --tier keeps its prior always-on behavior unchanged.
+function isEnabled(tier) {
   try {
     const p = join(process.cwd(), ".claude", "settings.skailr.json");
     if (existsSync(p)) {
       const s = JSON.parse(readFileSync(p, "utf8"));
-      if (s && s.telemetry && typeof s.telemetry.enabled === "boolean") {
-        return s.telemetry.enabled; // explicit disable/enable always wins
+      if (s && s.telemetry) {
+        if (typeof s.telemetry.enabled === "boolean") {
+          return s.telemetry.enabled; // legacy explicit disable/enable always wins
+        }
+        const scope = typeof s.telemetry.scope === "string" ? s.telemetry.scope : "program-only";
+        if (scope === "off") return false;
+        if (scope === "all") return true;
+        // scope === "program-only" (default): disabled only for tiers explicitly
+        // opted out by their own command prose; an omitted --tier stays enabled.
+        if (scope === "program-only" && (tier === "patch" || tier === "feature-yolo")) return false;
+        return true;
       }
     }
   } catch {
@@ -300,7 +312,7 @@ function req(a, name) {
 
 // ---------- subcommands ----------
 function cmdSpanStart(a) {
-  if (!isEnabled()) return { disabled: true }; // AC-17 — no file
+  if (!isEnabled(a["tier"])) return { disabled: true }; // AC-17 — no file
   const emitterId = slugEmitter(req(a, "emitter-id"));
   const traceId = req(a, "trace-id");
   const agentRole = req(a, "agent-role");

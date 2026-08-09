@@ -10,6 +10,52 @@ cell) and run-to-run variance is large — in some cases larger than the
 differences being compared. Treat every "delta" on this page as a lead
 worth investigating, not a settled result. See [Caveats](#caveats).
 
+## 2026-08-09 update: lean pass landed, not yet re-benchmarked
+
+Everything below this note is the campaign data that motivated a benchmark-driven
+efficiency pass (`IMPROVEMENT-BACKLOG.md`, L-1..L-7) — the fixed points, not something
+this note revises. What changed, mechanically:
+
+- **De-taxed per-dispatch bookkeeping** (`route-models`, `emit-telemetry`): the routing
+  file is now read once per run instead of before every Task; telemetry span wrapping
+  now defaults **off** for `/patch` and standalone `/yolo` (`telemetry.scope:
+  "program-only"` in `.claude/settings.skailr.json`) since real campaigns showed it
+  cost 2 Bash calls per dispatch, across 6-7+ dispatches per feature run, for a signal
+  that was itself broken (next point).
+- **Guarded inline-fix carve-out for `/patch`**: a bounded, single-owner, non-sensitive
+  fix below `fit-test`'s own spawn floor is now implemented by the orchestrator
+  directly instead of always spawning an engineer subagent — the likely driver of
+  `patch-webhook`'s 3.4x tool-call ratio below. `/yolo`/`/yolo-program` keep the
+  dispatch-only rule.
+- **Proportional verification/docs in `/yolo`**: `e2e-verifier`/`validator`/
+  `program-documenter` now skip (with a logged reason) on single-ticket, non-sensitive,
+  non-public-surface features; anything bigger or sensitive keeps the full path
+  unconditionally.
+- **Two real bugs found and fixed in `bench/` itself while investigating the
+  `usage.by_source.subagent`-always-zero caveat below**: a single real `claude -p`
+  process (one `spawn()` call, never `--resume`-chained) emits multiple `result`-shaped
+  events over its own lifetime — verified on a real transcript, one untagged interim
+  status mid-stream plus several tagged `origin:{"kind":"task-notification"}` (one per
+  background Task completing), `total_cost_usd` rising monotonically across all of them
+  ($2.61 → $12.70 across 7 events) — and `claude.mjs` was selecting the *first* one via
+  `.find()`, an early interim status rather than the run's actual outcome (confirmed by
+  that event's own result text, `"**YOLO run complete**..."`, only present on the true
+  last one), understating `cost_reported_usd` and `usage.tokens` on any run with more
+  than one. Fixed to `.findLast()`. The subagent-attribution figure itself stays
+  honestly zero-filled — investigated and rejected a naive per-turn-usage-summation fix
+  because it overcounts by ~26x (per-turn `usage` is cumulative context size at that
+  turn, not an incremental delta); no sound per-source split is derivable from
+  stream-json alone.
+
+**Not done here:** no numbers on this page were rerun or corrected. The `resultEvent`
+fix in particular means historical `cost_reported_usd` figures for real, multi-checkpoint
+skailr-arm runs below may be understated — flagged, not retroactively recomputed, since
+that requires either re-deriving from each run's raw `stdout.log` or a fresh campaign.
+A real before/after `bench/docker-run.sh` run (starting with `patch-webhook`, where the
+inline-fix path most directly applies) is the natural next step and is not simulated or
+estimated on this page. `program-rbac`'s identical 6/6 failure is a capability gap this
+pass does not address — see "The real program-rbac finding" below.
+
 ## What's being compared
 
 | Column | What it is | Real bench data? |

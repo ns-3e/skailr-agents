@@ -30,9 +30,9 @@ N/A.
 
 ### Model routing
 
-Before every Task dispatch, follow skill `route-models`: resolve the model from `.claude/model-routing.json` (active profile), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
+Follow skill `route-models`: at Setup, read `.claude/model-routing.json` **once** and cache the active profile's role→model map; per dispatch, look up the cached map (re-consult the file only on an escalate/downgrade event), apply escalate/downgrade rules, and append a line to `.claude/tmp/model-usage.md`. YOLO still respects the active profile; escalate once on gate failure / retry. **Also prepend every Task prompt** with the `route-models` Task prompt preamble (concision + Task return / DONE contract). Do not re-quote it in full.
 
-Also follow skill `emit-telemetry`: once at run start, mint and persist `trace_id`/`root_span_id` to the run's `telemetry.json` (skip if it already exists — resume case); then capture a `span-start` handle immediately before every Task dispatch and pass it verbatim to `span-end` immediately after that dispatch resolves, deriving `--status` from this command's own success/failure/blocked handling. See the skill for emitter-id, the AC-7 hierarchy tier, and parent_span_id rules.
+Also follow skill `emit-telemetry`: once at run start, mint and persist `trace_id`/`root_span_id` to the run's `telemetry.json` (skip if it already exists — resume case); then capture a `span-start` handle immediately before every Task dispatch and pass it verbatim to `span-end` immediately after that dispatch resolves, deriving `--status` from this command's own success/failure/blocked handling. **Pass `--tier feature-yolo` on every `span-start` for a standalone run** (`ARTIFACT_ROOT=.claude/tmp`, no program parent) — under the default `telemetry.scope: "program-only"` this tier is gated off mechanically by the script (no file write). **Omit `--tier` when nested under a program** (dispatched via `run-feature-queue`): that dispatch is part of the program-tier run the operator is already tracking, so it stays on. Either way, keep issuing the calls unconditionally in prose regardless of scope. See the skill for emitter-id, the AC-7 hierarchy tier, and parent_span_id rules.
 
 
 ### Artifact root
@@ -48,6 +48,10 @@ Before decomposing work (intake or build) or dispatching engineers/tickets, run 
 **Decomposition rules** when splitting work into tickets/slices: split along contract seams (the frozen spec's API/data/ownership boundaries); keep units MECE; single-writer per file (no two dispatched agents own the same path — enforced by the ownership gate below); cap at ≤7 direct reports per dispatch round; do not spawn a task under ~10k tokens of expected work — fold it into an adjacent ticket instead.
 
 **Leads never ingest raw work product.** Your context as orchestrator holds plans, contracts, dispatch packets, and completion reports only — never raw diffs, full engineer-written files, transcripts, or tool logs from dispatched agents. Engineers report back via their completion report (~1000-token cap) and artifact paths; verify claims (e.g. `git diff --name-only`) without reading full file contents as a matter of course.
+
+### Sensitive-surface list (shared)
+
+Used by Phase 5/6's proportionality gate and Phase 7's docs gate below. A ticket, path, or the feature request itself **matches** when it touches, or names, any of: auth, security, payment, billing, crypto, compliance, permission, rbac, secret, token, password, session. Prefer `ownership.json` role tags when present (a path tagged to a security/compliance-owning role matches); fall back to this keyword match against paths, ticket titles, and the request text.
 
 ### YOLO rules (non-negotiable)
 
@@ -153,7 +157,9 @@ Create the feature branch if one does not exist: `feature/<slug-from-story-title
 
 Set `build` to `in_progress` in progress.md.
 
-**If `$ARTIFACT_ROOT/board.md` exists:** follow skill `run-ticket-board` for the full claim → dispatch → resolve loop (research fan-out, decide/@human, frontier parallel Tasks). Refer to tickets by **title**. On resume, use `ticket-status.mjs --json` / `feature-status` `tickets` + `handoffs` (ticket-id keys under `$ARTIFACT_ROOT/handoff/<id>.md`). Cap 5 yields per ticket.
+**If `$ARTIFACT_ROOT/board.md` exists with exactly one ticket:** skip the claim/resolve board ceremony — its coordination value only exists at ≥2 parallel tickets. Dispatch the owning engineer directly for that ticket (same shape as `/patch`'s single-dispatch path), pass the ticket's Goal/Acceptance criteria/File allowlist from `board.md` in the Task prompt, and mark the ticket resolved via `ticket-status.mjs resolve` once its report lands (still keeps the board file as the source of truth for resume — just without the claim step and the per-ticket dispatch-loop bookkeeping).
+
+**Else, if `$ARTIFACT_ROOT/board.md` exists with 2+ tickets:** follow skill `run-ticket-board` for the full claim → dispatch → resolve loop (research fan-out, decide/@human, frontier parallel Tasks). Refer to tickets by **title**. On resume, use `ticket-status.mjs --json` / `feature-status` `tickets` + `handoffs` (ticket-id keys under `$ARTIFACT_ROOT/handoff/<id>.md`). Cap 5 yields per ticket.
 
 **Else (legacy fallback):** Invoke `backend-engineer` and `frontend-engineer` **in the same message, as concurrent Task calls** (on resume, only slices in `partialBuild`; include handoff paths from `handoffs`).
 
@@ -172,13 +178,19 @@ node scripts/skailr/check-ownership.mjs --from-spec $ARTIFACT_ROOT/spec.md && no
 
 Checkpoint: `build` → complete.
 
-### Phase 5 — Verification
+### Phase 5 — Verification (proportional)
 
-Invoke `e2e-verifier`. It writes `verification-report.md`. Do not let it modify application code. Note failures and continue to validation.
+**Full path (default) unless all of these hold:** the board had exactly **one** ticket, no ticket/path matches the sensitive-surface list above, and the change is not user-visible (or no existing e2e suite covers the surface). When all three hold, skip `e2e-verifier` and log why in `progress.md` Notes (`verify: skipped — single non-sensitive ticket, no e2e coverage`) — this mirrors `/patch`'s existing light-verify rule; anything bigger, multi-ticket, sensitive, or e2e-covered keeps the full check unconditionally.
+
+Otherwise invoke `e2e-verifier`. It writes `verification-report.md`. Do not let it modify application code. Note failures and continue to validation.
 
 Checkpoint: `verify` → complete.
 
-### Phase 6 — Validation
+### Phase 6 — Validation (proportional)
+
+**Skip full `validator`** only when Phase 5 was skipped **and** the build phase's ownership/contract/test/lint/typecheck chained check passed clean **and** no engineer flagged risk in its report. Log the skip in `progress.md` Notes (`validate: skipped — proportional gate, see verify skip`) and jump to Phase 7. Any ownership/contract gate failure, engineer-flagged risk, e2e failure, multi-ticket board, or sensitive-surface match means the full validator path below runs unconditionally — this is a risk gate, not a blanket downgrade.
+
+**Otherwise, run the full path:**
 
 **Expert gate (when progress Notes `matched:` is non-empty).** Before the validator, dispatch `expert` with `mode: gate`, `slug: <matched slug>`, `subject: the feature diff`. It writes `$ARTIFACT_ROOT/expert-verdict-<slug>.md` with a `verdict` of `pass | pass-with-notes | fail` and a computed `authority`. If `matched: none`, skip with **no user-facing mention** (do not say “no experts registry”).
 
@@ -206,9 +218,9 @@ If `validation-report.md` has one or more blocking findings (regardless of the v
 
 Checkpoint: log the fix round (or its absence, if there was nothing blocking) in `progress.md` Notes before moving on.
 
-### Phase 7 — Documentation
+### Phase 7 — Documentation (conditional)
 
-Invoke `program-documenter` as in `/build-feature`. If a blocking finding is still open after Phase 6b's one fix round, reconcile-only; hold new release notes until it's fixed by a human.
+Invoke `program-documenter` (as in `/build-feature`) **only if** the diff touches a documented public surface (a README-referenced API/CLI/config, or anything `docs/` already describes). Most single-ticket, non-public-surface features don't — skip with a one-line note in `progress.md` Notes (`docs: no public-surface change`) instead of dispatching unconditionally. If a blocking finding is still open after Phase 6b's one fix round, reconcile-only; hold new release notes until it's fixed by a human.
 
 Checkpoint: `docs` → complete; frontmatter `status: complete`.
 

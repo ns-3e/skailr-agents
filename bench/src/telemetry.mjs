@@ -14,13 +14,35 @@
 //      given install does emit files/logs, best-effort discovery
 //      (readOtelRecords) picks them up from <runDir>/otel/*.json.
 //   2. PRIMARY parse path: stream-json `result.usage` (input/output/
-//      cache_read/cache_creation) is the one signal `claude.mjs` always has
-//      —its own source is "main" only; no subagent/auxiliary/agent-name
-//      breakdown is derivable from stream-json alone in this CLI version
-//      (no separate agent-attributed event type observed in --help/schema).
+//      cache_read/cache_creation) is the one signal `claude.mjs` always has.
+//      Real sessions emit MULTIPLE `result`-shaped events within a single
+//      process (verified on a real transcript: one untagged interim result
+//      mid-stream plus several tagged `origin:{"kind":"task-notification"}`,
+//      one per background Task completing; total_cost_usd rises monotonically
+//      across all of them, e.g. 2.61 -> 12.70) — `claude.mjs` now picks the
+//      LAST one by stream position (fixed alongside this file; it was
+//      previously picking the FIRST via `.find()`, which is an early interim
+//      status, not the run's outcome — confirmed by that event's own result
+//      text on the real transcript checked). That last event's usage IS the
+//      correct cumulative total for the whole session, main + every subagent
+//      combined — Claude Code's own total_cost_usd/token accounting already
+//      rolls Task-dispatched subagent spend into the running total shown at
+//      each interim result, and the last one is the most complete.
+//      What's still NOT derivable: a per-source (main vs subagent) SPLIT of
+//      that total. The obvious-looking alternative — sum each `assistant`
+//      event's own `message.usage`, bucketed by presence of
+//      `parent_tool_use_id`/`subagent_type` — was tried and rejected: each
+//      turn's `usage` reflects cumulative context size AT that turn (mostly
+//      cache_read), not an incremental per-turn delta, so summing across many
+//      turns wildly overcounts (verified against a real run: summed turns gave
+//      ~26x the true session total). No sound way to attribute the single
+//      session-level total to a source is available from stream-json alone.
 //      When no otel/*.json records are found, usage collapses to a single
-//      by_source.main record and by_agent stays {} — degraded but never
-//      absent (never blocks a run.json write).
+//      by_source.main record (the full, now-correct session total) and
+//      by_source.subagent/by_agent stay zero-filled/{} — an honest reflection
+//      of what's attributable, not a bug to chase further without a different
+//      data source (e.g. per-agent OTel spans, if Claude Code ever exports
+//      them — see the OTEL MECHANISM CHOICE above).
 //   3. Mock mode is the fully exercised, schema-verified path: it reads the
 //      kernel-generated otel/telemetry.json (already split across
 //      main/subagent/auxiliary per mock-streamjson contract) directly.
