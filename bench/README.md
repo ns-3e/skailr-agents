@@ -465,10 +465,38 @@ is **correct and runnable**, proven via **mock mode** + committed
   on it, and mock runs are not excluded. Observed 2026-08-09: a 3-task ×
   2-arm × 1-rep smoke campaign produced 6 runs and published `Runs: 8`,
   having pulled in 2 stale mock-run directories with matching task/arm names.
-  **Until this is fixed, either point `--results-dir` at a per-campaign
-  directory, or verify each run's `run.json`/`grader.json` by hand and treat
-  the generated aggregate as untrusted.** A `series_id` (or campaign-id)
-  filter in `listRunRecords`' callers is the obvious fix; it is not built.
+  **Fixed in `bench/src/lib/ids.mjs` (`mintCampaignId`), `bench/src/run.mjs`,
+  `bench/src/aggregate.mjs`, `bench/src/report.mjs`, and
+  `bench/scripts/publish-campaign.mjs`.** `series_id` alone could never have
+  fixed this — it's `deriveSeriesId({claude_code_version, model_id})`, a
+  *deterministic* hash, so two real campaigns run the same day on the same
+  Claude Code version + model share an identical `series_id` and still
+  collide. The actual fix is a separate, non-deterministic `campaign_id`:
+  `run.mjs` mints one fresh `campaign_id` (`mintCampaignId()`, `crypto.randomUUID()`
+  with a timestamp+random-hex fallback) per `run.mjs`/`runCampaign()`
+  invocation, stamps it into `identity.campaign_id` on every `run.json` that
+  invocation writes, and prints it at the end of the run
+  (`bench: campaign_id=...`) for an operator or CI step to capture.
+  `listRunRecords(campaignDir, { campaignId })` (and everything built on it —
+  `aggregateCampaign`, `getCachedAggregate`, `loadCampaign`,
+  `reportSingleCampaign`) skips any record whose `identity.campaign_id`
+  doesn't match when a `campaignId` is given; omitting the option is
+  byte-for-byte the old unscoped behavior, so every `run.json` written before
+  this field existed (no `campaign_id` at all) is still found exactly as
+  before. `publish-campaign.mjs --campaign-id <id>` threads it through, so
+  `SUMMARY.md`/`report.md`/`aggregate.json`/`runs/` are scoped to exactly the
+  runs one invocation produced. `identity.campaign_id` is an **optional**
+  field in `run.schema.json` (`additionalProperties: false` on `identity`
+  required it be declared, not required) — historical run.json without it
+  remain schema-valid. Verified by the `bench/src/aggregate.test.mjs` and
+  `bench/scripts/publish-campaign.test.mjs` regression tests, which reproduce
+  the exact 6-real/2-stale scenario above and assert the scoped call returns
+  6 while the unscoped call still returns 8 (unchanged, intentional
+  backward-compat). Until an operator threads `--campaign-id` through (or
+  points `--results-dir` at a genuinely per-campaign directory), the
+  unscoped/legacy pollution this entry describes is still the *default*
+  behavior of an un-flagged `publish-campaign.mjs` run — the fix is additive,
+  opt-in scoping, not automatic cleanup of the shared `results/` namespace.
 
 ## V2 / not yet built
 

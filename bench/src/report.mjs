@@ -53,10 +53,17 @@ export function resolveCampaignDir(ref) {
   );
 }
 
-/** Load one campaign: aggregate stats (cached) + raw entries for diagnostics. */
-export function loadCampaign(dir) {
-  const agg = getCachedAggregate(dir);
-  const entries = listRunRecords(dir);
+/**
+ * Load one campaign: aggregate stats (cached) + raw entries for diagnostics.
+ * `opts.campaignId`, when given, scopes both to one campaign invocation's
+ * own runs (see aggregate.mjs `listRunRecords`) — used by
+ * `publish-campaign.mjs --campaign-id` so a published SUMMARY/report never
+ * includes foreign runs sitting in the same results dir. Omitting it
+ * preserves the historical unscoped behavior exactly.
+ */
+export function loadCampaign(dir, opts = {}) {
+  const agg = getCachedAggregate(dir, opts);
+  const entries = listRunRecords(dir, { campaignId: opts.campaignId });
   return { label: campaignLabel(dir), dir: path.resolve(dir), agg, entries };
 }
 
@@ -641,8 +648,8 @@ export function compareCampaigns(refADir, refBDir) {
 }
 
 /** Pure builder for a single-campaign report (`bench:report --campaign <id>`) — no comparison/verdict. */
-export function reportSingleCampaign(campaignDir) {
-  const campaign = loadCampaign(campaignDir);
+export function reportSingleCampaign(campaignDir, opts = {}) {
+  const campaign = loadCampaign(campaignDir, opts);
   const rows = buildHeadlineRows([campaign]);
   const kpis = computeKPIs(campaign);
   const diag = computeDiagnostics(campaign);

@@ -17,7 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadAndVerifyConfig, getLiveEnv } from "./lib/config.mjs";
-import { deriveSeriesId, deriveRunId } from "./lib/ids.mjs";
+import { deriveSeriesId, deriveRunId, mintCampaignId } from "./lib/ids.mjs";
 import { ensureDir, atomicWriteJson, atomicWriteValidatedJson, markReadOnly } from "./lib/fsutil.mjs";
 import { invokeClaude, buildLaunchPrompt } from "./claude.mjs";
 import { buildTelemetryEnv, buildTelemetry } from "./telemetry.mjs";
@@ -356,6 +356,13 @@ export async function runOne(opts) {
     claudeBin = "claude",
     runGrader,
     skailrRepoRoot,
+    // campaignId: minted once per campaign invocation (see lib/ids.mjs
+    // mintCampaignId) and stamped into identity below so a campaign's own
+    // report can scope itself to exactly the runs it produced, instead of
+    // every run.json ever written into the shared results/ namespace (see
+    // "Known issues" in bench/README.md). Optional — undefined when runOne
+    // is called directly (e.g. in unit tests) outside of runCampaign.
+    campaignId,
   } = opts;
 
   const timestamp = new Date().toISOString();
@@ -495,6 +502,7 @@ export async function runOne(opts) {
       run_id, series_id, task_id: task.id, task_version: task.version, arm,
       skailr_sha: installResult.skailr_sha, skailr_version: installResult.skailr_version,
       fixture_sha: task.fixture_sha, timestamp,
+      ...(campaignId ? { campaign_id: campaignId } : {}),
     },
     environment: {
       claude_code_version: config.claude_code_version, model_id: config.model,
@@ -590,6 +598,12 @@ export async function runCampaign(opts) {
   const {
     tasks, arms = ["baseline", "skailr"], reps, smoke = false,
     maxCampaignUsd = 100, parallel = 1, config, rng,
+    // One campaign_id per runCampaign() invocation — freshly minted unless
+    // the caller supplies one (tests / re-entrant callers), never derived
+    // from series_id (see lib/ids.mjs). Stamped into every run this
+    // invocation writes so a campaign's own runs can be told apart from
+    // whatever else is sitting in the shared results/ directory.
+    campaignId = mintCampaignId(),
   } = opts;
   assertContainerSupported(config);
   const repsEff = smoke ? 1 : (reps ?? config.defaults.repetitions);
@@ -616,17 +630,19 @@ export async function runCampaign(opts) {
       while (idx < plan.length) {
         const i = idx++;
         const { task, arm, rep } = plan[i];
-        results[i] = await runOne({ ...opts, task, arm, rep });
+        results[i] = await runOne({ ...opts, task, arm, rep, campaignId });
       }
     }
     await Promise.all(Array.from({ length: Math.min(parallel, plan.length) }, worker));
+    results.campaignId = campaignId;
     return results;
   }
 
   const results = [];
   for (const { task, arm, rep } of plan) {
-    results.push(await runOne({ ...opts, task, arm, rep }));
+    results.push(await runOne({ ...opts, task, arm, rep, campaignId }));
   }
+  results.campaignId = campaignId;
   return results;
 }
 
@@ -671,6 +687,12 @@ async function main() {
     config, skailrRef: args.skailrRef || "HEAD", mock,
   });
   console.log(`bench: completed ${results.length} runs across ${taskIds.length} task(s) [${taskIds.join(", ")}]. See bench/results/<run_id>/run.json`);
+  // Printed clearly on its own line so an operator or CI step can grep/capture
+  // it — pass to `publish-campaign.mjs --campaign-id <id>` (or `aggregateCampaign`/
+  // `listRunRecords`'s `campaignId` option) to scope reporting to exactly this
+  // invocation's runs, instead of everything sitting in results/ (see "Known
+  // issues" in bench/README.md).
+  console.log(`bench: campaign_id=${results.campaignId}`);
 }
 
 function getLiveEnvSafe() {

@@ -12,10 +12,15 @@
 //
 // Usage:
 //   node scripts/publish-campaign.mjs [--results-dir <dir>] [--out-root <dir>]
-//        [--label <name>] [--now <iso>]
+//        [--label <name>] [--now <iso>] [--campaign-id <id>]
 // Defaults: --results-dir bench/results, --out-root bench/benchmarks.
 // --label / --now exist so tests are deterministic; in CI, label is derived
 // from the run timestamp + series_id.
+// --campaign-id scopes publishing to exactly one campaign invocation's own
+// runs (the `campaign_id` printed by `run.mjs` at the end of a campaign) —
+// see "Known issues" in bench/README.md: without it, this script reports on
+// whatever run.json files happen to be sitting in --results-dir, which can
+// silently include stale runs from an earlier invocation.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -35,6 +40,7 @@ function parseArgs(argv) {
     else if (a === "--out-root") out.outRoot = argv[++i];
     else if (a === "--label") out.label = argv[++i];
     else if (a === "--now") out.now = argv[++i];
+    else if (a === "--campaign-id") out.campaignId = argv[++i];
   }
   return out;
 }
@@ -52,14 +58,18 @@ function uniq(arr) {
  * Publish one campaign. Pure-ish: reads runs from resultsDir, writes into
  * outRoot/<label>/. Returns { dir, label, meta }.
  */
-export function publishCampaign({ resultsDir, outRoot, label, now } = {}) {
+export function publishCampaign({ resultsDir, outRoot, label, now, campaignId } = {}) {
   resultsDir = resultsDir || path.join(BENCH_ROOT, "results");
   outRoot = outRoot || path.join(BENCH_ROOT, "benchmarks");
   const nowIso = now || new Date().toISOString();
 
-  const entries = listRunRecords(resultsDir);
+  const entries = listRunRecords(resultsDir, { campaignId });
   if (entries.length === 0) {
-    throw new Error(`publish-campaign: no run.json found under ${resultsDir}`);
+    throw new Error(
+      campaignId
+        ? `publish-campaign: no run.json with campaign_id "${campaignId}" found under ${resultsDir}`
+        : `publish-campaign: no run.json found under ${resultsDir}`
+    );
   }
   const records = entries.map((e) => e.record);
 
@@ -86,11 +96,11 @@ export function publishCampaign({ resultsDir, outRoot, label, now } = {}) {
   }
 
   // 2. Aggregate (per task x arm, with bootstrap CIs).
-  const agg = aggregateCampaign(resultsDir);
+  const agg = aggregateCampaign(resultsDir, { campaignId });
   fs.writeFileSync(path.join(dir, "aggregate.json"), JSON.stringify(agg, null, 2) + "\n");
 
   // 3. Single-campaign report (both arms side by side): md/html/csv.
-  const report = reportSingleCampaign(resultsDir);
+  const report = reportSingleCampaign(resultsDir, { campaignId });
   writeReport(dir, report, "report");
 
   // 4. Metadata + SUMMARY.md.
