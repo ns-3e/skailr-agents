@@ -1,0 +1,15 @@
+{
+  "task_id": "feature-status-lookup",
+  "class": "cross-cutting",
+  "root_dirs": ["src", "test"],
+  "visible_test_cmd": "npm test",
+  "setup_cmd": ["npm ci"],
+  "entrypoints": {
+    "service": "src/server.ts"
+  },
+  "critical_requirements": [
+    "get-status-endpoint-implemented",
+    "post-webhooks-contract-preserved",
+    "unknown-event-id-404"
+  ]
+}

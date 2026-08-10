@@ -1,0 +1,19 @@
+{
+  "name": "feature-status-lookup-fixture",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fixture: minimal webhook ingestion service (already exactly-once-safe) with no status-lookup endpoint yet.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "start": "node src/server.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "22.20.1"
+  }
+}

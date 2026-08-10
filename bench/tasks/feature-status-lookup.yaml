@@ -1,0 +1,44 @@
+id: feature-status-lookup
+version: "1.0"
+class: cross-cutting
+fixture: bench/fixtures/feature-status-lookup
+fixture_sha: 02e379da862828bef9daac59875ed587bd17102e
+grader: bench/graders/feature-status-lookup
+limits:
+  max_budget_usd: 10
+  wall_clock_timeout_min: 30
+# `command` is the leading Skailr slash command, load-bearing for the skailr
+# arm only (see patch-webhook.yaml / bench/README.md "Known issues" for why:
+# headless `-p` mode has no human to answer the intake skill's confirmation
+# gates, so a bare/missing command makes the run self-route and exit in
+# seconds with 0 tool calls). `prompt` below is the arm-agnostic task body;
+# run.mjs/claude.mjs (buildLaunchPrompt) prepend `command` only for the
+# skailr arm and a plain-language framing line for baseline.
+#
+# This task exists to exercise /yolo's lean-path collapse (single separable
+# capability, non-sensitive surface, small repo with an existing
+# .claude/repo/orientation.md — see that file in the fixture) now that a
+# small budget/timeout makes a cheap lean-path run visible in campaign
+# results, distinct from feature-api-keys.yaml (deliberately cross-cutting /
+# sensitive, permanently lean-ineligible) and program-rbac.yaml (a different
+# command entirely).
+command: /yolo
+prompt: |
+  Add a GET /webhooks/:event_id/status endpoint that returns the stored
+  processing result for a previously submitted webhook event (404 if the
+  event_id is unknown).
+  Requirements:
+  - Must not change the existing POST /webhooks contract.
+  - Success response mirrors POST's response shape: { event_id, status, result }.
+  - Unknown event_id returns 404.
+  - Malformed or missing event_id (e.g. an empty path segment) is handled
+    sensibly, following this repo's existing error-response conventions
+    (see PUBLIC_API.md).
+  - Add tests.
+  Run the relevant test suite and leave the repository in a working state.
+setup:
+  - npm ci
+critical_requirements:
+  - get-status-endpoint-implemented
+  - post-webhooks-contract-preserved
+  - unknown-event-id-404
