@@ -84,16 +84,27 @@ export async function runGrader(workspaceDir) {
         adminA: { email: "grader-admin-a@bench.test", password: "grader-pass-a1!" },
         memberA: { email: "grader-member-a@bench.test", password: "grader-pass-a2!" },
         adminB: { email: "grader-admin-b@bench.test", password: "grader-pass-b1!" },
+        // The invitee has an account (with known credentials) but is not yet
+        // a member of any org — mirrors "invite an existing platform user by
+        // email" and lets the probe authenticate as them before accepting.
+        // Without this, discoverAccept has no way to ever produce a session
+        // for the invitee, and every reasonable implementation that gates
+        // accept behind auth (matching every other endpoint this fixture
+        // ships, per PUBLIC_API.md) is structurally unreachable — see
+        // docs/audits/2026-08-10-program-rbac-diagnosis.md.
+        invitee: { email: "invitee@bench.test", password: "grader-pass-invitee1!" },
       };
       const userAdminA = db.createUser({ email: seeded.adminA.email, passwordHash: hashSecret(seeded.adminA.password) });
       const userMemberA = db.createUser({ email: seeded.memberA.email, passwordHash: hashSecret(seeded.memberA.password) });
       const userAdminB = db.createUser({ email: seeded.adminB.email, passwordHash: hashSecret(seeded.adminB.password) });
+      const userInvitee = db.createUser({ email: seeded.invitee.email, passwordHash: hashSecret(seeded.invitee.password) });
       db.addMember(orgA.id, userAdminA.id, "admin");
       db.addMember(orgA.id, userMemberA.id, "member");
       db.addMember(orgB.id, userAdminB.id, "admin");
       seeded.adminA.id = userAdminA.id;
       seeded.memberA.id = userMemberA.id;
       seeded.adminB.id = userAdminB.id;
+      seeded.invitee.id = userInvitee.id;
 
       const port = await freePort();
       server = serverMod.createServer();

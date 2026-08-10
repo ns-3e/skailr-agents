@@ -23,6 +23,31 @@ function pushCase(cases, id, ok, detail) {
   cases.push({ id, ok, detail: detail !== undefined ? String(detail).slice(0, 800) : undefined });
 }
 
+// DOC: fallback token discovery. Some implementations legitimately never
+// return the raw invitation token in the create-invitation HTTP response
+// (only via the mocked email) — a reasonable security choice, not a bug.
+// Tries conventional accept-link/token shapes against the email's subject
+// and body text.
+function extractInviteTokenFromEmail(message) {
+  if (!message) return undefined;
+  const text = `${message.subject || ""}\n${message.body || ""}`;
+  const patterns = [
+    /token=([A-Za-z0-9._-]{8,})/, // ?token=<value> query param
+    /\/invitations?\/([A-Za-z0-9._-]{8,})\/accept/, // /invitations/<value>/accept
+    /\/accept-invitation\/([A-Za-z0-9._-]{8,})/, // /accept-invitation/<value>
+    /\btoken\b\s*[:=]\s*["']?([A-Za-z0-9._-]{8,})["']?/i, // "token: <value>" / "token=<value>" prose
+  ];
+  for (const re of patterns) {
+    const m = re.exec(text);
+    // Trim trailing sentence punctuation a greedy match can pick up when the
+    // token sits at the end of a prose sentence (the charset above allows
+    // "." to support dotted token formats like JWTs, so a token immediately
+    // followed by ". " would otherwise swallow the full stop).
+    if (m) return m[1].replace(/[.,;:!?]+$/, "");
+  }
+  return undefined;
+}
+
 export async function runHiddenTests(base, { db, audit, email, workspaceDir, seeded }) {
   const hf = [];
   const reg = [];
@@ -41,6 +66,12 @@ export async function runHiddenTests(base, { db, audit, email, workspaceDir, see
   const sessAdminA = await login(seeded.adminA.email, seeded.adminA.password);
   const sessMemberA = await login(seeded.memberA.email, seeded.memberA.password);
   const sessAdminB = await login(seeded.adminB.email, seeded.adminB.password);
+  // The invitee already has an account (seeded, not yet a member of any
+  // org) so accept can be exercised as an authenticated request — matching
+  // every other mutating endpoint this fixture ships. See discoverAccept
+  // below: without this session, implementations that reasonably gate
+  // accept behind auth are structurally unreachable by this probe.
+  const sessInvitee = await login(seeded.invitee.email, seeded.invitee.password);
   pushCase(reg, "reg-existing-login-still-works", !!sessAdminA && !!sessMemberA && !!sessAdminB, "seeded users authenticate via unchanged /login");
 
   // --- regression: existing members endpoint / org-scoping unaffected ---
@@ -58,7 +89,7 @@ export async function runHiddenTests(base, { db, audit, email, workspaceDir, see
   }
 
   // --- invitation create (admin only) ---
-  const inviteEmail = "invitee@bench.test";
+  const inviteEmail = seeded.invitee.email;
   const discovered = sessAdminA
     ? await discoverInviteCreate(base, seeded.orgA.id, sessAdminA, { email: inviteEmail, role: "member" })
     : null;
@@ -89,6 +120,20 @@ export async function runHiddenTests(base, { db, audit, email, workspaceDir, see
   try {
     const emails = email.findEmailsTo(inviteEmail);
     pushCase(hf, "hf-invitation-email-sent-via-mock-adapter", emails.length > 0, `outbox matches=${emails.length}`);
+    // Fall back to extracting the invite token from the emailed accept
+    // link/body when the create-invitation HTTP response doesn't echo it.
+    // A response that omits the raw token (only the id/email/role/status)
+    // is a reasonable, security-conscious design — the token is a secret
+    // that should reach only the invitee, via email, never the admin who
+    // created the invite. discoverInviteCreate only reads the JSON
+    // response body, so without this fallback `discovered.inviteToken` is
+    // undefined and every accept candidate is built with the wrong value
+    // (the invitation id) standing in for the token — guaranteed to fail
+    // regardless of route shape or auth. See
+    // docs/audits/2026-08-10-program-rbac-diagnosis.md.
+    if (!discovered.inviteToken && emails.length > 0) {
+      discovered.inviteToken = extractInviteTokenFromEmail(emails[emails.length - 1]);
+    }
   } catch (err) {
     pushCase(hf, "hf-invitation-email-sent-via-mock-adapter", false, String(err.message || err));
   }
@@ -135,14 +180,19 @@ export async function runHiddenTests(base, { db, audit, email, workspaceDir, see
 
   // --- malformed / bogus invitation accept must not 500 or succeed ---
   try {
-    const bogus = await discoverAccept(base, seeded.orgA.id, discovered.basePath, "not-a-real-id", "not-a-real-token", undefined);
+    const bogus = await discoverAccept(base, seeded.orgA.id, discovered.basePath, "not-a-real-id", "not-a-real-token", sessInvitee);
     pushCase(sec, "sec-malformed-invitation-accept-rejected", bogus === null, bogus ? "unexpectedly accepted" : "denied/not-found");
   } catch (err) {
     pushCase(sec, "sec-malformed-invitation-accept-rejected", false, String(err.message || err));
   }
 
   // --- accept lifecycle + single-use (critical) ---
-  const acceptResult = await discoverAccept(base, seeded.orgA.id, discovered.basePath, discovered.id, discovered.inviteToken, undefined);
+  // Authenticated as the invitee: accept is a mutating, identity-sensitive
+  // action (the response depends on which user is accepting), and every
+  // other mutating endpoint in this fixture requires a session — an
+  // unauthenticated probe here can never reach an implementation that
+  // reasonably follows that same convention.
+  const acceptResult = await discoverAccept(base, seeded.orgA.id, discovered.basePath, discovered.id, discovered.inviteToken, sessInvitee);
   if (!acceptResult) {
     pushCase(hf, "hf-invitation-accept-discoverable", false, "no accept shape succeeded for the original invitation");
     critical["invitation-single-use"] = false;
@@ -162,7 +212,7 @@ export async function runHiddenTests(base, { db, audit, email, workspaceDir, see
     }
 
     // reuse the SAME invitation a second time -> must be rejected
-    const secondAttempt = await discoverAccept(base, seeded.orgA.id, discovered.basePath, discovered.id, discovered.inviteToken, undefined);
+    const secondAttempt = await discoverAccept(base, seeded.orgA.id, discovered.basePath, discovered.id, discovered.inviteToken, sessInvitee);
     const singleUse = secondAttempt === null;
     pushCase(hf, "hf-invitation-single-use-enforced", singleUse, secondAttempt ? `unexpectedly accepted twice (${secondAttempt.response.status})` : "second accept denied");
     critical["invitation-single-use"] = singleUse;
