@@ -84,11 +84,9 @@ function Install-Claude {
     $dirs = @(
         "$Target\.claude\agents",
         "$Target\.claude\commands",
-        "$Target\.claude\teams",
         "$Target\.claude\skills",
         "$Target\.claude\tmp",
         "$Target\.claude\repo",
-        "$Target\.claude\program\channels",
         "$Target\.claude\program\schemas"
     )
     foreach ($d in $dirs) {
@@ -109,17 +107,9 @@ function Install-Claude {
         Copy-Item $_.FullName "$Target\.claude\commands\" -Force
         Write-Host "  + .claude/commands/$($_.Name)"
     }
-    Copy-Item "$ScriptDir\.claude\teams\registry.md" "$Target\.claude\teams\registry.md" -Force
-    Write-Host "  + .claude/teams/registry.md"
-
     if (Test-Path "$ScriptDir\.claude\skills") {
         Copy-Item "$ScriptDir\.claude\skills\*" "$Target\.claude\skills\" -Recurse -Force
         Write-Host "  + .claude/skills/"
-    }
-
-    foreach ($f in @("PROTOCOL.md", "program.md", "feature.md")) {
-        Copy-Item "$ScriptDir\.claude\program\channels\$f" "$Target\.claude\program\channels\$f" -Force
-        Write-Host "  + .claude/program/channels/$f"
     }
 
     if (Test-Path "$ScriptDir\.claude\program\schemas") {
@@ -140,12 +130,6 @@ function Install-Claude {
             Copy-Item $settings "$Target\.claude\settings.skailr.json" -Force
             Write-Host "  + .claude/settings.skailr.json"
         }
-    }
-
-    $routing = Join-Path $ScriptDir ".claude\model-routing.json"
-    if (Test-Path $routing) {
-        Copy-Item $routing "$Target\.claude\model-routing.json" -Force
-        Write-Host "  + .claude/model-routing.json"
     }
 
     $intake = Join-Path $ScriptDir ".claude\intake.md"
@@ -169,21 +153,10 @@ function Install-Claude {
 }
 
 $PackagedRules = @(
-    "architect", "backend-engineer", "content-editor", "content-lead", "content-strategist",
-    "content-writer", "data-engineer", "e2e-verifier", "frontend-engineer", "integration-verifier",
-    "program-architect", "program-documenter", "program-validator", "researcher", "story-writer",
-    "validator", "registry", "intake", "portfolio-architect", "initiative-lead",
-    "legal-lead", "legal-analyst", "compliance-reviewer", "legal-validator",
-    "pm-lead", "pm-planner", "risk-analyst", "status-reporter",
-    "design-lead", "design-strategist", "designer", "design-reviewer",
-    "mkt-lead", "mkt-strategist", "channel-planner", "mkt-analyst",
-    "fin-lead", "fin-modeler", "fin-analyst", "fin-auditor",
-    "expert", "expert-scout"
+    "engineer", "verifier", "researcher", "program-architect", "intake"
 )
 $PackagedCommands = @(
-    "ship-feature", "build-feature", "continue-feature", "yolo", "patch",
-    "discover", "plan-program", "build-program", "continue-program", "yolo-program", "map-repo",
-    "discover-portfolio", "plan-portfolio", "status-portfolio", "mint-expert"
+    "patch", "build", "program", "map-repo", "yolo", "yolo-program"
 )
 
 function Install-Cursor {
@@ -210,18 +183,6 @@ function Install-Cursor {
         Write-Host "  + .cursor/README.md"
     }
 
-    $modelRouting = Join-Path $ScriptDir ".cursor\model-routing.md"
-    if (Test-Path $modelRouting) {
-        Copy-Item $modelRouting "$Target\.cursor\model-routing.md" -Force
-        Write-Host "  + .cursor/model-routing.md"
-    }
-
-    $reg = "$Target\.claude\teams\registry.md"
-    if (-not (Test-Path $reg)) {
-        New-Item -ItemType Directory -Path "$Target\.claude\teams" -Force | Out-Null
-        Copy-Item "$ScriptDir\.claude\teams\registry.md" $reg -Force
-        Write-Host "  + .claude/teams/registry.md (needed by Cursor registry rule)"
-    }
     $intakeTarget = "$Target\.claude\intake.md"
     if (-not (Test-Path $intakeTarget)) {
         $intakeSrc = Join-Path $ScriptDir ".claude\intake.md"
@@ -235,6 +196,127 @@ function Install-Cursor {
     New-Item -ItemType Directory -Path "$Target\.claude\repo" -Force | Out-Null
     foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep", "$Target\.claude\repo\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }
+    }
+}
+
+# DOC: 3.0 retire phase. skailr-agents ≤2.x shipped an orchestration framework that 3.0
+# removed — see docs/DESIGN-3.0.md. On upgrade, those pack-owned files must not linger in
+# the target. Only EXACT paths the ≤2.x pack itself shipped are listed; consumer data
+# (.claude/experts/, program runtime, .claude/tmp/, the CLAUDE.md conventions zone) is
+# never listed and never touched. Keep in sync with install.sh's RETIRED_* arrays.
+$RetiredDirs = @(
+    ".claude\agents\content", ".claude\agents\design", ".claude\agents\finance",
+    ".claude\agents\legal", ".claude\agents\marketing", ".claude\agents\pm",
+    ".claude\agents\portfolio", ".claude\agents\experts",
+    ".claude\teams", ".claude\program\channels"
+)
+$RetiredSkills = @(
+    "archive-program-state", "check-ownership", "cleanup-scoped-artifacts",
+    "compile-status-digest", "consult-or-mint", "curate-expert", "drain-exception-inbox",
+    "emit-stubs", "emit-telemetry", "fit-test", "freeze-contract", "reconcile-model",
+    "resume-from-feature-progress", "resume-from-ledger", "route-channels", "route-intake",
+    "route-models", "run-feature-queue", "run-gated-pipeline", "run-ticket-board",
+    "sync-lineage", "trace-requirement", "track-phase", "write-handoff-and-yield"
+)
+$RetiredFiles = @(
+    ".claude\agents\engineering\architect.md",
+    ".claude\agents\engineering\backend-engineer.md",
+    ".claude\agents\engineering\data-engineer.md",
+    ".claude\agents\engineering\e2e-verifier.md",
+    ".claude\agents\engineering\frontend-engineer.md",
+    ".claude\agents\engineering\story-writer.md",
+    ".claude\agents\engineering\validator.md",
+    ".claude\agents\program\integration-verifier.md",
+    ".claude\agents\program\program-documenter.md",
+    ".claude\agents\program\program-validator.md",
+    ".claude\commands\ship-feature.md", ".claude\commands\build-feature.md",
+    ".claude\commands\continue-feature.md", ".claude\commands\continue-program.md",
+    ".claude\commands\discover.md", ".claude\commands\plan-program.md",
+    ".claude\commands\build-program.md", ".claude\commands\discover-portfolio.md",
+    ".claude\commands\plan-portfolio.md", ".claude\commands\status-portfolio.md",
+    ".claude\commands\mint-expert.md",
+    ".claude\model-routing.json",
+    ".claude\program\schemas\artboard.template.md",
+    ".claude\program\schemas\backlog.template.md",
+    ".claude\program\schemas\board.template.md",
+    ".claude\program\schemas\budget-ledger.template.md",
+    ".claude\program\schemas\completion-report.template.md",
+    ".claude\program\schemas\contract.template.md",
+    ".claude\program\schemas\design-brief.template.md",
+    ".claude\program\schemas\dispatch-packet.template.md",
+    ".claude\program\schemas\expert-config.schema.json",
+    ".claude\program\schemas\expert-profile.template.md",
+    ".claude\program\schemas\expert-registry.template.md",
+    ".claude\program\schemas\expert-research.template.md",
+    ".claude\program\schemas\expert.schema.json",
+    ".claude\program\schemas\feature-progress.template.md",
+    ".claude\program\schemas\field-guide.template.md",
+    ".claude\program\schemas\handoff.template.md",
+    ".claude\program\schemas\ledger.template.md",
+    ".claude\program\schemas\map-repo-progress.template.md",
+    ".claude\program\schemas\map-report.template.md",
+    ".claude\program\schemas\patch-report.template.md",
+    ".claude\program\schemas\telemetry-event.schema.json",
+    ".claude\program\schemas\ticket.template.md",
+    ".claude\program\schemas\ui-spec.template.md",
+    "scripts\skailr\apply-model-routing.mjs", "scripts\skailr\archive-program.mjs",
+    "scripts\skailr\check-agent-tools.mjs", "scripts\skailr\check-blocks.mjs",
+    "scripts\skailr\check-contracts.mjs", "scripts\skailr\check-experts.mjs",
+    "scripts\skailr\check-phase-tracking.mjs", "scripts\skailr\cleanup-scoped.mjs",
+    "scripts\skailr\db.mjs", "scripts\skailr\lib\db.mjs", "scripts\skailr\lib\render.mjs",
+    "scripts\skailr\emit-stubs.mjs", "scripts\skailr\emit-telemetry.mjs",
+    "scripts\skailr\feature-status.mjs", "scripts\skailr\ledger-status.mjs",
+    "scripts\skailr\rotate-channels.mjs", "scripts\skailr\route-prompt.mjs",
+    "scripts\skailr\status.mjs", "scripts\skailr\telemetry-smoke.mjs",
+    "scripts\skailr\ticket-status.mjs", "scripts\skailr\validate-channels.mjs",
+    ".cursor\model-routing.md"
+)
+$RetiredCursorRules = @(
+    "architect", "backend-engineer", "content-editor", "content-lead", "content-strategist",
+    "content-writer", "data-engineer", "e2e-verifier", "frontend-engineer", "integration-verifier",
+    "program-documenter", "program-validator", "story-writer", "validator", "registry",
+    "portfolio-architect", "initiative-lead",
+    "legal-lead", "legal-analyst", "compliance-reviewer", "legal-validator",
+    "pm-lead", "pm-planner", "risk-analyst", "status-reporter",
+    "design-lead", "design-strategist", "designer", "design-reviewer",
+    "mkt-lead", "mkt-strategist", "channel-planner", "mkt-analyst",
+    "fin-lead", "fin-modeler", "fin-analyst", "fin-auditor",
+    "expert", "expert-scout"
+)
+$RetiredCursorCommands = @(
+    "ship-feature", "build-feature", "continue-feature", "discover", "plan-program",
+    "build-program", "continue-program", "discover-portfolio", "plan-portfolio",
+    "status-portfolio", "mint-expert"
+)
+
+function Invoke-RetireLegacy {
+    $removed = 0
+    foreach ($d in $RetiredDirs) {
+        $p = Join-Path $Target $d
+        if (Test-Path $p -PathType Container) { Remove-Item $p -Recurse -Force; $removed++ }
+    }
+    foreach ($s in $RetiredSkills) {
+        $p = Join-Path $Target ".claude\skills\$s"
+        if (Test-Path $p -PathType Container) { Remove-Item $p -Recurse -Force; $removed++ }
+    }
+    foreach ($f in $RetiredFiles) {
+        $p = Join-Path $Target $f
+        if (Test-Path $p -PathType Leaf) { Remove-Item $p -Force; $removed++ }
+    }
+    foreach ($r in $RetiredCursorRules) {
+        $p = Join-Path $Target ".cursor\rules\$r.mdc"
+        if (Test-Path $p -PathType Leaf) { Remove-Item $p -Force; $removed++ }
+    }
+    foreach ($c in $RetiredCursorCommands) {
+        $p = Join-Path $Target ".cursor\commands\$c.md"
+        if (Test-Path $p -PathType Leaf) { Remove-Item $p -Force; $removed++ }
+    }
+    $lib = Join-Path $Target "scripts\skailr\lib"
+    if ((Test-Path $lib -PathType Container) -and -not (Get-ChildItem $lib)) {
+        Remove-Item $lib -Force
+    }
+    if ($removed -gt 0) {
+        Write-Host "  - retired $removed pre-3.0 pack file(s)/dir(s) (see docs/DESIGN-3.0.md)"
     }
 }
 
@@ -342,6 +424,7 @@ switch ($Mode) {
     "cursor" { Install-Cursor }
 }
 
+Invoke-RetireLegacy
 Invoke-Migrations
 Invoke-RecordInstall
 Append-Gitignore

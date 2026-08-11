@@ -1,5 +1,5 @@
 ---
-description: Install the skailr-agents operating model into the current project (agents, commands, skills, script gates, Cursor mirror)
+description: Install skailr-agents into the current project (agents, commands, skills, hooks, Cursor mirror)
 argument-hint: "[--claude-only|--cursor-only]"
 allowed-tools: Bash, Read
 ---
@@ -7,7 +7,7 @@ allowed-tools: Bash, Read
 Install the skailr-agents pack into this project. The pack is repo-local by design:
 agents, commands, skills, schemas, and the script gates all land in the project so
 they version with it. This plugin command only bootstraps; day-to-day work then uses
-the project-local commands (`/yolo`, `/map-repo`, `/patch`, `/ship-feature`, …).
+the project-local commands (`/build`, `/patch`, `/program`, `/map-repo`).
 
 Steps:
 
@@ -24,9 +24,9 @@ Steps:
    Non-zero exit → show the FAIL rows and stop; do not declare success.
 
 3. Tell the user, briefly: install done and doctor-verified; existing codebases
-   should run `/map-repo` first to baseline; greenfield asks can go straight to
-   `/yolo <request>` or `/yolo-program <request>`; plain chat is auto-routed per the
-   installed `CLAUDE.md`. Mention that a restart of the session may be needed before
-   the project-local slash commands appear.
+   should run `/map-repo` first to baseline; build asks go to `/build <request>`
+   (or `/program <request>` for scope too large for one session); plain chat is
+   auto-routed per the installed `CLAUDE.md`. Mention that a restart of the
+   session may be needed before the project-local slash commands appear.
 
 Do not run any build command yourself in this turn.

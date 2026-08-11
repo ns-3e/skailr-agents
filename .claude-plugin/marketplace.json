@@ -1,14 +1,22 @@
 {
   "name": "skailr",
-  "owner": { "name": "Skailr", "url": "https://skailr.io" },
+  "owner": {
+    "name": "Skailr",
+    "url": "https://skailr.io"
+  },
   "description": "Skailr plugins for Claude Code.",
   "plugins": [
     {
       "name": "skailr-agents",
       "source": "./",
-      "description": "Multi-agent operating model — teams, contracts, channels, script gates. Install the pack into a project with /skailr-agents:install.",
+      "description": "Thin layer over Claude Code — main-session-led builds, fresh-context verification, durable CLAUDE.md context. Install the pack into a project with /skailr-agents:install.",
       "category": "workflow",
-      "keywords": ["multi-agent", "operating-model", "orchestration"]
+      "keywords": [
+        "claude-code",
+        "agents",
+        "claude-md",
+        "verification"
+      ]
     }
   ]
 }

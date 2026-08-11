@@ -1,98 +1,14 @@
 {
   "name": "skailr-agents",
-  "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
-  "version": "2.0.0",
+  "description": "Thin layer over Claude Code \u2014 main-session-led builds, fresh-context verification, durable CLAUDE.md context",
+  "version": "3.0.0",
   "artifacts": [
     {
-      "id": "content-editor",
-      "tier": "content",
-      "type": "agent",
-      "claude_path": ".claude/agents/content/content-editor.md",
-      "cursor_path": ".cursor/rules/content-editor.mdc"
-    },
-    {
-      "id": "content-lead",
-      "tier": "content",
-      "type": "agent",
-      "claude_path": ".claude/agents/content/content-lead.md",
-      "cursor_path": ".cursor/rules/content-lead.mdc"
-    },
-    {
-      "id": "content-strategist",
-      "tier": "content",
-      "type": "agent",
-      "claude_path": ".claude/agents/content/content-strategist.md",
-      "cursor_path": ".cursor/rules/content-strategist.mdc"
-    },
-    {
-      "id": "content-writer",
-      "tier": "content",
-      "type": "agent",
-      "claude_path": ".claude/agents/content/content-writer.md",
-      "cursor_path": ".cursor/rules/content-writer.mdc"
-    },
-    {
-      "id": "design-lead",
-      "tier": "design",
-      "type": "agent",
-      "claude_path": ".claude/agents/design/design-lead.md",
-      "cursor_path": ".cursor/rules/design-lead.mdc"
-    },
-    {
-      "id": "design-reviewer",
-      "tier": "design",
-      "type": "agent",
-      "claude_path": ".claude/agents/design/design-reviewer.md",
-      "cursor_path": ".cursor/rules/design-reviewer.mdc"
-    },
-    {
-      "id": "design-strategist",
-      "tier": "design",
-      "type": "agent",
-      "claude_path": ".claude/agents/design/design-strategist.md",
-      "cursor_path": ".cursor/rules/design-strategist.mdc"
-    },
-    {
-      "id": "designer",
-      "tier": "design",
-      "type": "agent",
-      "claude_path": ".claude/agents/design/designer.md",
-      "cursor_path": ".cursor/rules/designer.mdc"
-    },
-    {
-      "id": "architect",
+      "id": "engineer",
       "tier": "workstream",
       "type": "agent",
-      "claude_path": ".claude/agents/engineering/architect.md",
-      "cursor_path": ".cursor/rules/architect.mdc"
-    },
-    {
-      "id": "backend-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/engineering/backend-engineer.md",
-      "cursor_path": ".cursor/rules/backend-engineer.mdc"
-    },
-    {
-      "id": "data-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/engineering/data-engineer.md",
-      "cursor_path": ".cursor/rules/data-engineer.mdc"
-    },
-    {
-      "id": "e2e-verifier",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/engineering/e2e-verifier.md",
-      "cursor_path": ".cursor/rules/e2e-verifier.mdc"
-    },
-    {
-      "id": "frontend-engineer",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/engineering/frontend-engineer.md",
-      "cursor_path": ".cursor/rules/frontend-engineer.mdc"
+      "claude_path": ".claude/agents/engineering/engineer.md",
+      "cursor_path": ".cursor/rules/engineer.mdc"
     },
     {
       "id": "researcher",
@@ -102,165 +18,11 @@
       "cursor_path": ".cursor/rules/researcher.mdc"
     },
     {
-      "id": "story-writer",
+      "id": "verifier",
       "tier": "workstream",
       "type": "agent",
-      "claude_path": ".claude/agents/engineering/story-writer.md",
-      "cursor_path": ".cursor/rules/story-writer.mdc"
-    },
-    {
-      "id": "validator",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/engineering/validator.md",
-      "cursor_path": ".cursor/rules/validator.mdc"
-    },
-    {
-      "id": "expert-scout",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/experts/expert-scout.md",
-      "cursor_path": ".cursor/rules/expert-scout.mdc"
-    },
-    {
-      "id": "expert",
-      "tier": "workstream",
-      "type": "agent",
-      "claude_path": ".claude/agents/experts/expert.md",
-      "cursor_path": ".cursor/rules/expert.mdc"
-    },
-    {
-      "id": "fin-analyst",
-      "tier": "finance",
-      "type": "agent",
-      "claude_path": ".claude/agents/finance/fin-analyst.md",
-      "cursor_path": ".cursor/rules/fin-analyst.mdc"
-    },
-    {
-      "id": "fin-auditor",
-      "tier": "finance",
-      "type": "agent",
-      "claude_path": ".claude/agents/finance/fin-auditor.md",
-      "cursor_path": ".cursor/rules/fin-auditor.mdc"
-    },
-    {
-      "id": "fin-lead",
-      "tier": "finance",
-      "type": "agent",
-      "claude_path": ".claude/agents/finance/fin-lead.md",
-      "cursor_path": ".cursor/rules/fin-lead.mdc"
-    },
-    {
-      "id": "fin-modeler",
-      "tier": "finance",
-      "type": "agent",
-      "claude_path": ".claude/agents/finance/fin-modeler.md",
-      "cursor_path": ".cursor/rules/fin-modeler.mdc"
-    },
-    {
-      "id": "compliance-reviewer",
-      "tier": "legal",
-      "type": "agent",
-      "claude_path": ".claude/agents/legal/compliance-reviewer.md",
-      "cursor_path": ".cursor/rules/compliance-reviewer.mdc"
-    },
-    {
-      "id": "legal-analyst",
-      "tier": "legal",
-      "type": "agent",
-      "claude_path": ".claude/agents/legal/legal-analyst.md",
-      "cursor_path": ".cursor/rules/legal-analyst.mdc"
-    },
-    {
-      "id": "legal-lead",
-      "tier": "legal",
-      "type": "agent",
-      "claude_path": ".claude/agents/legal/legal-lead.md",
-      "cursor_path": ".cursor/rules/legal-lead.mdc"
-    },
-    {
-      "id": "legal-validator",
-      "tier": "legal",
-      "type": "agent",
-      "claude_path": ".claude/agents/legal/legal-validator.md",
-      "cursor_path": ".cursor/rules/legal-validator.mdc"
-    },
-    {
-      "id": "channel-planner",
-      "tier": "marketing",
-      "type": "agent",
-      "claude_path": ".claude/agents/marketing/channel-planner.md",
-      "cursor_path": ".cursor/rules/channel-planner.mdc"
-    },
-    {
-      "id": "mkt-analyst",
-      "tier": "marketing",
-      "type": "agent",
-      "claude_path": ".claude/agents/marketing/mkt-analyst.md",
-      "cursor_path": ".cursor/rules/mkt-analyst.mdc"
-    },
-    {
-      "id": "mkt-lead",
-      "tier": "marketing",
-      "type": "agent",
-      "claude_path": ".claude/agents/marketing/mkt-lead.md",
-      "cursor_path": ".cursor/rules/mkt-lead.mdc"
-    },
-    {
-      "id": "mkt-strategist",
-      "tier": "marketing",
-      "type": "agent",
-      "claude_path": ".claude/agents/marketing/mkt-strategist.md",
-      "cursor_path": ".cursor/rules/mkt-strategist.mdc"
-    },
-    {
-      "id": "pm-lead",
-      "tier": "pm",
-      "type": "agent",
-      "claude_path": ".claude/agents/pm/pm-lead.md",
-      "cursor_path": ".cursor/rules/pm-lead.mdc"
-    },
-    {
-      "id": "pm-planner",
-      "tier": "pm",
-      "type": "agent",
-      "claude_path": ".claude/agents/pm/pm-planner.md",
-      "cursor_path": ".cursor/rules/pm-planner.mdc"
-    },
-    {
-      "id": "risk-analyst",
-      "tier": "pm",
-      "type": "agent",
-      "claude_path": ".claude/agents/pm/risk-analyst.md",
-      "cursor_path": ".cursor/rules/risk-analyst.mdc"
-    },
-    {
-      "id": "status-reporter",
-      "tier": "pm",
-      "type": "agent",
-      "claude_path": ".claude/agents/pm/status-reporter.md",
-      "cursor_path": ".cursor/rules/status-reporter.mdc"
-    },
-    {
-      "id": "initiative-lead",
-      "tier": "portfolio",
-      "type": "agent",
-      "claude_path": ".claude/agents/portfolio/initiative-lead.md",
-      "cursor_path": ".cursor/rules/initiative-lead.mdc"
-    },
-    {
-      "id": "portfolio-architect",
-      "tier": "portfolio",
-      "type": "agent",
-      "claude_path": ".claude/agents/portfolio/portfolio-architect.md",
-      "cursor_path": ".cursor/rules/portfolio-architect.mdc"
-    },
-    {
-      "id": "integration-verifier",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program/integration-verifier.md",
-      "cursor_path": ".cursor/rules/integration-verifier.mdc"
+      "claude_path": ".claude/agents/engineering/verifier.md",
+      "cursor_path": ".cursor/rules/verifier.mdc"
     },
     {
       "id": "program-architect",
@@ -270,60 +32,11 @@
       "cursor_path": ".cursor/rules/program-architect.mdc"
     },
     {
-      "id": "program-documenter",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program/program-documenter.md",
-      "cursor_path": ".cursor/rules/program-documenter.mdc"
-    },
-    {
-      "id": "program-validator",
-      "tier": "program",
-      "type": "agent",
-      "claude_path": ".claude/agents/program/program-validator.md",
-      "cursor_path": ".cursor/rules/program-validator.mdc"
-    },
-    {
-      "id": "build-feature",
+      "id": "build",
       "tier": "workstream",
       "type": "command",
-      "claude_path": ".claude/commands/build-feature.md",
-      "cursor_path": ".cursor/commands/build-feature.md"
-    },
-    {
-      "id": "build-program",
-      "tier": "program",
-      "type": "command",
-      "claude_path": ".claude/commands/build-program.md",
-      "cursor_path": ".cursor/commands/build-program.md"
-    },
-    {
-      "id": "continue-feature",
-      "tier": "workstream",
-      "type": "command",
-      "claude_path": ".claude/commands/continue-feature.md",
-      "cursor_path": ".cursor/commands/continue-feature.md"
-    },
-    {
-      "id": "continue-program",
-      "tier": "program",
-      "type": "command",
-      "claude_path": ".claude/commands/continue-program.md",
-      "cursor_path": ".cursor/commands/continue-program.md"
-    },
-    {
-      "id": "discover",
-      "tier": "program",
-      "type": "command",
-      "claude_path": ".claude/commands/discover.md",
-      "cursor_path": ".cursor/commands/discover.md"
-    },
-    {
-      "id": "discover-portfolio",
-      "tier": "portfolio",
-      "type": "command",
-      "claude_path": ".claude/commands/discover-portfolio.md",
-      "cursor_path": ".cursor/commands/discover-portfolio.md"
+      "claude_path": ".claude/commands/build.md",
+      "cursor_path": ".cursor/commands/build.md"
     },
     {
       "id": "map-repo",
@@ -333,13 +46,6 @@
       "cursor_path": ".cursor/commands/map-repo.md"
     },
     {
-      "id": "mint-expert",
-      "tier": "workstream",
-      "type": "command",
-      "claude_path": ".claude/commands/mint-expert.md",
-      "cursor_path": ".cursor/commands/mint-expert.md"
-    },
-    {
       "id": "patch",
       "tier": "workstream",
       "type": "command",
@@ -347,32 +53,11 @@
       "cursor_path": ".cursor/commands/patch.md"
     },
     {
-      "id": "plan-portfolio",
-      "tier": "portfolio",
-      "type": "command",
-      "claude_path": ".claude/commands/plan-portfolio.md",
-      "cursor_path": ".cursor/commands/plan-portfolio.md"
-    },
-    {
-      "id": "plan-program",
+      "id": "program",
       "tier": "program",
       "type": "command",
-      "claude_path": ".claude/commands/plan-program.md",
-      "cursor_path": ".cursor/commands/plan-program.md"
-    },
-    {
-      "id": "ship-feature",
-      "tier": "workstream",
-      "type": "command",
-      "claude_path": ".claude/commands/ship-feature.md",
-      "cursor_path": ".cursor/commands/ship-feature.md"
-    },
-    {
-      "id": "status-portfolio",
-      "tier": "portfolio",
-      "type": "command",
-      "claude_path": ".claude/commands/status-portfolio.md",
-      "cursor_path": ".cursor/commands/status-portfolio.md"
+      "claude_path": ".claude/commands/program.md",
+      "cursor_path": ".cursor/commands/program.md"
     },
     {
       "id": "yolo",
@@ -396,186 +81,11 @@
       "cursor_path": null
     },
     {
-      "id": "skill-archive-program-state",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/archive-program-state/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-check-ownership",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/check-ownership/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-cleanup-scoped-artifacts",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/cleanup-scoped-artifacts/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-compile-status-digest",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/compile-status-digest/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-consult-or-mint",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/consult-or-mint/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-curate-expert",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/curate-expert/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-drain-exception-inbox",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/drain-exception-inbox/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-emit-stubs",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/emit-stubs/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-emit-telemetry",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/emit-telemetry/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-fit-test",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/fit-test/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-freeze-contract",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/freeze-contract/SKILL.md",
-      "cursor_path": null
-    },
-    {
       "id": "skill-maintain-claude-md",
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/maintain-claude-md/SKILL.md",
       "cursor_path": null
-    },
-    {
-      "id": "skill-reconcile-model",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/reconcile-model/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-resume-from-feature-progress",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/resume-from-feature-progress/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-resume-from-ledger",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/resume-from-ledger/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-route-channels",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/route-channels/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-route-intake",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/route-intake/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-route-models",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/route-models/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-run-feature-queue",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/run-feature-queue/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-run-gated-pipeline",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/run-gated-pipeline/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-run-ticket-board",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/run-ticket-board/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-sync-lineage",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/sync-lineage/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-trace-requirement",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/trace-requirement/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-track-phase",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/track-phase/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "skill-write-handoff-and-yield",
-      "tier": "skill",
-      "type": "skill",
-      "claude_path": ".claude/skills/write-handoff-and-yield/SKILL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "registry",
-      "tier": "program",
-      "type": "registry",
-      "claude_path": ".claude/teams/registry.md",
-      "cursor_path": ".cursor/rules/registry.mdc"
     },
     {
       "id": "intake",
@@ -589,48 +99,6 @@
       "tier": "config",
       "type": "config",
       "claude_path": "CLAUDE.md",
-      "cursor_path": null
-    },
-    {
-      "id": "model-routing",
-      "tier": "config",
-      "type": "config",
-      "claude_path": ".claude/model-routing.json",
-      "cursor_path": ".cursor/model-routing.md"
-    },
-    {
-      "id": "channels-PROTOCOL",
-      "tier": "program",
-      "type": "template",
-      "claude_path": ".claude/program/channels/PROTOCOL.md",
-      "cursor_path": null
-    },
-    {
-      "id": "channels-program",
-      "tier": "program",
-      "type": "template",
-      "claude_path": ".claude/program/channels/program.md",
-      "cursor_path": null
-    },
-    {
-      "id": "channels-feature",
-      "tier": "program",
-      "type": "template",
-      "claude_path": ".claude/program/channels/feature.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-ledger.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/ledger.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-contract.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/contract.template.md",
       "cursor_path": null
     },
     {
@@ -648,129 +116,10 @@
       "cursor_path": null
     },
     {
-      "id": "schema-patch-report.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/patch-report.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-feature-progress.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/feature-progress.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-handoff.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/handoff.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-board.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/board.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-ticket.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/ticket.template.md",
-      "cursor_path": null
-    },
-    {
       "id": "schema-orientation.template",
       "tier": "program",
       "type": "schema",
       "claude_path": ".claude/program/schemas/orientation.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-ui-spec.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/ui-spec.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-design-brief.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/design-brief.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-artboard.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/artboard.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-backlog.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/backlog.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-map-repo-progress.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/map-repo-progress.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-map-report.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/map-report.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-expert.schema",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/expert.schema.json",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-expert-config.schema",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/expert-config.schema.json",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-expert-profile.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/expert-profile.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-expert-registry.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/expert-registry.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-expert-research.template",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/expert-research.template.md",
-      "cursor_path": null
-    },
-    {
-      "id": "schema-telemetry-event.schema",
-      "tier": "program",
-      "type": "schema",
-      "claude_path": ".claude/program/schemas/telemetry-event.schema.json",
       "cursor_path": null
     }
   ]

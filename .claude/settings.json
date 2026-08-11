@@ -1,7 +1,6 @@
 {
-  "//why-this-file": "Claude Code only auto-loads .claude/settings.json, .claude/settings.local.json, and ~/.claude/settings.json — confirmed against the official docs. .claude/settings.skailr.json (this pack's own narrower autoUpdate/telemetry toggle file) is NOT a recognized filename and is never auto-discovered or merged; hooks configured there silently never fire. Found 2026-08-08 by direct evidence: two live campaign runs' marker files were absent despite matching finding data, the session's own system-init event carried no hooks field at all, and this file's absence was the only settings file present in either run's workspace. This file is the actual, working home for hooks — a normal pack artifact install.sh keeps in sync on every install/update (like CLAUDE.md and model-routing.json), not a preserve-on-upgrade consumer-preference file. If you want to add your OWN hooks on top of these without editing a file the pack will overwrite, use .claude/settings.local.json (gitignored, highest precedence, Claude Code merges it with this file automatically).",
-  "//hooksStop": "The first three Stop commands are advisory (|| true — they never block). check-blocking-findings.mjs and check-phase-tracking.mjs are the two exceptions: the former enforces yolo.md Phase 6b / build-program.md Phase D2 (fix open validator blocking findings before finishing), the latter enforces .claude/skills/track-phase/SKILL.md (every phase checkpoint must be written to skailr.db, not just rendered into ledger.md/progress.md by hand) — both mechanically, since real campaign runs proved the prose-only versions of these rules don't reliably fire. Each self-bounds to one block per run via its own marker file — see the scripts' own doc comments.",
-  "//hooksUserPromptSubmit": "route-prompt.mjs is advisory only (never blocks) — a cheap heuristic pass at CLAUDE.md's route-intake chooser table, injected fresh before the model reasons about the prompt, because a live campaign showed plain-prompt self-routing via CLAUDE.md alone does not reliably happen.",
+  "//why-this-file": "Claude Code auto-loads only .claude/settings.json, .claude/settings.local.json, and ~/.claude/settings.json. This file is pack-owned and overwritten on every install/upgrade — put your own hooks in .claude/settings.local.json (gitignored, merged automatically, higher precedence).",
+  "//hooks": "check-update.mjs is advisory (|| true; once-per-24h version notice). check-blocking-findings.mjs is the one blocking gate this pack ships: if a verification report has open Blocking Findings, the run may not finish until one bounded fix round happens — the single mechanism benchmarks proved worth its cost. It self-bounds to one block per run via a marker file.",
   "hooks": {
     "Stop": [
       {
@@ -9,34 +8,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/skailr/validate-channels.mjs --dir .claude/program/channels 2>/dev/null || true; node scripts/skailr/validate-channels.mjs --tmp 2>/dev/null || true"
-          },
-          {
-            "type": "command",
-            "command": "node scripts/skailr/check-experts.mjs 2>/dev/null || true"
-          },
-          {
-            "type": "command",
             "command": "node scripts/skailr/check-update.mjs 2>/dev/null || true"
           },
           {
             "type": "command",
             "command": "node scripts/skailr/check-blocking-findings.mjs"
-          },
-          {
-            "type": "command",
-            "command": "node scripts/skailr/check-phase-tracking.mjs"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node scripts/skailr/route-prompt.mjs"
           }
         ]
       }

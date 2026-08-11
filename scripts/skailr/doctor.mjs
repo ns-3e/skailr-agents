@@ -61,13 +61,8 @@ function main() {
   const core = [
     ".claude/intake.md",
     "CLAUDE.md",
-    ".claude/teams/registry.md",
-    ".claude/model-routing.json",
     ".claude/settings.json",
     ".claude/settings.skailr.json",
-    ".claude/program/channels/PROTOCOL.md",
-    ".claude/program/channels/program.md",
-    ".claude/program/channels/feature.md",
   ];
   const missingCore = core.filter((f) => !existsSync(join(root, f)));
   if (missingCore.length) report("FAIL", "core files", `missing: ${missingCore.join(", ")}`);
@@ -120,30 +115,15 @@ function main() {
   if (missingScripts.length) report("FAIL", "script refs", `missing: ${missingScripts.join(", ")}`);
   else report("PASS", "script refs", `${scriptRefs.size} referenced script(s) present`);
 
-  // ---- 5. Delegated validators (each is skip-safe on missing inputs) ----
-  const delegated = [
-    ["model routing", "apply-model-routing.mjs", ["--check", "--root", root]],
-    ["agent tools", "check-agent-tools.mjs", []],
-    ["expert roster", "check-experts.mjs", []],
-    ["contracts", "check-contracts.mjs", []],
-    ["channels (program)", "validate-channels.mjs", []],
-  ];
-  for (const [name, script, extra] of delegated) {
-    const r = runNode(root, script, extra);
-    if (r.missing) report("FAIL", name, `${script} not installed`);
-    else if (r.status === 0) report("PASS", name, r.out.trim().split("\n").pop());
-    else report("FAIL", name, r.out.trim().split("\n").slice(-2).join(" | "));
-  }
-  if (existsSync(join(root, ".claude/tmp/channels"))) {
-    const r = runNode(root, "validate-channels.mjs", ["--tmp"]);
-    report(r.status === 0 ? "PASS" : "FAIL", "channels (feature)", r.out.trim().split("\n").pop());
-  } else {
-    report("SKIP", "channels (feature)", "no .claude/tmp/channels");
-  }
+  // ---- 5. Hook scripts present (the pack's only enforcement layer) ----
+  const hookScripts = ["check-blocking-findings.mjs", "check-update.mjs", "check-ownership.mjs"];
+  const missingHooks = hookScripts.filter((s) => !existsSync(join(root, "scripts/skailr", s)));
+  if (missingHooks.length) report("FAIL", "hook scripts", `missing: ${missingHooks.join(", ")}`);
+  else report("PASS", "hook scripts", `${hookScripts.length} present`);
 
   // ---- 6. Mirror presence ----
   if (existsSync(join(root, ".cursor"))) {
-    const mirror = [".cursor/rules/intake.mdc", ".cursor/rules/registry.mdc", ".cursor/model-routing.md"];
+    const mirror = [".cursor/rules/intake.mdc"];
     const missing = mirror.filter((f) => !existsSync(join(root, f)));
     report(missing.length ? "FAIL" : "PASS", "cursor mirror", missing.length ? `missing: ${missing.join(", ")}` : "core mirror files present");
   } else {
@@ -215,11 +195,6 @@ function main() {
       for (const r of rules) if (!cursorRules.includes(r)) parity.push(`${label}: rule ${r} has no mirror file`);
     }
     report(parity.length ? "FAIL" : "PASS", "installer parity", parity.length ? parity.slice(0, 6).join("; ") : "installer arrays == mirror set");
-
-    // 7d. Canonical blocks
-    const r = runNode(root, "check-blocks.mjs", ["--root", root]);
-    if (r.missing) report("SKIP", "canonical blocks", "check-blocks.mjs absent");
-    else report(r.status === 0 ? "PASS" : "FAIL", "canonical blocks", r.out.trim().split("\n").pop());
 
     // 7d'. npm tarball must never carry this repo's own runtime/dogfood state.
     // "files" in package.json includes listed directories VERBATIM FROM DISK and

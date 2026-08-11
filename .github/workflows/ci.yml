@@ -39,44 +39,10 @@ jobs:
           done < <(find .claude/agents -name '*.md' -type f | sort)
           exit $fail
 
-      - name: Check Write-capable roles also grant Edit
-        run: node scripts/skailr/check-agent-tools.mjs
-
-      - name: Check prompt efficiency invariants
-        run: |
-          set -e
-          if grep -RsnF 'message board, not a chat' .claude/agents; then
-            echo "FAIL: channel protocol must live in PROTOCOL.md only (not inlined in agents)"
-            exit 1
-          fi
-          # shellcheck disable=SC2016  # literal grep -F pattern; the backticks are not command substitution
-          if grep -RsnF 'full contents of `story.md`' .claude/commands; then
-            echo "FAIL: commands must not paste full story.md into chat"
-            exit 1
-          fi
-          if grep -RsnF 'Take a deep breath' .claude/agents .claude/commands; then
-            echo "FAIL: remove Take a deep breath scaffold from agents/commands"
-            exit 1
-          fi
-          if grep -RsnF 'Full vertical slice with real file paths' .claude/agents .claude/program/schemas; then
-            echo "FAIL: researcher/orientation must use capped slice format (paths + ≤5 lines)"
-            exit 1
-          fi
-          echo "OK: prompt efficiency invariants"
-
-      - name: Check model routing matches active profile
-        run: node scripts/skailr/apply-model-routing.mjs --check
-
-      - name: Check canonical boilerplate blocks identical
-        run: node scripts/skailr/check-blocks.mjs
-
       - name: Doctor — whole-installation health check
         run: node scripts/skailr/doctor.mjs
 
-      - name: Check expert roster valid
-        run: node scripts/skailr/check-experts.mjs
-
-      - name: Check version consistency (package.json = manifest.json = latest CHANGELOG cut)
+      - name: Check version consistency (package.json = manifest.json = plugin.json = latest CHANGELOG cut)
         run: |
           set -e
           pkg=$(node -p "require('./package.json').version")
@@ -121,64 +87,101 @@ jobs:
           print(f"OK: {len(manifest['artifacts'])} artifacts")
           PY
 
-      - name: Fixture script gates
+      - name: Ownership gate fixture
         run: |
           set -e
           node scripts/skailr/check-ownership.mjs --map examples/parallel-api/ownership.json --map-only
-          node scripts/skailr/check-contracts.mjs --dir examples/parallel-api/contracts --ledger examples/parallel-api/ledger.md
-          node scripts/skailr/validate-channels.mjs --dir examples/parallel-api/channels
-          node scripts/skailr/emit-stubs.mjs --dir examples/parallel-api/contracts --out /tmp/skailr-stubs
-          node scripts/skailr/ledger-status.mjs --ledger examples/parallel-api/ledger.md
-          # ticket board smoke (printf, not heredocs — column-0 heredoc bodies
-          # terminate a YAML block scalar and killed this workflow file entirely)
-          TB=$(mktemp -d)
-          mkdir -p "$TB/tickets"
-          printf '%s\n' \
-            '# Board: CI' '' '## Destination' 'x' '' '## Done' '' \
-            '## Not yet specified' '' '## Out of scope' '' '## Tickets' '' \
-            '| ID | Title | Role | Status | Blocked by |' \
-            '|----|-------|------|--------|------------|' \
-            '| T-001 | A | backend | open | |' > "$TB/board.md"
-          printf '%s\n' \
-            '---' 'id: T-001' 'title: A' 'role: backend' 'status: open' \
-            'acs: [AC-1]' 'blocked_by: []' 'ownership:' '  - src/a/**' '---' \
-            '' '# Ticket: A' '' '## Resolution' > "$TB/tickets/T-001-a.md"
-          node scripts/skailr/ticket-status.mjs validate --root "$TB"
-          node scripts/skailr/ticket-status.mjs claim --id T-001 --root "$TB"
-          node scripts/skailr/ticket-status.mjs resolve --id T-001 --gist "done" --root "$TB"
-          test -f /tmp/skailr-stubs/orders-api.stub.js
           echo "fixture scripts OK"
+
+      - name: Stop-hook fixture (blocking findings gate)
+        run: |
+          set -e
+          TB=$(mktemp -d)
+          mkdir -p "$TB/.claude/tmp" "$TB/scripts/skailr"
+          cp scripts/skailr/check-blocking-findings.mjs "$TB/scripts/skailr/"
+          printf '%s\n' '# Verification report' 'Verdict: NEEDS_FIXES' '' \
+            '## Blocking Findings' '1. **CRITICAL — broken thing**: evidence' \
+            > "$TB/.claude/tmp/verification-report.md"
+          out=$(printf '{"cwd":"%s"}' "$TB" | node "$TB/scripts/skailr/check-blocking-findings.mjs")
+          echo "$out" | grep -q '"decision":"block"' || { echo "FAIL: hook did not block on open finding"; exit 1; }
+          # second run must NOT block (marker bounds it to one round)
+          out2=$(printf '{"cwd":"%s"}' "$TB" | node "$TB/scripts/skailr/check-blocking-findings.mjs")
+          [ -z "$out2" ] || { echo "FAIL: hook blocked twice (marker bound broken)"; exit 1; }
+          # clean report must never block
+          TB2=$(mktemp -d)
+          mkdir -p "$TB2/.claude/tmp"
+          printf '%s\n' '# Verification report' 'Verdict: SHIP' '' '## Blocking Findings' 'None.' \
+            > "$TB2/.claude/tmp/verification-report.md"
+          out3=$(printf '{"cwd":"%s"}' "$TB2" | node "$TB/scripts/skailr/check-blocking-findings.mjs")
+          [ -z "$out3" ] || { echo "FAIL: hook blocked a clean report"; exit 1; }
+          echo "stop-hook fixture OK"
 
       - name: Install smoke test
         run: |
           set -e
           TMP=$(mktemp -d)
           ./install.sh "$TMP"
-          test -f "$TMP/.claude/program/channels/PROTOCOL.md"
-          test -f "$TMP/.claude/agents/engineering/validator.md"
-          test -f "$TMP/.claude/commands/continue-feature.md"
+          test -f "$TMP/.claude/agents/engineering/engineer.md"
+          test -f "$TMP/.claude/agents/engineering/verifier.md"
+          test -f "$TMP/.claude/agents/engineering/researcher.md"
+          test -f "$TMP/.claude/agents/program/program-architect.md"
           test -f "$TMP/.claude/commands/patch.md"
+          test -f "$TMP/.claude/commands/build.md"
+          test -f "$TMP/.claude/commands/program.md"
           test -f "$TMP/.claude/commands/map-repo.md"
-          test -f "$TMP/.claude/repo/.gitkeep"
+          test -f "$TMP/.claude/commands/yolo.md"
+          test -f "$TMP/.claude/commands/yolo-program.md"
+          test -f "$TMP/.claude/skills/maintain-claude-md/SKILL.md"
+          test -f "$TMP/.claude/skills/apply-ux-quality/SKILL.md"
           test -f "$TMP/.claude/program/schemas/orientation.template.md"
-          test -f "$TMP/.claude/agents/legal/legal-lead.md"
-          test -f "$TMP/.claude/skills/check-ownership/SKILL.md"
-          test -f "$TMP/.claude/skills/route-intake/SKILL.md"
-          test -f "$TMP/.claude/skills/sync-lineage/SKILL.md"
-          test -f "$TMP/.claude/skills/run-ticket-board/SKILL.md"
-          test -f "$TMP/.claude/program/schemas/board.template.md"
-          test -f "$TMP/.claude/program/schemas/ticket.template.md"
+          test -f "$TMP/.claude/program/schemas/ownership.schema.json"
+          test -f "$TMP/.claude/settings.json"
           test -f "$TMP/.claude/intake.md"
+          test -f "$TMP/.claude/repo/.gitkeep"
           test -f "$TMP/CLAUDE.md"
           test -f "$TMP/scripts/skailr/check-ownership.mjs"
-          test -f "$TMP/scripts/skailr/ticket-status.mjs"
-          test -f "$TMP/.claude/model-routing.json"
-          test -f "$TMP/scripts/skailr/apply-model-routing.mjs"
-          test -f "$TMP/.cursor/commands/build-feature.md"
+          test -f "$TMP/scripts/skailr/check-blocking-findings.mjs"
+          test -f "$TMP/.cursor/commands/build.md"
           test -f "$TMP/.cursor/commands/patch.md"
-          test -f "$TMP/.cursor/commands/map-repo.md"
           test -f "$TMP/.cursor/rules/intake.mdc"
-          test -f "$TMP/.cursor/model-routing.md"
+          test -f "$TMP/.cursor/rules/engineer.mdc"
+          # retired 2.x files must never be installed
+          test ! -e "$TMP/.claude/teams"
+          test ! -e "$TMP/.claude/model-routing.json"
+          test ! -e "$TMP/.claude/program/channels"
+          test ! -e "$TMP/scripts/skailr/db.mjs"
           ./install.sh "$TMP" | grep -q 'already has'
           rm -rf "$TMP"
           echo "install OK"
+
+      - name: Upgrade retire smoke test (2.x leftovers are removed)
+        run: |
+          set -e
+          TMP=$(mktemp -d)
+          # simulate a 2.x install's pack-owned leftovers
+          mkdir -p "$TMP/.claude/agents/legal" "$TMP/.claude/teams" \
+                   "$TMP/.claude/program/channels" "$TMP/.claude/skills/fit-test" \
+                   "$TMP/scripts/skailr/lib" "$TMP/.cursor/rules" \
+                   "$TMP/.claude/experts/profiles"
+          touch "$TMP/.claude/agents/legal/legal-lead.md" \
+                "$TMP/.claude/teams/registry.md" \
+                "$TMP/.claude/program/channels/PROTOCOL.md" \
+                "$TMP/.claude/skills/fit-test/SKILL.md" \
+                "$TMP/.claude/model-routing.json" \
+                "$TMP/scripts/skailr/db.mjs" \
+                "$TMP/scripts/skailr/lib/db.mjs" \
+                "$TMP/.cursor/rules/story-writer.mdc" \
+                "$TMP/.claude/experts/profiles/auth-security-expert.md"
+          ./install.sh "$TMP" | grep -q 'retired'
+          test ! -e "$TMP/.claude/agents/legal"
+          test ! -e "$TMP/.claude/teams"
+          test ! -e "$TMP/.claude/program/channels"
+          test ! -e "$TMP/.claude/skills/fit-test"
+          test ! -e "$TMP/.claude/model-routing.json"
+          test ! -e "$TMP/scripts/skailr/db.mjs"
+          test ! -e "$TMP/scripts/skailr/lib"
+          test ! -e "$TMP/.cursor/rules/story-writer.mdc"
+          # consumer data must survive
+          test -f "$TMP/.claude/experts/profiles/auth-security-expert.md"
+          rm -rf "$TMP"
+          echo "retire OK"

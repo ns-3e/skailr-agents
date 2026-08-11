@@ -16,16 +16,9 @@ CURSOR_CMDS = ROOT / ".cursor" / "commands"
 CURSOR_RULES.mkdir(parents=True, exist_ok=True)
 CURSOR_CMDS.mkdir(parents=True, exist_ok=True)
 
-CHANNEL_WRITE_ONLY = {
-    "researcher": "Read, Grep, Glob, Write, Edit — Write/Edit only to `.claude/tmp/research.md`, `.claude/tmp/ask.md`, and channel appends; never edit application code.",
-    "validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to append channel messages; never edit application code.",
-    "program-validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to append channel messages; never edit application code.",
-    "content-editor": "Write and Edit are for the audit report and channel appends; do not rewrite draft content as an author.",
-    "legal-validator": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to validation report and channel appends.",
-    "design-reviewer": "Write and Edit are for the design-review report and channel appends; do not rewrite asset specs as an author.",
-    "mkt-analyst": "Write and Edit are for the mkt-review report and channel appends; do not rewrite campaign plans as an author.",
-    "fin-auditor": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely to audit-report and channel appends; do not rewrite models as an author.",
-    "expert": "Read, Grep, Glob, Write, Edit, Bash — Write and Edit only for `.claude/tmp/ask.md`, `.claude/tmp/expert-<slug>.md`, `.claude/tmp/expert-verdict-<slug>.md`, the one loaded profile under `.claude/experts/` during a curate-expert pass, and channel appends; Bash is for read-only git staleness checks; never edit application code, `story.md`, or `spec.md`.",
+WRITE_RESTRICTED = {
+    "researcher": "Read, Grep, Glob, Write, Edit — Write/Edit only for the artifact the dispatch names (ask answer, orientation.md, recon note); never edit application code.",
+    "verifier": "Read, Grep, Glob, Bash, Write, Edit — Write/Edit solely for verification-report.md; never edit application code, even for a one-line fix.",
 }
 
 def parse_frontmatter(text):
@@ -61,45 +54,22 @@ for src in sorted(agent_files):
     tools = fm.get("tools", "")
     model = fm.get("model", "sonnet")
     restriction_note = ""
-    if name in CHANNEL_WRITE_ONLY:
+    if name in WRITE_RESTRICTED:
         restriction_note = (
             f"<!-- Cursor limitation: Claude Code tools are [{tools}]. "
             f"Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->\n\n"
-            f"**Tool restriction (honor manually):** {CHANNEL_WRITE_ONLY[name]}\n\n"
+            f"**Tool restriction (honor manually):** {WRITE_RESTRICTED[name]}\n\n"
         )
-    model_note = (
-        f"**Model (Cursor Task):** {model} — pass this as the Task model when dispatching this role. "
-        f"See `.cursor/model-routing.md` and skill `route-models`.\n\n"
-    )
     out = (
         f"---\n"
         f"description: {desc}\n"
         f"alwaysApply: false\n"
         f"---\n\n"
-        f"{model_note}"
         f"{restriction_note}"
         f"{body}"
     )
     (CURSOR_RULES / f"{name}.mdc").write_text(out)
     print(f"rule: {name}")
-
-registry_mdc = """---
-description: Team routing registry for the program tier. Always loaded so the architect can route workstreams without loading full team definitions.
-alwaysApply: true
----
-
-# Team Registry (pointer)
-
-The authoritative team routing manifest lives at `.claude/teams/registry.md`.
-
-When planning or building a program (`/plan-program`, `/build-program`, or when acting as program-architect), **read that file** before routing any workstream. Do not invent teams or leads that are not listed there. Full team agent definitions load only when a workstream is routed to that team — this file is Tier-1 JIT disclosure only.
-
-## Experts are not a team
-
-Minted domain experts under `.claude/experts/` are a different axis from teams and are deliberately absent from the registry. **Never route a workstream to an expert**, and never write the live roster into `.claude/teams/registry.md`: `install.sh` copies that file fresh on every upgrade, so anything added there at runtime is destroyed. The consumer roster lives at `.claude/experts/registry.md`, which is git-tracked in the consumer project and survives upgrades. Experts advise, co-author as scoped input, and gate as evidence, inside commands and roles that were already routed (skill `consult-or-mint`). A project with no `.claude/experts/` directory is an empty roster for consult — mint evaluation still runs when a build/map caller asks for it. The full comparison table is in the "Experts are not a team" section of `.claude/teams/registry.md`.
-"""
-(CURSOR_RULES / "registry.mdc").write_text(registry_mdc)
-print("rule: registry")
 
 intake_src = ROOT / ".claude" / "intake.md"
 if not intake_src.exists():
@@ -109,7 +79,7 @@ intake_body = intake_src.read_text().lstrip()
 intake_for_rule = intake_body
 intake_mdc = (
     "---\n"
-    "description: Skailr plain-chat intake — route a question inside exactly one registered expert's band to that expert in advise mode, other questions to researcher, small changes to /patch, features to /yolo, whole apps to /yolo-program. Always loaded.\n"
+    "description: Skailr plain-chat intake — answer questions directly, small changes to /patch, features to /build, program-scale scope to /program, repo baselining to /map-repo. Always loaded.\n"
     "alwaysApply: true\n"
     "---\n\n"
     f"{intake_for_rule}"
@@ -152,70 +122,18 @@ for src in sorted(CLAUDE_CMDS.glob("*.md")):
     (CURSOR_CMDS / f"{name}.md").write_text(out)
     print(f"cmd:  {name}")
 
-# Generate .cursor/model-routing.md from .claude/model-routing.json
-routing_path = ROOT / ".claude" / "model-routing.json"
-if routing_path.exists():
-    routing = json.loads(routing_path.read_text())
-    active = routing.get("active", "balanced")
-    profile = routing.get("profiles", {}).get(active, {})
-    roles = profile.get("roles", {})
-    lines = [
-        "# Model routing (Cursor mirror)",
-        "",
-        "Generated by `scripts/remirror.sh` from `.claude/model-routing.json`.",
-        "Do not hand-edit; re-run remirror after changing the routing config or applying a profile.",
-        "",
-        f"**Active profile:** `{active}`",
-        "",
-        "When dispatching a role via Task in Cursor, pass the model from this table",
-        "(or follow skill `route-models` for escalate/downgrade).",
-        "",
-        "| Role | Model |",
-        "| ---- | ----- |",
-    ]
-    for role in sorted(roles.keys()):
-        lines.append(f"| `{role}` | `{roles[role]}` |")
-    lines.extend([
-        "",
-        "Switch profiles in the pack or installed project:",
-        "",
-        "```bash",
-        "node scripts/skailr/apply-model-routing.mjs --profile economy",
-        "./scripts/remirror.sh   # pack maintainers only",
-        "```",
-        "",
-        "Full docs: [docs/MODEL_ROUTING.md](../docs/MODEL_ROUTING.md).",
-        "",
-    ])
-    (ROOT / ".cursor" / "model-routing.md").write_text("\n".join(lines))
-    print("mirror: model-routing.md")
-
 # Map agent subdirectory name → manifest tier
 DIR_TIER = {
     "engineering": "workstream",
     "program": "program",
-    "portfolio": "portfolio",
-    "content": "content",
-    "legal": "legal",
-    "pm": "pm",
-    "experts": "workstream",
 }
 COMMANDS = {
-    "ship-feature": "workstream",
-    "build-feature": "workstream",
-    "continue-feature": "workstream",
-    "yolo": "workstream",
     "patch": "workstream",
-    "mint-expert": "workstream",
-    "discover": "program",
-    "plan-program": "program",
-    "build-program": "program",
-    "continue-program": "program",
+    "build": "workstream",
+    "yolo": "workstream",
+    "program": "program",
     "yolo-program": "program",
     "map-repo": "program",
-    "discover-portfolio": "portfolio",
-    "plan-portfolio": "portfolio",
-    "status-portfolio": "portfolio",
 }
 entries = []
 agents_root = ROOT / ".claude" / "agents"
@@ -254,11 +172,6 @@ if skills_root.exists():
                 "cursor_path": None,
             })
 entries.append({
-    "id": "registry", "tier": "program", "type": "registry",
-    "claude_path": ".claude/teams/registry.md",
-    "cursor_path": ".cursor/rules/registry.mdc",
-})
-entries.append({
     "id": "intake",
     "tier": "config",
     "type": "intake",
@@ -272,44 +185,10 @@ entries.append({
     "claude_path": "CLAUDE.md",
     "cursor_path": None,
 })
-entries.append({
-    "id": "model-routing",
-    "tier": "config",
-    "type": "config",
-    "claude_path": ".claude/model-routing.json",
-    "cursor_path": ".cursor/model-routing.md",
-})
-for fname in ("PROTOCOL.md", "program.md", "feature.md"):
-    entries.append({
-        "id": f"channels-{Path(fname).stem}",
-        "tier": "program",
-        "type": "template",
-        "claude_path": f".claude/program/channels/{fname}",
-        "cursor_path": None,
-    })
 for schema in (
-    "ledger.template.md",
-    "contract.template.md",
     "ownership.schema.json",
     "ownership.example.json",
-    "patch-report.template.md",
-    "feature-progress.template.md",
-    "handoff.template.md",
-    "board.template.md",
-    "ticket.template.md",
     "orientation.template.md",
-    "ui-spec.template.md",
-    "design-brief.template.md",
-    "artboard.template.md",
-    "backlog.template.md",
-    "map-repo-progress.template.md",
-    "map-report.template.md",
-    "expert.schema.json",
-    "expert-config.schema.json",
-    "expert-profile.template.md",
-    "expert-registry.template.md",
-    "expert-research.template.md",
-    "telemetry-event.schema.json",
 ):
     p = ROOT / ".claude" / "program" / "schemas" / schema
     if not p.exists():
@@ -328,7 +207,7 @@ if missing:
 
 manifest = {
     "name": "skailr-agents",
-    "description": "Multi-agent operating model for Claude Code and Cursor — teams, contracts, channels, script gates",
+    "description": "Thin layer over Claude Code — main-session-led builds, fresh-context verification, durable CLAUDE.md context",
     "version": json.loads((ROOT / "package.json").read_text())["version"],
     "artifacts": entries,
 }

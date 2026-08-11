@@ -1,21 +1,12 @@
 {
   "name": "skailr-agents",
-  "version": "2.0.0",
-  "description": "Multi-agent operating model for Claude Code and Cursor — roles, contracts, channels, and script gates",
+  "version": "3.0.0",
+  "description": "Thin layer over Claude Code — main-session-led builds, fresh-context verification, durable CLAUDE.md context",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
-    "check:contracts": "node scripts/skailr/check-contracts.mjs",
-    "check:channels": "node scripts/skailr/validate-channels.mjs",
-    "check:agent-tools": "node scripts/skailr/check-agent-tools.mjs",
-    "check:blocks": "node scripts/skailr/check-blocks.mjs",
     "doctor": "node scripts/skailr/doctor.mjs",
-    "status": "node scripts/skailr/status.mjs",
-    "ledger:status": "node scripts/skailr/ledger-status.mjs",
-    "models:apply": "node scripts/skailr/apply-model-routing.mjs",
-    "models:check": "node scripts/skailr/apply-model-routing.mjs --check",
     "smoke:update": "node scripts/skailr/update-smoke.mjs",
-    "smoke:migrate": "node scripts/skailr/migrate-smoke.mjs",
-    "smoke:telemetry": "node scripts/skailr/telemetry-smoke.mjs"
+    "smoke:migrate": "node scripts/skailr/migrate-smoke.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -28,14 +19,9 @@
     ".claude/agents",
     ".claude/commands",
     ".claude/skills",
-    ".claude/teams/registry.md",
-    ".claude/program/channels/PROTOCOL.md",
-    ".claude/program/channels/program.md",
-    ".claude/program/channels/feature.md",
     ".claude/program/schemas",
     ".claude/settings.json",
     ".claude/settings.skailr.json",
-    ".claude/model-routing.json",
     ".claude/intake.md",
     ".claude-plugin",
     ".cursor",
@@ -46,13 +32,8 @@
     "install.ps1",
     "manifest.json",
     "CLAUDE.md",
-    "docs/CONTEXT_BUDGET.md",
-    "docs/INTAKE.md",
+    "docs/DESIGN-3.0.md",
     "docs/MAP_REPO.md",
-    "docs/MODEL_ROUTING.md",
-    "docs/YOLO.md",
-    "docs/experts.md",
-    "docs/TELEMETRY.md",
     "docs/UPDATE-CHECK.md",
     "docs/BENCHMARKS.md"
   ],
@@ -65,8 +46,8 @@
     "claude-code",
     "cursor",
     "agents",
-    "multi-agent",
-    "operating-model",
-    "orchestration"
+    "claude-md",
+    "verification",
+    "thin-layer"
   ]
 }

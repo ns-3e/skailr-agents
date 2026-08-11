@@ -7,9 +7,11 @@ description: Apply Skailr's UX craft kernel — principles, anti-AI layout patte
 
 ## When to use
 
-Any role that specifies, implements, or reviews user-visible UI: architect (mint `ui-spec`), frontend-engineer (build), validator (Pass 4), design-lead / strategist / designer / design-reviewer (program design workstreams), and patch runs that touch UI paths.
+Whoever is specifying, implementing, or reviewing user-visible UI — the main
+session on `/build` and `/patch`, an `engineer` building a UI slice, or the
+`verifier` auditing one.
 
-Load references just-in-time; do not paste them into Task returns.
+Load references just-in-time; do not paste them into reports.
 
 | Reference | Path |
 | --------- | ---- |
@@ -19,38 +21,26 @@ Load references just-in-time; do not paste them into Task returns.
 
 ## Procedure by caller
 
-### Architect
+### Building UI (main session on /build, or an engineer's slice)
 
-1. If the feature has **no** user-visible UI (API-only, jobs, migrations), skip — note `N/A: no user-visible UI` in `spec.md`.
-2. Otherwise read `principles.md` and `anti-ai-layouts.md`.
-3. If a consumed `kind: design` contract exists, cite it and align the ui-spec to that handoff; do not reinvent.
-4. Write `$ARTIFACT_ROOT/ui-spec.md` from `.claude/program/schemas/ui-spec.template.md`.
-5. Point frontend tickets' Spec pointers at the relevant ui-spec sections.
-6. Ensure `spec.md` Frontend Work and Interaction notes stay consistent with `ui-spec.md`.
+1. Read `principles.md`, `anti-ai-layouts.md`, and `checklist.md` before
+   inventing layout. If the project has its own design system or design
+   handoff, that wins — align to it, don't reinvent.
+2. Build every new view with designed loading / empty / populated / error /
+   unauthorized states.
+3. Self-check against `checklist.md` before calling the surface done; note the
+   result in the build report.
 
-### Frontend engineer
+### Verifying UI (verifier, when the diff includes user-visible UI)
 
-1. Read `ui-spec.md` (or design handoff) before inventing layout. Prefer those over improvisation.
-2. Read `principles.md`, `anti-ai-layouts.md`, and `checklist.md`.
-3. Build every new view with designed loading / empty / populated / error / unauthorized states.
-4. Self-check against `checklist.md` before claiming the ticket/slice done.
-5. Report results under `## UX Quality` in the ticket or frontend report (required for new views; no omit).
-
-### Validator (Pass 4)
-
-1. Run only when the feature diff includes frontend / user-visible UI.
-2. Read `checklist.md` and `anti-ai-layouts.md`; compare diff to `ui-spec.md` (or Frontend Work if ui-spec missing — missing ui-spec when FE shipped is itself a finding).
-3. **Blocking:** ui-spec ignored; new views missing designed empty/error; inaccessible controls; checklist hard fails.
-4. **Advisory:** taste disagreements when no house design system exists (state the assumption). Document in Pass 4 of `validation-report.md`.
-
-### Design team (lead / strategist / designer / reviewer)
-
-1. Lead: brief names craft goals and anti-patterns to avoid (template: `design-brief.template.md`); three ship-blockers — inaccessible, off-system, craft-failed.
-2. Strategist: outlines include job-per-surface, hierarchy test, motion budget, anti-AI constraints.
-3. Designer: self-check `checklist.md` before handoff.
-4. Reviewer: craft / anti-AI layout audit beside a11y + DS; fail craft-failed assets.
+1. Read `checklist.md` and `anti-ai-layouts.md`; compare against the diff.
+2. **Blocking:** new views missing designed empty/error states; inaccessible
+   controls; checklist hard fails.
+3. **Advisory:** taste disagreements when no house design system exists (state
+   the assumption). Record in the verification report.
 
 ### Patch (UI paths)
 
 1. Load `checklist.md` (and anti-AI if touching layout/branded surfaces).
-2. Apply lightly to changed UI; mint a full `ui-spec.md` only when adding a **new** surface.
+2. Apply lightly to the changed surfaces only — a patch never grows a design
+   phase.

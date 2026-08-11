@@ -1,6 +1,6 @@
 ---
 name: maintain-claude-md
-description: Create and keep current the project's hierarchical CLAUDE.md files — root (project-conventions zone) plus one per real directory boundary — derived from orientation.md and kept true by later diffs. Use from /map-repo (baseline mode) and program-documenter's reconcile mode (reconcile mode).
+description: Create and keep current the project's hierarchical CLAUDE.md files — root (project-conventions zone) plus one per real directory boundary — derived from orientation.md and kept true by later diffs. Use from /map-repo (baseline mode) and the /build//program close-out step (reconcile mode).
 ---
 
 # Skill: maintain-claude-md
@@ -39,7 +39,7 @@ install and upgrade...
 `install.sh` / `install.ps1` — this skill never reads or writes it, and the
 installer's merge logic never touches anything outside it (see those files' own
 comments for the mechanism). The conventions zone belongs to this skill —
-`/map-repo` and `program-documenter` are its only writers. This split is what lets
+`/map-repo` and the `/build`/`/program` close-out steps are its only writers. This split is what lets
 Skailr keep the intake block in sync on every upgrade (as it always has) without
 destroying accumulated project knowledge the way a blind file overwrite would.
 
@@ -59,8 +59,8 @@ markers are what let a future reconcile touch only the generated part.
 <!-- skailr:boundary:start -->
 # <Boundary name> conventions
 _Maintained by Skailr from .claude/repo/orientation.md — see the root CLAUDE.md
-too. Edits inside this block may be overwritten by /map-repo or
-program-documenter; edit orientation.md (or ask for a remap) instead. Notes
+too. Edits inside this block may be overwritten by /map-repo or a build's
+reconcile pass; edit orientation.md (or ask for a remap) instead. Notes
 outside this block are yours and are never touched._
 
 **Stack:** <this boundary's slice of orientation.md's Stack, if it differs from root>
@@ -76,8 +76,7 @@ outside this block are yours and are never touched._
 
 Run directly by the orchestrator — this is a mechanical derivation from an
 artifact already produced this run, not new discovery, so it does not warrant
-another subagent dispatch (fit-test's own spawn-floor logic: a task this size
-inlines).
+another subagent dispatch.
 
 1. Read `.claude/repo/orientation.md`.
 2. **Root conventions zone.** If root `CLAUDE.md` doesn't exist, there is nothing
@@ -104,7 +103,7 @@ inlines).
 Idempotent: re-running (a remap) regenerates both zones from the current
 `orientation.md`, same as `orientation.md` itself gets regenerated on remap.
 
-## Reconcile mode (called from `program-documenter`)
+## Reconcile mode (called from the `/build` / `/program` close-out step)
 
 Only runs if `.claude/repo/orientation.md` exists — this skill never performs a
 fresh researcher-style mapping pass itself; that is `/map-repo`'s job alone. If it
@@ -113,9 +112,8 @@ in the caller's report and stop.
 
 1. Read the diff. Determine whether it: (a) added or removed a top-level directory
    that orientation.md's Directory Boundaries doesn't yet reflect, or (b) changed
-   a convention that a root or boundary `CLAUDE.md` currently documents (same
-   "grep the docs tree for references to the changed surfaces" method
-   `program-documenter` already uses for its other reconcile work).
+   a convention that a root or boundary `CLAUDE.md` currently documents (grep the
+   CLAUDE.md files for references to the changed surfaces).
 2. For each hit, update **only** the affected rows/lines inside the relevant
    `skailr:conventions` or `skailr:boundary` block — surgically, same rule as
    every other reconcile-mode doc: do not restructure, do not re-derive the whole

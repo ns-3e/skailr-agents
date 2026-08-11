@@ -9,7 +9,7 @@ usage() {
 Usage: ./install.sh <target-project-path> [--claude-only|--cursor-only]
 
 Copies the packaged agent library into a project:
-  .claude/agents/  .claude/commands/  .claude/teams/  .claude/skills/
+  .claude/agents/  .claude/commands/  .claude/skills/
   .claude/program/schemas/  .claude/settings.json  .claude/settings.skailr.json  .claude/intake.md
   CLAUDE.md (plain-chat intake for Claude Code — only the marked intake zone is
     kept in sync; a project-owned conventions zone, if /map-repo has written one,
@@ -18,9 +18,13 @@ Copies the packaged agent library into a project:
   .cursor/rules/   .cursor/commands/
   Creates .claude/tmp/, .claude/program/, .claude/repo/, and .skailr/
   Appends ignore rules if missing
+  Retires pack-owned files shipped by skailr-agents 2.x and earlier (the 3.0
+    thin-layer restructuring — see docs/DESIGN-3.0.md). Only exact pack-shipped
+    paths are removed; consumer runtime and project files are never touched.
 
 Never touches .claude/experts/. That roster is accumulated project expertise
-owned by the consumer, and an upgrade must leave it byte-identical.
+owned by the consumer, and an upgrade must leave it byte-identical (3.0 no
+longer reads it, but it remains the consumer's data).
 
 Flags:
   --claude-only   Install only the .claude/ tree (+ scripts)
@@ -123,11 +127,9 @@ install_claude_md() {
 install_claude() {
   mkdir -p "$TARGET/.claude/agents" \
            "$TARGET/.claude/commands" \
-           "$TARGET/.claude/teams" \
            "$TARGET/.claude/skills" \
            "$TARGET/.claude/tmp" \
            "$TARGET/.claude/repo" \
-           "$TARGET/.claude/program/channels" \
            "$TARGET/.claude/program/schemas"
 
   for team_dir in "$SCRIPT_DIR"/.claude/agents/*/; do
@@ -144,18 +146,10 @@ install_claude() {
     cp "$f" "$TARGET/.claude/commands/"
     echo "  + .claude/commands/$(basename "$f")"
   done
-  cp "$SCRIPT_DIR/.claude/teams/registry.md" "$TARGET/.claude/teams/registry.md"
-  echo "  + .claude/teams/registry.md"
-
   if [[ -d "$SCRIPT_DIR/.claude/skills" ]]; then
     cp -R "$SCRIPT_DIR/.claude/skills/." "$TARGET/.claude/skills/"
     echo "  + .claude/skills/"
   fi
-
-  for f in PROTOCOL.md program.md feature.md; do
-    cp "$SCRIPT_DIR/.claude/program/channels/$f" "$TARGET/.claude/program/channels/$f"
-    echo "  + .claude/program/channels/$f"
-  done
 
   for f in "$SCRIPT_DIR"/.claude/program/schemas/*; do
     [[ -f "$f" ]] || continue
@@ -188,11 +182,6 @@ install_claude() {
     fi
   fi
 
-  if [[ -f "$SCRIPT_DIR/.claude/model-routing.json" ]]; then
-    cp "$SCRIPT_DIR/.claude/model-routing.json" "$TARGET/.claude/model-routing.json"
-    echo "  + .claude/model-routing.json"
-  fi
-
   if [[ -f "$SCRIPT_DIR/.claude/intake.md" ]]; then
     cp "$SCRIPT_DIR/.claude/intake.md" "$TARGET/.claude/intake.md"
     echo "  + .claude/intake.md"
@@ -213,22 +202,10 @@ install_claude() {
 }
 
 PACKAGED_RULES=(
-  architect backend-engineer content-editor content-lead content-strategist
-  content-writer data-engineer e2e-verifier frontend-engineer integration-verifier
-  program-architect program-documenter program-validator researcher story-writer
-  validator registry intake portfolio-architect initiative-lead
-  legal-lead legal-analyst compliance-reviewer legal-validator
-  pm-lead pm-planner risk-analyst status-reporter
-  design-lead design-strategist designer design-reviewer
-  mkt-lead mkt-strategist channel-planner mkt-analyst
-  fin-lead fin-modeler fin-analyst fin-auditor
-  expert expert-scout
+  engineer verifier researcher program-architect intake
 )
 PACKAGED_COMMANDS=(
-  ship-feature build-feature continue-feature yolo patch
-  discover plan-program build-program continue-program yolo-program map-repo
-  discover-portfolio plan-portfolio status-portfolio
-  mint-expert
+  patch build program map-repo yolo yolo-program
 )
 
 install_cursor() {
@@ -255,16 +232,6 @@ install_cursor() {
     echo "  + .cursor/README.md"
   fi
 
-  if [[ -f "$SCRIPT_DIR/.cursor/model-routing.md" ]]; then
-    cp "$SCRIPT_DIR/.cursor/model-routing.md" "$TARGET/.cursor/model-routing.md"
-    echo "  + .cursor/model-routing.md"
-  fi
-
-  if [[ ! -f "$TARGET/.claude/teams/registry.md" ]]; then
-    mkdir -p "$TARGET/.claude/teams"
-    cp "$SCRIPT_DIR/.claude/teams/registry.md" "$TARGET/.claude/teams/registry.md"
-    echo "  + .claude/teams/registry.md (needed by Cursor registry rule)"
-  fi
   if [[ -f "$SCRIPT_DIR/.claude/intake.md" ]] && [[ ! -f "$TARGET/.claude/intake.md" ]]; then
     cp "$SCRIPT_DIR/.claude/intake.md" "$TARGET/.claude/intake.md"
     echo "  + .claude/intake.md (needed by Cursor intake rule)"
@@ -273,6 +240,123 @@ install_cursor() {
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"
   [[ -f "$TARGET/.claude/repo/.gitkeep" ]] || touch "$TARGET/.claude/repo/.gitkeep"
+}
+
+# DOC: 3.0 retire phase. skailr-agents ≤2.x shipped an orchestration framework
+# (40 agents, 15 commands, 26 skills, SQLite state, channels, telemetry, model
+# routing) that 3.0 removed — see docs/DESIGN-3.0.md. On upgrade, those
+# pack-owned files must not linger in the target: stale agents/commands remain
+# invocable and stale scripts are referenced by the old settings.json hooks.
+# Only EXACT paths the ≤2.x pack itself shipped are listed here. Consumer data
+# (.claude/experts/, program runtime like ledger.md/contracts, .claude/tmp/,
+# the CLAUDE.md conventions zone) is never listed and never touched.
+RETIRED_DIRS=(
+  .claude/agents/content .claude/agents/design .claude/agents/finance
+  .claude/agents/legal .claude/agents/marketing .claude/agents/pm
+  .claude/agents/portfolio .claude/agents/experts
+  .claude/teams .claude/program/channels
+)
+RETIRED_SKILLS=(
+  archive-program-state check-ownership cleanup-scoped-artifacts
+  compile-status-digest consult-or-mint curate-expert drain-exception-inbox
+  emit-stubs emit-telemetry fit-test freeze-contract reconcile-model
+  resume-from-feature-progress resume-from-ledger route-channels route-intake
+  route-models run-feature-queue run-gated-pipeline run-ticket-board
+  sync-lineage trace-requirement track-phase write-handoff-and-yield
+)
+RETIRED_FILES=(
+  .claude/agents/engineering/architect.md
+  .claude/agents/engineering/backend-engineer.md
+  .claude/agents/engineering/data-engineer.md
+  .claude/agents/engineering/e2e-verifier.md
+  .claude/agents/engineering/frontend-engineer.md
+  .claude/agents/engineering/story-writer.md
+  .claude/agents/engineering/validator.md
+  .claude/agents/program/integration-verifier.md
+  .claude/agents/program/program-documenter.md
+  .claude/agents/program/program-validator.md
+  .claude/commands/ship-feature.md .claude/commands/build-feature.md
+  .claude/commands/continue-feature.md .claude/commands/continue-program.md
+  .claude/commands/discover.md .claude/commands/plan-program.md
+  .claude/commands/build-program.md .claude/commands/discover-portfolio.md
+  .claude/commands/plan-portfolio.md .claude/commands/status-portfolio.md
+  .claude/commands/mint-expert.md
+  .claude/model-routing.json
+  .claude/program/schemas/artboard.template.md
+  .claude/program/schemas/backlog.template.md
+  .claude/program/schemas/board.template.md
+  .claude/program/schemas/budget-ledger.template.md
+  .claude/program/schemas/completion-report.template.md
+  .claude/program/schemas/contract.template.md
+  .claude/program/schemas/design-brief.template.md
+  .claude/program/schemas/dispatch-packet.template.md
+  .claude/program/schemas/expert-config.schema.json
+  .claude/program/schemas/expert-profile.template.md
+  .claude/program/schemas/expert-registry.template.md
+  .claude/program/schemas/expert-research.template.md
+  .claude/program/schemas/expert.schema.json
+  .claude/program/schemas/feature-progress.template.md
+  .claude/program/schemas/field-guide.template.md
+  .claude/program/schemas/handoff.template.md
+  .claude/program/schemas/ledger.template.md
+  .claude/program/schemas/map-repo-progress.template.md
+  .claude/program/schemas/map-report.template.md
+  .claude/program/schemas/patch-report.template.md
+  .claude/program/schemas/telemetry-event.schema.json
+  .claude/program/schemas/ticket.template.md
+  .claude/program/schemas/ui-spec.template.md
+  scripts/skailr/apply-model-routing.mjs scripts/skailr/archive-program.mjs
+  scripts/skailr/check-agent-tools.mjs scripts/skailr/check-blocks.mjs
+  scripts/skailr/check-contracts.mjs scripts/skailr/check-experts.mjs
+  scripts/skailr/check-phase-tracking.mjs scripts/skailr/cleanup-scoped.mjs
+  scripts/skailr/db.mjs scripts/skailr/lib/db.mjs scripts/skailr/lib/render.mjs
+  scripts/skailr/emit-stubs.mjs scripts/skailr/emit-telemetry.mjs
+  scripts/skailr/feature-status.mjs scripts/skailr/ledger-status.mjs
+  scripts/skailr/rotate-channels.mjs scripts/skailr/route-prompt.mjs
+  scripts/skailr/status.mjs scripts/skailr/telemetry-smoke.mjs
+  scripts/skailr/ticket-status.mjs scripts/skailr/validate-channels.mjs
+  .cursor/model-routing.md
+)
+RETIRED_CURSOR_RULES=(
+  architect backend-engineer content-editor content-lead content-strategist
+  content-writer data-engineer e2e-verifier frontend-engineer integration-verifier
+  program-documenter program-validator story-writer validator registry
+  portfolio-architect initiative-lead
+  legal-lead legal-analyst compliance-reviewer legal-validator
+  pm-lead pm-planner risk-analyst status-reporter
+  design-lead design-strategist designer design-reviewer
+  mkt-lead mkt-strategist channel-planner mkt-analyst
+  fin-lead fin-modeler fin-analyst fin-auditor
+  expert expert-scout
+)
+RETIRED_CURSOR_COMMANDS=(
+  ship-feature build-feature continue-feature discover plan-program
+  build-program continue-program discover-portfolio plan-portfolio
+  status-portfolio mint-expert
+)
+
+retire_legacy() {
+  local removed=0 p
+  for d in "${RETIRED_DIRS[@]}"; do
+    if [[ -d "$TARGET/$d" ]]; then rm -rf "$TARGET/${d:?}"; removed=$((removed+1)); fi
+  done
+  for s in "${RETIRED_SKILLS[@]}"; do
+    if [[ -d "$TARGET/.claude/skills/$s" ]]; then rm -rf "$TARGET/.claude/skills/${s:?}"; removed=$((removed+1)); fi
+  done
+  for p in "${RETIRED_FILES[@]}"; do
+    if [[ -f "$TARGET/$p" ]]; then rm -f "$TARGET/$p"; removed=$((removed+1)); fi
+  done
+  for r in "${RETIRED_CURSOR_RULES[@]}"; do
+    if [[ -f "$TARGET/.cursor/rules/$r.mdc" ]]; then rm -f "$TARGET/.cursor/rules/$r.mdc"; removed=$((removed+1)); fi
+  done
+  for c in "${RETIRED_CURSOR_COMMANDS[@]}"; do
+    if [[ -f "$TARGET/.cursor/commands/$c.md" ]]; then rm -f "$TARGET/.cursor/commands/$c.md"; removed=$((removed+1)); fi
+  done
+  # Empty lib/ dir left behind after its two scripts retire
+  rmdir "$TARGET/scripts/skailr/lib" 2>/dev/null || true
+  if [[ "$removed" -gt 0 ]]; then
+    echo "  - retired $removed pre-3.0 pack file(s)/dir(s) (see docs/DESIGN-3.0.md)"
+  fi
 }
 
 # DOC: .claude/experts/ is a consumer runtime artifact, never a pack artifact. No install
@@ -426,6 +510,7 @@ case "$MODE" in
   cursor) install_cursor ;;
 esac
 
+retire_legacy
 run_migrations
 record_install
 append_gitignore
