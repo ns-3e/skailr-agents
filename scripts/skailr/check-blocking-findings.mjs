@@ -58,8 +58,12 @@ const CANDIDATES = [
   { report: ".claude/program/program-validation-report.md", marker: ".claude/program/.fix-round-attempted" },
 ];
 
+// Root resolution: prefer CLAUDE_PROJECT_DIR (the project whose settings.json
+// loaded this hook) over the hook input's cwd — a session opened in a
+// subdirectory reports that subdirectory as cwd, and the reports/markers this
+// gate reads live at the project root.
 const input = readStdinJson();
-const cwd = input.cwd || process.cwd();
+const cwd = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
 
 for (const { report, marker } of CANDIDATES) {
   const reportPath = path.join(cwd, report);

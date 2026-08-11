@@ -1,6 +1,6 @@
 {
   "//why-this-file": "Claude Code auto-loads only .claude/settings.json, .claude/settings.local.json, and ~/.claude/settings.json. This file is pack-owned and overwritten on every install/upgrade — put your own hooks in .claude/settings.local.json (gitignored, merged automatically, higher precedence).",
-  "//hooks": "check-update.mjs is advisory (|| true; once-per-24h version notice). check-blocking-findings.mjs is the one blocking gate this pack ships: if a verification report has open Blocking Findings, the run may not finish until one bounded fix round happens — the single mechanism benchmarks proved worth its cost. It self-bounds to one block per run via a marker file.",
+  "//hooks": "check-update.mjs is advisory (|| true; once-per-24h version notice). check-blocking-findings.mjs is the one blocking gate this pack ships: if a verification report has open Blocking Findings, the run may not finish until one bounded fix round happens — the single mechanism benchmarks proved worth its cost. It self-bounds to one block per run via a marker file. Commands are anchored to ${CLAUDE_PROJECT_DIR} (the directory whose .claude/settings.json loaded these hooks) because hook commands run with the SESSION's cwd — a session opened in a subdirectory would otherwise fail to resolve scripts/skailr/ (observed as a MODULE_NOT_FOUND Stop-hook error in a real project).",
   "hooks": {
     "Stop": [
       {
@@ -8,11 +8,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/skailr/check-update.mjs 2>/dev/null || true"
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/scripts/skailr/check-update.mjs\" 2>/dev/null || true"
           },
           {
             "type": "command",
-            "command": "node scripts/skailr/check-blocking-findings.mjs"
+            "command": "node \"${CLAUDE_PROJECT_DIR:-.}/scripts/skailr/check-blocking-findings.mjs\""
           }
         ]
       }

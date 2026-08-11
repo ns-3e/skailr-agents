@@ -6,6 +6,16 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- **Stop hooks now resolve from the project root, not the session cwd.** The
+  3.0.0 hook commands used relative paths (`node scripts/skailr/…`), which
+  fail with MODULE_NOT_FOUND whenever a session runs in a subdirectory of the
+  installed project (hooks load from the root `.claude/settings.json`, but
+  commands execute with the session's cwd — observed in a real project's
+  `frontend/` session). Commands are now anchored to
+  `${CLAUDE_PROJECT_DIR:-.}`, and `check-blocking-findings.mjs` resolves its
+  report/marker paths the same way. Re-running an installer refreshes
+  `settings.json` in affected projects.
+
 - **Installer CLAUDE.md merge: pre-2.0.0 legacy files no longer produce two
   intake blocks.** A CLAUDE.md written before the intake-zone markers existed
   (1.x installs: a wholly-generated copy headed by the remirror comment, "do
