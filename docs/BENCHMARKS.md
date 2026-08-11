@@ -371,14 +371,30 @@ don't fully refute it either:
   difficulty or an over-strict / mis-specified grader probe or fixture, rather
   than something specific to how work is split across workstreams.
 
-**Open question, leaning one way now.** Skailr is not vindicated by this (it
-still fails, seven for seven, and far more expensively); the earlier
-Skailr-specific reading is weaker than it was (n=3 vanilla failures, all
-identical, is a real pattern, not a fluke). The next useful step is reading
-the two critical probes against both arms' actual diffs to decide whether the
-requirement is unmet or unmeetable. Until that happens, treat "reproducible gap
-in the multi-workstream pipeline" as unconfirmed rather than established — but
-lean toward "task/fixture issue" more than this page did before.
+**Resolved: it was a grader bug, not a capability gap in either arm.**
+[A follow-up diagnosis](audits/2026-08-10-program-rbac-diagnosis.md), done
+entirely against already-frozen local run artifacts (zero new bench spend),
+read the two failing probes against 8 real implementations' actual diffs —
+across both arms and every Skailr version tested — and found the same
+mechanical cause in every one: `hidden-tests.mjs`'s accept-invitation probe
+always called the endpoint unauthenticated and only ever read the invite
+token from the create-invitation HTTP response body. Every real
+implementation sampled (6/6 checked in detail) reasonably gates accept
+behind session auth — the *only* auth pattern this fixture's own
+`PUBLIC_API.md` documents — and at least 2/8 never echo the raw token in
+that response at all (a deliberate, sound security choice; the token is
+delivered only via the mocked email, exactly as the task prompt asked). The
+grader never seeded a session for the invitee and never fell back to the
+outbox for the token, so accept was structurally unreachable regardless of
+how good the implementation was. Seeding an invitee account/session and
+adding an email-body token fallback in `bench/graders/program-rbac/{grade,hidden-tests}.mjs`
+flips 8 of 12 sampled real runs (across both arms, every Skailr version, and
+one dual-mode implementation the old probe also couldn't reach) from
+`solved=false` to `solved=true`, while correctly leaving the 4 runs that were
+independently known to be wall-clock-killed or broken-before-finishing still
+`solved=false` — see the audit doc for the full before/after table. Treat the
+"reproducible gap in the multi-workstream pipeline" framing as retired: both
+arms could build this feature; the benchmark just couldn't see it.
 
 ### Phantom completion: present in the 2026-08-08 run, absent in the 2026-08-09 one
 
