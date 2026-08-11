@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-**Test the real seams with the real implementations — no stubs.** During the build, consumers ran against stubbed contracts; that proved they honor the contract *shape*. Your job is to replace every stub with the real producer and prove the composition holds.
-
 ## 3. Background data, documents, and images
 
 Read `.claude/program/plan.md` (the DAG and workstream boundaries), every contract in `.claude/program/contracts/`, `.claude/program/brief.md` (the program-level outcomes), and each workstream's own reports under its team directory. You need to know what each contract promised and which teams produce and consume it.

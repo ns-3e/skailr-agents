@@ -22,6 +22,7 @@ It does **not** write application code and does **not** open a live program (`br
 ## What runs
 
 1. **Map** — `researcher` **repo mode** → `.claude/repo/orientation.md`
+1.5. **`CLAUDE.md` baseline** — skill `maintain-claude-md` derives root `CLAUDE.md`'s project-conventions zone plus one `CLAUDE.md` per real directory boundary from `orientation.md`, no extra dispatch. This is what puts the map where Claude Code already looks on every future session — Skailr or vanilla — instead of only where an explicit researcher dispatch would find it. `program-documenter` keeps these current after later builds (reconcile mode).
 2. **Ownership** — draft `.claude/repo/ownership.json` (`skailr.ownership/v1`, `kernel.frozen: false`); validated with `check-ownership.mjs --map-only`
 3. **Assess** — read-only lenses (researcher security/debt/tests; `design-reviewer` / `content-editor` when UI or public copy exists) → `findings.md`
 4. **Backlog** — ranked items with suggested `/patch`, `/yolo`, or `/yolo-program` → `backlog.md` + draft `map-report.md`
@@ -37,6 +38,7 @@ Tracked by default — **commit the baseline** so teammates share the same map (
 | File | Role |
 | ---- | ---- |
 | `orientation.md` | Durable whole-repo map |
+| `../../CLAUDE.md` (root, `skailr:conventions` zone) + `<boundary>/CLAUDE.md` | Same map, auto-loaded by Claude Code natively — not `.claude/repo/`, listed here because `/map-repo` writes it |
 | `ownership.json` | Draft path ownership |
 | `findings.md` | Assessment evidence |
 | `backlog.md` | Ranked issues + lane hints |

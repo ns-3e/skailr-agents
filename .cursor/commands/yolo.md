@@ -79,12 +79,12 @@ On a fresh start:
 
 - Write the raw request verbatim to `$ARTIFACT_ROOT/request.md`.
 - Write `$ARTIFACT_ROOT/mode.md` with a single line: `yolo`.
-- `node scripts/skailr/db.mjs feature init --id <feature-slug> --mode yolo --artifact-root $ARTIFACT_ROOT --request "<one-line ask>"` then `node scripts/skailr/db.mjs render progress --feature-id <feature-slug> --name "<feature title>" --out $ARTIFACT_ROOT/progress.md` (skill `track-phase`) to seed `progress.md`.
+- `node scripts/skailr/db.mjs feature init --id <feature-slug> --mode yolo --artifact-root $ARTIFACT_ROOT --request "<one-line ask>" && node scripts/skailr/db.mjs render progress --feature-id <feature-slug> --name "<feature title>" --out $ARTIFACT_ROOT/progress.md` — one `&&`-chained call, per skill `track-phase` — to seed `progress.md`.
 - Initialize channels: ensure `$ARTIFACT_ROOT/channels/` exists with `PROTOCOL.md` and a `feature.md` board.
 
 ### Checkpoint rule
 
-After each phase's artifact exists and your checks pass, mark that phase `complete` **before** dispatching the next agent — via skill `track-phase` (`db.mjs feature set-phase` then `db.mjs render progress`), never a direct edit of `progress.md`'s Phases table. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark tickets (and slice aggregates) complete as each resolves via `db.mjs ticket claim/resolve`; mark `build` complete only after the board is complete (or both classic slices) + ownership/channel gates pass. Leave `build` `in_progress` while any ticket is open/claimed so resume continues the frontier.
+After each phase's artifact exists and your checks pass, mark that phase `complete` **before** dispatching the next agent — via skill `track-phase` (`db.mjs feature set-phase` `&&`-chained with `db.mjs render progress` as **one** Bash call, never two), never a direct edit of `progress.md`'s Phases table. If a mechanical check (ownership, ticket-validate) already runs at this same checkpoint, append the set-phase+render pair to that same chain instead of a separate call. Never mark complete without the artifact (e.g. `research.md`). For parallel build: set `build` to `in_progress` when starting; mark tickets (and slice aggregates) complete as each resolves via `db.mjs ticket claim/resolve`; mark `build` complete only after the board is complete (or both classic slices) + ownership/channel gates pass. Leave `build` `in_progress` while any ticket is open/claimed so resume continues the frontier.
 
 ### Context handoff (build workers)
 
@@ -98,7 +98,32 @@ Engineers may yield mid-ticket (or mid-slice) to reset context (skill `write-han
 
 Before Phase 1. **Never a gate.** Follow skill `consult-or-mint` with `mode: consult-only`, `carry_to: progress.md` Notes. Missing `.claude/experts/` or `registry.md` means empty roster for consult — it does **not** skip later mint evaluation. Never warn the user about an absent roster.
 
-### Phase 1 — Research
+### Phase 0 — Lean-path eligibility gate
+
+Decide once, before any Phase 1 dispatch, whether Research/Story/Spec run as three separately dispatched phases (default) or collapse into one `architect` dispatch (`mode: lean`). This is the same proportionality logic Phase 5/6 already apply to verification — extended to the front end, where the fixed per-dispatch cost (fresh context, repo re-orientation) is paid three times regardless of task size.
+
+**Lean-eligible only when ALL of:**
+- The feature request does not match the sensitive-surface list above.
+- The request names **one** separable capability, not ≥3 (the same signal used to route `/yolo` vs `/yolo-program` at intake — if this request would have tripped that tie-breaker, it is not lean).
+- Setup's expert consult-only pass returned `matched: none`. A matched expert band is itself a signal of domain complexity the full path exists to serve — do not lean-path around it.
+- `.claude/repo/orientation.md` exists, or the repo has no material existing application code under the likely target directories (genuine greenfield) — lean mode's abbreviated research pass leans on one of these; without either, full research depth still earns its keep.
+- Fit-test's own estimate (skill `fit-test`) for "read what's relevant + write the full implementation" as a single leaf lands **≤65%** of budget. If it already looks decomposition-sized, it was never a single-ticket feature, and the front-end dispatch count was never the expensive part.
+
+Record the decision as one line in `progress.md` Notes: `lean-path: eligible` or `lean-path: full — <which criterion failed>`. Not re-evaluated per phase — one decision, before Phase 1.
+
+**When eligible:** skip Phases 1–3 as written below and run **Phase 1 (lean)** instead. **When not:** Phases 1–3 run exactly as written, unchanged.
+
+### Phase 1 (lean) — combined Research + Story + Spec
+
+Only when Phase 0 chose lean. Invoke the `architect` subagent with `mode: lean` in the Task prompt, in place of the researcher, story-writer, and architect dispatches below. It writes `research.md`, `story.md`, `spec.md`, and mints `board.md` + tickets in this one dispatch — see architect.md's Lean mode section for what it does internally.
+
+Your checks after it returns are the **union** of the three full-path checks below, run once: confirm `research.md` exists with a Prior Art section; confirm `story.md` has testable ACs with IDs and no un-Assumed Open Questions; then run Phase 3's verification block (ownership disjointness, AC-to-spec coverage, ticket board validity) exactly as written there. A `research.md`/`story.md` that doesn't clear the same bar the standalone agents would have held it to is a defect in this dispatch, not a lower bar — re-invoke once with the specific gap, same as any other agent contract violation.
+
+If the architect's Task return includes `ESCALATE: <reason>` (its escape hatch for when the real shape of the work turned out bigger than Phase 0's gate assumed): treat every later proportionality gate (Phase 5, Phase 6) as if this feature had matched the sensitive-surface list — run their full paths unconditionally, regardless of ticket count. Log the escalation reason in `progress.md` Notes.
+
+Checkpoint `research`, `story`, and `spec` each `complete` off this one dispatch — three `db.mjs feature set-phase` calls chained with `&&`, then **one** final `db.mjs render progress` at the end of that same chain (not three separate renders; nothing reads the file between the three status updates, so only the final render matters). Skill `track-phase`; the checkpoint ledger's phase granularity is unchanged, only the dispatch *and Bash call* count feeding it collapsed. Then run **After research — expert consult-or-mint (T3)** below exactly as the full path does (`research.md` now exists) before continuing into Phase 4. If T3 mints a new expert here, it did not shape this feature's already-written `story.md`/`spec.md` — that is expected and fine; a lean-eligible feature is, by construction, not the case a fresh mint needed to influence. It still joins the roster for future runs. Do not re-invoke the lean dispatch solely because T3 minted.
+
+### Phase 1 — Research (full path — skip if Phase 0 chose lean)
 
 Invoke the `researcher` subagent via the Task tool. Pass the feature request; it writes `.claude/tmp/research.md`.
 
@@ -112,7 +137,7 @@ Checkpoint: `research` → complete.
 
 Follow skill `consult-or-mint` with `mode: consult-and-mint`, `trigger: build-consult`, `request: the feature ask`, `evidence: .claude/tmp/research.md` (+ orientation/backlog if present), `carry_to: progress.md` Notes. Re-consult after any mint. Co-author and gate read **matched:** from that note — never “does registry exist?”. Skip co-author/gate when `matched: none` with **no user-facing mention**.
 
-### Phase 2 — Story (auto-approve)
+### Phase 2 — Story (auto-approve, full path — skip if Phase 0 chose lean)
 
 Invoke the `story-writer` subagent. It writes `.claude/tmp/story.md`.
 
@@ -126,7 +151,7 @@ Your check before continuing:
 
 Then **auto-approve** the story. Checkpoint: `story` → complete. Do not print a gate prompt. Do not end your turn.
 
-### Phase 3 — Spec (auto-approve)
+### Phase 3 — Spec (auto-approve, full path — skip if Phase 0 chose lean)
 
 **Expert co-author, before the architect (when carry-forward `matched:` is non-empty).** Dispatch `expert` with `mode: co-author`, `slug: <matched slug>`, `subject: $ARTIFACT_ROOT/story.md`, refreshing `$ARTIFACT_ROOT/expert-<slug>.md` against the approved story. Then invoke the architect and tell it to read that file as required input.
 

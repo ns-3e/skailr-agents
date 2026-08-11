@@ -252,6 +252,7 @@ Tiers nest, each with durable on-disk state and a resume command:
 | **Progressive disclosure** | Thin registry → team lead → workers. Unused domains cost almost nothing. |
 | **Message board** | Append-only channels under `.claude/program/channels/` (feature runs: `$ARTIFACT_ROOT/channels/`). |
 | **Frozen contracts** | Cross-team seams freeze after plan approval; only the program-architect changes them, gated on your approval. |
+| **Hierarchical `CLAUDE.md`** | `/map-repo` writes real project conventions — stack, directory boundaries, house conventions — into root `CLAUDE.md`'s own zone plus one `CLAUDE.md` per real subsystem, the same native mechanism Claude Code already auto-loads by directory. `program-documenter` keeps them current as the code changes. Skill: `maintain-claude-md`. |
 
 **Claude Code vs Cursor:** `.claude/` is the source of truth; `.cursor/` is a generated mirror. Edit `.claude/`, then `./scripts/remirror.sh` if you maintain this pack.
 
@@ -402,9 +403,10 @@ There is no separate update command — re-run any install channel (`npx skailr-
 | Preserved | Overwritten (pack files) |
 | --------- | ------------------------ |
 | `.claude/portfolio/` | Agents, commands, skills, teams registry |
-| `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`, intake, model-routing |
+| `.claude/program/` runtime (brief, plan, contracts, ledger, workstreams, …) | `CLAUDE.md`'s `skailr:intake` zone, intake, model-routing |
 | `.claude/tmp/` feature artifacts | Program schemas + channel templates |
-| `.claude/repo/` map-repo baseline | Cursor rules/commands and `scripts/skailr/` |
+| `.claude/repo/` map-repo baseline (including any nested `<dir>/CLAUDE.md` files) | Cursor rules/commands and `scripts/skailr/` |
+| `CLAUDE.md`'s `skailr:conventions` zone — written by `/map-repo`, kept current by `program-documenter` (see [How it works](#how-it-works)) | |
 | `.claude/experts/` (asserted byte-identical) | |
 | `.claude/settings.skailr.json` — your `telemetry` and `autoUpdate` choices (copied only if absent; see migrations below) | `.claude/settings.json` — hooks (Claude Code only auto-loads this filename; see its own `//why-this-file` note) |
 | `.skailr/` runtime state (telemetry spans, `installed-version.json` is re-stamped on each install) | |

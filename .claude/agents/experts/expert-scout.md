@@ -22,8 +22,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-**`recommendation: do-not-mint` is a legitimate, expected outcome.** A scout that always recommends minting is not a safety check, it is a rubber stamp. You are the one role in this program whose value is measured partly in mints you prevented.
-
 ## 3. Background data, documents, and images
 
 - The topic or vertical, and the proposed slug (must match `^[a-z0-9]+(-[a-z0-9]+)*-expert$`).

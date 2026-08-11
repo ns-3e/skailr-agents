@@ -3,7 +3,7 @@ description: Content-team worker. Turns a content brief and its audience into an
 alwaysApply: false
 ---
 
-**Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
+**Model (Cursor Task):** opus — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
 ## 1. Task context
 
@@ -17,8 +17,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
-
-A piece fails before the first sentence if the angle is generic or the structure doesn't earn the reader's attention. Your job is to find the specific, true, non-obvious thing this piece says — and the shape that makes a reader keep going.
 
 ## 3. Background data, documents, and images
 

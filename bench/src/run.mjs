@@ -200,7 +200,7 @@ export function runVisibleTests(workspace) {
  * source per brief — this is the "artifacts" side; OTel resource attrs are
  * the fallback (telemetry.mjs), not implemented as a second counter here
  * since no live OTel sample exists yet (see telemetry.mjs top comment). */
-export function extractSkailrDiagnostics(workspace, runDir, shippedPaths = new Set()) {
+export function extractSkailrDiagnostics(workspace, runDir, shippedPaths = new Set(), events = []) {
   const destRoot = path.join(runDir, "skailr-artifacts");
   const sources = [path.join(workspace, ".claude", "program"), path.join(workspace, ".claude", "tmp")];
   let copiedAny = false;
@@ -210,7 +210,27 @@ export function extractSkailrDiagnostics(workspace, runDir, shippedPaths = new S
     const dest = path.join(destRoot, path.basename(src));
     fs.cpSync(src, dest, { recursive: true });
   }
-  const zero = { agents_spawned: 0, inter_agent_messages: 0, blockers: 0, contract_events: 0, gate_failures: 0, validator_findings: 0 };
+
+  // Real Agent-tool dispatch count, from the actual session transcript — NOT
+  // inferred from artifact text like the fields below. A top-level dispatch is
+  // an `assistant` event with an `Agent`-type tool_use and no
+  // `parent_tool_use_id` (a subagent's own nested Agent calls, if any, carry
+  // their own parent chain and are correctly excluded — this counts dispatches
+  // FROM the orchestrator, not work done by them). The previous approach
+  // (regex over artifact text for an `@Task`/`dispatched` pattern, falling back
+  // to counting `role:\s*\w` — mostly ticket frontmatter) undercounted a real
+  // run by 4x (2 reported vs 8 real dispatches) — see
+  // `IMPROVEMENT-BACKLOG.md`'s L-11 entry for the full trace. Computed
+  // independent of whether any artifact files exist, since a crashed run can
+  // still have dispatched agents before writing anything.
+  const agents_spawned = events.filter((e) =>
+    e.type === "assistant" &&
+    !e.parent_tool_use_id &&
+    Array.isArray(e.message?.content) &&
+    e.message.content.some((b) => b && b.type === "tool_use" && b.name === "Agent"),
+  ).length;
+
+  const zero = { agents_spawned, inter_agent_messages: 0, blockers: 0, contract_events: 0, gate_failures: 0, validator_findings: 0 };
   if (!copiedAny) return zero;
 
   // Count ONLY agent-produced artifacts: scan the live workspace under
@@ -229,7 +249,7 @@ export function extractSkailrDiagnostics(workspace, runDir, shippedPaths = new S
   if (text === "") return zero;
   const count = (re) => (text.match(re) || []).length;
   return {
-    agents_spawned: count(/^\|?\s*[\w-]+\s*(@\s*Task|dispatched)/gim) || count(/role:\s*\w/gim),
+    agents_spawned,
     inter_agent_messages: count(/^type:\s*\w+/gim),
     blockers: count(/type:\s*blocker/gim),
     contract_events: count(/type:\s*contract-change/gim),
@@ -440,7 +460,7 @@ export async function runOne(opts) {
     try { markReadOnly(workspace); } catch { /* best-effort */ }
 
     stage("extract-skailr-diagnostics");
-    diagnostics = arm === "baseline" ? null : extractSkailrDiagnostics(workspace, runDir, installResult.installed_paths);
+    diagnostics = arm === "baseline" ? null : extractSkailrDiagnostics(workspace, runDir, installResult.installed_paths, claudeResult.events);
 
     stage("run-grader");
     try {

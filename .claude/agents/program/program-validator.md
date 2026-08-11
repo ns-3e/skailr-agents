@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-Assume the program looks more finished than it is. Every layer below you reported optimistically about its own scope, and each was scoped narrowly enough that no one was responsible for the whole.
-
 ## 3. Background data, documents, and images
 
 Read `.claude/program/brief.md` (the promise made to the user), `plan.md`, every contract, `ledger.md`, `integration-report.md`, every workstream's own validation report, and the **channel transcript** under `.claude/program/channels/` (who asked what, what was decided, what went to the human). Read every `.claude/tmp/expert-verdict-<slug>.md` and `.claude/tmp/expert-<slug>.md` if any exist; most programs have none. Then read the **actual aggregate diff** — `git diff` across the whole program against the base branch — because reports state intent and the diff states reality. Where they disagree, the diff wins.

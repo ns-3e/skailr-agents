@@ -2,6 +2,156 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.0.0] — 2026-08-10
+
+Rebuild of the feature-tier orchestration core, driven by real bench data showing
+1.15.0 still cost 8-13x vanilla Claude Code's tool calls/time on genuinely
+multi-owner or complex work, even on tasks where quality matched or beat it.
+Root cause, traced precisely rather than assumed: `architect.md` pre-designed
+each owner's *internal* implementation (services, components, schema), not just
+the seam between them, so a separate engineer dispatch then spent tool calls
+reconciling a prescription against real code instead of designing once from
+what it read. Major version because this changes `spec.md`'s content contract
+— it is now seam-only — not because any script gate, artifact schema, or
+checkpoint phase name changed; those are all untouched. See
+`IMPROVEMENT-BACKLOG.md` L-8 through L-10 for full mechanism traces.
+
+### Changed
+
+- **`architect.md` no longer designs owners' internal implementations.**
+  `spec.md` is now seam-only: API contract, ownership boundaries, and data
+  model only when `data-engineer` is a genuinely separate owner from
+  `backend-engineer`. New Process step ("Seam determination") derives what
+  crosses a boundary from the feature's actual owner split, per-feature, not a
+  fixed section list. `backend-engineer.md`/`frontend-engineer.md` gained a new
+  Process step 0 ("Design your slice") — each engineer now does its own
+  micro-research and internal design, in its own dispatch, from real code
+  rather than a prescription. `data-engineer.md` needed only a clarifying note;
+  its own process was already fully autonomous. New `## Design` report
+  subsection on both engineers (no new artifact file). Live-verified via a real
+  `/yolo` dry run on a 2-owner feature: 85/85 tests independently confirmed
+  passing, zero ownership overlap, and the existing validator/e2e-verifier
+  chain correctly caught a real cross-owner scope gap the new thinner spec
+  didn't prevent — proof the quality gates still work under the new contract,
+  not just that dispatch count went down. Full writeup: `IMPROVEMENT-BACKLOG.md`
+  L-10.
+- **`/yolo`'s Research/Story/Spec collapse into one dispatch for small,
+  single-owner, non-sensitive features** (Phase 0 eligibility gate), generalizing
+  the inline-fix carve-out `/patch` already had. `IMPROVEMENT-BACKLOG.md` L-8.
+- **`run-ticket-board` gained contract-change fan-out.** When a seam
+  contract-change resolves mid-build, every other role's ticket is now checked:
+  unclaimed needs no action, in-flight gets re-dispatched with the corrected
+  seam, already-`done` gets flagged for elevated verification risk instead of
+  silently trusted. Thinner seams make this matter more than it did against the
+  old, more comprehensive spec.
+- **27 agent files had a redundant paragraph removed from Tone Context** that
+  fully duplicated (as a substring or close paraphrase) their own Prime
+  Directive section — verified byte-identical or semantically-equivalent before
+  removal, zero information loss. This is `IMPROVEMENT-BACKLOG.md`'s
+  previously-deferred B-12, done mechanically instead of freeform.
+- **The `balanced` model-routing profile moves worker/IC roles to Opus and
+  routes the three high-level-plan roles to Fable.** Prompted by real evidence
+  from the L-11 verification campaign: every logged fix/retry dispatch for
+  `backend-engineer`/`frontend-engineer` across every real campaign on disk
+  stayed at its default tier (`sonnet`), never escalated, despite the
+  documented rule to bump one tier on a validator/e2e retry — including the
+  fix for a real caught account-takeover bug, dispatched at the same tier that
+  produced it. `default` and every previously-`sonnet` worker role in
+  `balanced` now resolve to `opus` (exception: `status-reporter`, a pure
+  digest-compile role, stays `sonnet`); `architect`, `program-architect`, and
+  `portfolio-architect` now route to `"fable"` directly. `researcher` and
+  `story-writer` added to `protected` alongside the engineers. `economy` and
+  `quality` profiles unchanged. See `IMPROVEMENT-BACKLOG.md` L-13.
+
+### Added
+
+- **`/map-repo` and `program-documenter` now create and maintain hierarchical
+  `CLAUDE.md` files** — root `CLAUDE.md` gained a `skailr:conventions` zone
+  (project-owned, survives upgrades) alongside its existing `skailr:intake`
+  zone (pack-owned), plus one `CLAUDE.md` per real directory boundary. New
+  skill `maintain-claude-md`. Puts what Skailr learns about a project where
+  Claude Code already looks natively, in both Skailr and vanilla sessions, not
+  only where an explicit researcher dispatch would find it. Required a
+  prerequisite fix: `install.sh`/`install.ps1` previously blind-overwrote root
+  `CLAUDE.md` on every upgrade — now merges only the marked intake zone,
+  preserving project-owned content, the same guarantee already in place for
+  `.claude/settings.skailr.json` and `.claude/experts/`. `IMPROVEMENT-BACKLOG.md`
+  L-9.
+
+### Fixed
+
+- **`check-ownership.mjs --from-spec` silently reported every path "unowned"**
+  whenever `spec.md`'s Ownership Boundaries globs were backtick-wrapped —
+  the natural, idiomatic markdown choice, and exactly what `architect.md`
+  produces. Root-caused to a missing backtick-strip in `ownershipFromSpec()`'s
+  glob parsing; `minimatch` can never match a pattern that literally starts
+  with a backtick against a real path. Pre-existing since `--from-spec` was
+  written, not introduced by this release; first exercised end-to-end by the
+  L-10 dry run. Verified against the real `spec.md` that triggered it.
+- **`bench/`'s real `claude -p` invocations now disable an undocumented CLI
+  background-task print-wait ceiling** (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`,
+  ~600s) that can silently truncate a long unattended session mid-turn.
+  Discovered live via the L-10 dry run, not from any published campaign number
+  — checked all real `stdout.log` files under `bench-docker-out/results/` and
+  found zero occurrences, so this is a preventive fix, not a correction to any
+  number already on `docs/BENCHMARKS.md`.
+- **`skailr_diagnostics.agents_spawned` was reporting a fundamentally wrong
+  number** — a regex heuristic over agent-produced artifact text (mostly
+  matching ticket-frontmatter `role:` lines), not a real dispatch count. Found
+  by tracing a real campaign's `events.jsonl` directly: `feature-api-keys`
+  reported 2 dispatches, the transcript shows 8; `program-rbac` reported 7,
+  the transcript shows 10. This had already produced one wrong claim in
+  `docs/BENCHMARKS.md`'s first 2.0.0 entry ("agent count dropped from 4 to
+  2... plausibly an L-10 effect") — corrected in the same page, same release.
+  `bench/src/run.mjs`'s `extractSkailrDiagnostics` now counts real top-level
+  `Agent`-tool dispatches from the session transcript instead.
+- **The orchestrator's own bookkeeping Bash calls (ticket claim/resolve,
+  model-usage logging, phase-completion tracking) were firing as separate
+  top-level Bash calls instead of being chained**, even though `yolo.md` and
+  `build-program.md` already establish and successfully use exactly this
+  chaining pattern in two other spots. On a real `feature-api-keys` run this
+  was 37% of the entire session's tool calls — more than any single subagent
+  dispatch. `run-ticket-board` and `track-phase` skills now chain these calls
+  the same way; `yolo.md`/`build-program.md` updated to match. No change to
+  what gets checked or recorded, only how many round trips it costs.
+
+### Known limitations
+
+- **L-8, L-9, and L-10 are shipped together in this cut, each individually
+  documented as "predicted, not fully verified against a fresh bench
+  campaign" at landing time** (`IMPROVEMENT-BACKLOG.md`). L-10 is the
+  exception with real, live verification (see above) — the others still need
+  a real campaign to confirm the predicted cost/time direction actually holds.
+  `docs/BENCHMARKS.md`'s 2.0.0 entry documents exactly that campaign.
+- **Increment 2 of the owner-dispatch model (broadening lean-path eligibility
+  from single-owner to ≤2-owner features) is explicitly deferred**, pending
+  this release's own campaign results — not bundled into this cut.
+- **The orchestrator bookkeeping-batching fix was re-benchmarked; the result is
+  inconclusive on cost, not confirmed and not contradicted.** A third real
+  campaign ran against 2.0.0 + this fix. `feature-api-keys` got *more*
+  expensive, not less — but the entire delta traces to real added work
+  (`auth-security-expert` minting for the first time on this task, adding 3
+  legitimate dispatches plus a 3rd ticket), not to anything this fix touches.
+  That same campaign's `feature-api-keys` run was marked `solved: false`;
+  traced to two grader/hidden-test convention mismatches against a correctly
+  spec-conformant, more security-hardened implementation — a grader
+  false-negative, not a product regression (see `IMPROVEMENT-BACKLOG.md`
+  L-12a). No evidence in any transcript that this fix caused a slowdown,
+  failure, or cost increase. See `IMPROVEMENT-BACKLOG.md` L-12 and
+  `docs/BENCHMARKS.md`'s L-11 verification campaign section for the full
+  trace.
+- **`install.ps1`'s merge-safe `CLAUDE.md` logic (L-9) is still unexecuted** —
+  no PowerShell available in this environment; reviewed carefully by eye, same
+  standing limitation as the original backlog's B-4.
+- **The `balanced` profile's Fable routing (`architect`/`program-architect`/
+  `portfolio-architect`) is unverified against a real subagent Task dispatch.**
+  Config applies cleanly and `doctor.mjs` passes, but confirmed only that the
+  installed Claude Code CLI lists `fable` as a recognized `--model` alias — not
+  that a dispatched subagent actually honors `model: fable` in agent
+  frontmatter the same way `opus`/`sonnet` are honored today. Also unmeasured:
+  the cost/quality effect of moving ~15 worker roles from `sonnet` to `opus`
+  in this profile. See `IMPROVEMENT-BACKLOG.md` L-13.
+
 ## [1.15.0] — 2026-08-09
 
 Benchmark-driven lean pass. `docs/BENCHMARKS.md`'s real (non-mock) Docker campaign data

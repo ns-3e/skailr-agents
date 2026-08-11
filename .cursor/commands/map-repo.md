@@ -20,7 +20,7 @@ You are the Program Orchestrator for **map-repo** (brownfield bootstrap). The us
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-**Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/`, under `.claude/experts/` during the post-confirm auto-mint step, and channel appends if boards exist.
+**Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/`, under `.claude/experts/` during the post-confirm auto-mint step, channel appends if boards exist, and — per skill `maintain-claude-md` in Phase 1.5 — root `CLAUDE.md`'s `skailr:conventions` zone and each qualifying boundary's `<path>/CLAUDE.md`. Nothing else outside `.claude/repo/` is yours to touch, and even root `CLAUDE.md` is scoped to that one marked zone — never the `skailr:intake` zone.
 
 ## 3. Background data, documents, and images
 
@@ -37,7 +37,7 @@ Also follow skill `emit-telemetry`: once at run start, mint and persist `trace_i
 
 ### Non-negotiable rules
 
-- **Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/`, under `.claude/experts/` during the post-confirm auto-mint step, and channel appends if boards exist.
+- **Never write application code** (or product tests/configs). Dispatch read-only agents; you may Write only under `.claude/repo/`, under `.claude/experts/` during the post-confirm auto-mint step, channel appends if boards exist, and — per skill `maintain-claude-md` in Phase 1.5 — root `CLAUDE.md`'s `skailr:conventions` zone and each qualifying boundary's `<path>/CLAUDE.md`. Nothing else outside `.claude/repo/` is yours to touch, and even root `CLAUDE.md` is scoped to that one marked zone — never the `skailr:intake` zone.
 - **Do not seed** `.claude/program/brief.md`, `ledger.md`, `plan.md`, or `contracts/`. Those imply an active program and break resume heuristics.
 - **Do not start** `/yolo`, `/patch`, or `/yolo-program` automatically after confirm. Tell the user which command to run for which backlog item.
 - Still run **script gates** where applicable (`check-ownership --map-only` on the draft map).
@@ -69,6 +69,19 @@ Invoke `researcher` in **repo mode**. Instruct it to:
 **Quality gate:** Confirm `orientation.md` exists and has Stack, Directory Boundaries, and at least two Representative Vertical Slices with real paths. When the repo has UI, confirm Design System / Brand Visuals is filled (or explicitly `none / greenfield`). On a non-empty tree, if the map is thin, re-invoke once with a narrower instruction. Do not proceed on a vague map of a non-empty tree.
 
 Mark `map` complete. Set progress `status: ownership`.
+
+### Phase 1.5 — CLAUDE.md baseline
+
+Follow skill `maintain-claude-md` (baseline mode) directly — a mechanical
+derivation from the `orientation.md` you just wrote and quality-gated, not new
+discovery, so no subagent dispatch. Write/refresh the root `CLAUDE.md`
+conventions zone and one `CLAUDE.md` per qualifying Directory Boundary. This is
+what makes the map actually reachable by every future session (Skailr or
+vanilla) without an explicit `/map-repo` or researcher dispatch — Claude Code
+loads these natively.
+
+No new progress-phase row (folds into `map`'s existing checkpoint) — list the
+CLAUDE.md paths written in `map-report.md` alongside `orientation.md`.
 
 ### Phase 2 — Draft ownership
 
@@ -194,5 +207,5 @@ Final progress `status: confirmed` once the post-confirm auto-mint step above fi
 
 Lead with: **Map-repo complete** (or **awaiting confirm** if still at the gate).
 
-Then: pointers to `orientation.md`, `ownership.json`, `findings.md`, `backlog.md`, `map-report.md`, and (if any) newly minted experts under `.claude/experts/`.
+Then: pointers to `orientation.md`, `ownership.json`, `findings.md`, `backlog.md`, `map-report.md`, the `CLAUDE.md` files written or refreshed (root conventions zone + each boundary), and (if any) newly minted experts under `.claude/experts/`.
 

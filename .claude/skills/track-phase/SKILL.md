@@ -32,12 +32,19 @@ node scripts/skailr/db.mjs feature init --id <feature-slug> [--program-id <progr
 ```
 
 At every "Checkpoint: `<phase>` → complete" instruction (research, story, spec, build,
-verify, validate, docs — or whatever phases that command names):
+verify, validate, docs — or whatever phases that command names), run both commands **as
+one `&&`-chained Bash call**, never two separate ones — they always fire together,
+immediately, and a real campaign trace showed this exact pair as the single largest class
+of avoidable extra top-level Bash invocations in a run (`IMPROVEMENT-BACKLOG.md` L-11):
 
 ```bash
-node scripts/skailr/db.mjs feature set-phase --id <feature-slug> --phase <phase> --status complete [--notes "<one-line note, same as you'd have put in the table>"]
-node scripts/skailr/db.mjs render progress --feature-id <feature-slug> --name "<feature title>" --out <ARTIFACT_ROOT>/progress.md
+node scripts/skailr/db.mjs feature set-phase --id <feature-slug> --phase <phase> --status complete [--notes "<one-line note, same as you'd have put in the table>"] && node scripts/skailr/db.mjs render progress --feature-id <feature-slug> --name "<feature title>" --out <ARTIFACT_ROOT>/progress.md
 ```
+
+If a mechanical check (ownership, ticket-validate, test/lint/typecheck) already runs at
+this exact checkpoint per the calling command, append this pair to *that same* chain
+instead of issuing it as its own call — see `yolo.md`'s Phase 3/4 for the pattern this
+extends.
 
 Use `--status in_progress` when entering a phase, `--status complete` when leaving it — same
 semantics the old hand-written table used.
@@ -51,11 +58,11 @@ node scripts/skailr/db.mjs program init --id <program-slug> --status building
 ```
 
 At every "Checkpoint: Phase `<X>` → done" instruction (A_kernel, B_workstreams,
-C_integration, D_validation, E_documentation):
+C_integration, D_validation, E_documentation), same chaining rule as the feature-level
+pair above — one `&&`-joined call, not two:
 
 ```bash
-node scripts/skailr/db.mjs program set-phase --id <program-slug> --phase <phase> --status done --commit-sha <sha>
-node scripts/skailr/db.mjs render ledger --program-id <program-slug> --name "<program name>" --out .claude/program/ledger.md
+node scripts/skailr/db.mjs program set-phase --id <program-slug> --phase <phase> --status done --commit-sha <sha> && node scripts/skailr/db.mjs render ledger --program-id <program-slug> --name "<program name>" --out .claude/program/ledger.md
 ```
 
 Gates (`brief_confirmed`, `plan_approved`, `contracts_frozen`) and contract freeze/bump

@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-**Test from the user's perspective, through real seams.** Drive the UI or hit real HTTP endpoints against a real database. Do not mock the thing you are supposed to be verifying — a mocked API in an E2E test proves nothing except that your mock works.
-
 ## 3. Background data, documents, and images
 
 Read `$ARTIFACT_ROOT/story.md` (the source of truth for what must be true), `$ARTIFACT_ROOT/spec.md`, and both implementation reports.

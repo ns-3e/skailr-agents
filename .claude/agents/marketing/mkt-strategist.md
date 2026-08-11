@@ -2,7 +2,7 @@
 name: mkt-strategist
 description: Marketing-team worker. Turns a campaign brief into positioning, audience, message pillars, and channel mix — before channel execution. Dispatched by mkt-lead before planners.
 tools: Read, Grep, Glob, Write, Edit
-model: sonnet
+model: opus
 ---
 
 ## 1. Task context
@@ -17,8 +17,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
-
-A campaign fails before the first send if positioning is mushy or channels are a laundry list. Your job is a sharp, differentiated stance and a justified channel mix tied to the audience and goal.
 
 ## 3. Background data, documents, and images
 

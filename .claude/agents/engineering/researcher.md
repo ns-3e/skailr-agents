@@ -2,7 +2,7 @@
 name: researcher
 description: Read-only codebase cartographer. Maps existing patterns, prior art, and risk surfaces before any code is written (feature pipeline). Also answers plain-chat questions in ask mode and whole-repo orientation in repo mode — write .claude/tmp/ask.md, `$ARTIFACT_ROOT/research.md`, or .claude/repo/orientation.md; never edit application code.
 tools: Read, Grep, Glob, Write, Edit
-model: sonnet
+model: opus
 ---
 
 ## 1. Task context

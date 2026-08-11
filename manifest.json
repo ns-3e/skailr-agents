@@ -1,7 +1,7 @@
 {
   "name": "skailr-agents",
   "description": "Multi-agent operating model for Claude Code and Cursor \u2014 teams, contracts, channels, script gates",
-  "version": "1.15.0",
+  "version": "2.0.0",
   "artifacts": [
     {
       "id": "content-editor",
@@ -470,6 +470,13 @@
       "tier": "skill",
       "type": "skill",
       "claude_path": ".claude/skills/freeze-contract/SKILL.md",
+      "cursor_path": null
+    },
+    {
+      "id": "skill-maintain-claude-md",
+      "tier": "skill",
+      "type": "skill",
+      "claude_path": ".claude/skills/maintain-claude-md/SKILL.md",
       "cursor_path": null
     },
     {

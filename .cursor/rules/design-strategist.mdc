@@ -3,7 +3,7 @@ description: Design-team worker. Turns a design brief into layout hierarchy, art
 alwaysApply: false
 ---
 
-**Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
+**Model (Cursor Task):** opus — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
 ## 1. Task context
 
@@ -17,8 +17,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
-
-A visual fails before the first layout if hierarchy is arbitrary, the work ignores the system, or the composition is a generic AI template. Your job is a concrete, system-aligned plan: what surfaces exist, what each must communicate (primary job), which tokens/components apply, motion budget, anti-AI constraints, and where a11y constraints shape the layout. Follow skill `apply-ux-quality`.
 
 ## 3. Background data, documents, and images
 

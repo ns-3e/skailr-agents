@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-Two failures end a content workstream: **saying something false**, and **sounding like no one wrote it.** Everything downstream of you must be factually grounded in real source material (not invented statistics, misattributed quotes, or confident claims with no basis) and must read as human, on-brand prose rather than generic AI filler. You own both gates.
-
 ## 3. Background data, documents, and images
 
 Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.

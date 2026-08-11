@@ -112,6 +112,42 @@ test("MSG-007 diagnostics floor: a freshly-installed skailr workspace with NO ag
   assert.ok(diag2.inter_agent_messages > 0 && diag2.contract_events > 0);
 });
 
+test("L-11a: extractSkailrDiagnostics.agents_spawned counts real top-level Agent tool_use events, not artifact-text regex matches", async () => {
+  const ws = mkTmp("ws-agentcount");
+  const res = await installArm("skailr", "HEAD", ws);
+  const runDir = mkTmp("rundir-agentcount");
+
+  // Synthetic transcript: 3 top-level Agent dispatches (orchestrator-issued),
+  // 1 nested Agent tool_use tagged with a parent_tool_use_id (a subagent
+  // dispatching its own sub-agent — must NOT count as a top-level dispatch),
+  // and assorted non-Agent tool calls that a naive "any tool_use" count would
+  // over-count. Real count must be exactly 3.
+  const events = [
+    { type: "assistant", message: { content: [{ type: "tool_use", name: "Agent", input: {} }] } },
+    { type: "assistant", message: { content: [{ type: "tool_use", name: "Bash", input: {} }] } },
+    { type: "assistant", message: { content: [{ type: "tool_use", name: "Agent", input: {} }] } },
+    {
+      type: "assistant", parent_tool_use_id: "toolu_nested",
+      message: { content: [{ type: "tool_use", name: "Agent", input: {} }] },
+    },
+    { type: "assistant", message: { content: [{ type: "tool_use", name: "Agent", input: {} }] } },
+    { type: "assistant", message: { content: [{ type: "tool_use", name: "Read", input: {} }] } },
+  ];
+
+  // No artifacts written — MSG-007's floor still applies to every OTHER field,
+  // but agents_spawned must be computed from the transcript regardless.
+  const diag = extractSkailrDiagnostics(ws, runDir, res.installed_paths, events);
+  assert.equal(diag.agents_spawned, 3, "expected 3 top-level Agent dispatches, nested + non-Agent calls excluded");
+  assert.equal(diag.inter_agent_messages, 0);
+
+  // Artifact text alone (no real Agent dispatches, only text that the OLD
+  // regex heuristic would have miscounted as "2") must not move the number.
+  fs.mkdirSync(path.join(ws, ".claude/tmp"), { recursive: true });
+  fs.writeFileSync(path.join(ws, ".claude/tmp/tickets.md"), "role: backend\nrole: frontend\n");
+  const diag2 = extractSkailrDiagnostics(ws, mkTmp("rundir-agentcount2"), res.installed_paths, events);
+  assert.equal(diag2.agents_spawned, 3, "artifact-text role: lines must not influence the real dispatch count");
+});
+
 test("FR-1 container_image fail-fast: non-null container_image refuses to start the campaign", async () => {
   const config = { ...loadConfig(), container_image: "ghcr.io/example/img:1" };
   assert.throws(() => assertContainerSupported(config), /container execution is not implemented in V1/);

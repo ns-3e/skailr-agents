@@ -68,12 +68,19 @@ Format:
 ISO-8601 | <role> | <model> | <phase> | <note>
 ```
 
-Example:
+Example (`status-reporter` is the profile's one role that still starts below Opus, so it's the clearest example with real escalation headroom):
 
 ```text
-2026-07-28T12:00:00Z | researcher | sonnet | research | default
-2026-07-28T12:05:00Z | researcher | opus | research | escalate:thin-research
+2026-07-28T12:00:00Z | status-reporter | sonnet | digest | default
+2026-07-28T12:05:00Z | status-reporter | opus | digest | escalate:thin-digest-miss
 ```
+
+Most roles in the active profile already default to the ladder's top tier (or to
+`fable` for `architect`/`program-architect`/`portfolio-architect`, outside the ladder
+entirely) — a retry on one of those has no higher tier to escalate to. That's
+intentional: real campaign logs showed step 3 rarely fired even when it should have
+(a caught security bug's fix dispatch stayed on the same tier that produced it), so
+the floor moved up instead of depending on escalation to catch it after the fact.
 
 ## Switch profiles (human / maintainer)
 

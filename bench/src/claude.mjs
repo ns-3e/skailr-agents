@@ -210,7 +210,16 @@ export async function invokeClaude(opts) {
     const started = Date.now();
     let child;
     try {
-      child = spawn(claudeBin, args, { cwd, env: { ...process.env, ...env } });
+      // Claude Code's own headless -p mode has an internal, undocumented
+      // background-task print-wait ceiling (~600s) that terminates the
+      // session mid-turn if it's still waiting on output from a background
+      // Bash task — confirmed live outside this harness, via a real /yolo run
+      // whose validator spawned a long-running background re-verification
+      // (IMPROVEMENT-BACKLOG.md's owner-dispatch-model entry). Disabled by
+      // default for every real invocation here; `env` (caller-supplied) still
+      // wins if a caller ever wants the default ceiling back.
+      const spawnEnv = { CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS: "0", ...process.env, ...env };
+      child = spawn(claudeBin, args, { cwd, env: spawnEnv });
     } catch (err) {
       reject(new ClaudeInvocationError(`failed to spawn "${claudeBin}": ${err.message}`, "spawn_failed"));
       return;

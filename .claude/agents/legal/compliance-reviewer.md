@@ -2,7 +2,7 @@
 name: compliance-reviewer
 description: Reviews legal/compliance drafts for completeness, source quality, and control coverage before validation. Dispatched by legal-lead.
 tools: Read, Grep, Glob, Write, Edit
-model: sonnet
+model: opus
 ---
 
 ## 1. Task context

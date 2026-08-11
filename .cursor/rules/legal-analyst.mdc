@@ -3,7 +3,7 @@ description: Legal/compliance worker. Drafts control statements, requirement cla
 alwaysApply: false
 ---
 
-**Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
+**Model (Cursor Task):** opus — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
 ## 1. Task context
 

@@ -47,6 +47,18 @@ function parseArgs(argv) {
   return out;
 }
 
+// Globs in spec.md's Ownership Boundaries lines are routinely markdown
+// code-span-wrapped (every other path reference in these files is, so this is
+// the natural, idiomatic choice, not malformed input) — e.g. `` `apps/api/src/**` ``.
+// Strip a wrapping backtick sequence before matching; minimatch() has no idea
+// backticks aren't part of the glob, so an uncleaned unit can never match a real
+// path and silently reports everything "unowned" (confirmed against a real
+// architect-produced spec.md — see IMPROVEMENT-BACKLOG.md's owner-dispatch-model
+// entry).
+function cleanGlobUnit(s) {
+  return s.trim().replace(/^`+/, "").replace(/`+$/, "").trim();
+}
+
 function ownershipFromSpec(specPath) {
   const text = readFileSync(specPath, "utf8");
   const owners = [];
@@ -57,21 +69,21 @@ function ownershipFromSpec(specPath) {
     owners.push({
       id: "backend",
       team: "engineering",
-      units: backend[1].split(/,\s*/).map((s) => s.trim()).filter(Boolean),
+      units: backend[1].split(/,\s*/).map(cleanGlobUnit).filter(Boolean),
     });
   }
   if (frontend) {
     owners.push({
       id: "frontend",
       team: "engineering",
-      units: frontend[1].split(/,\s*/).map((s) => s.trim()).filter(Boolean),
+      units: frontend[1].split(/,\s*/).map(cleanGlobUnit).filter(Boolean),
     });
   }
   if (data) {
     owners.push({
       id: "data",
       team: "engineering",
-      units: data[1].split(/,\s*/).map((s) => s.trim()).filter(Boolean),
+      units: data[1].split(/,\s*/).map(cleanGlobUnit).filter(Boolean),
     });
   }
   return { schema: "skailr.ownership/v1", owners };

@@ -2,7 +2,7 @@
 name: designer
 description: Design-team worker. Authors one owned artboard or asset set from an approved outline as a markdown design spec and eng handoff notes. Parallel designers, disjoint assets.
 tools: Read, Grep, Glob, Write, Edit
-model: sonnet
+model: opus
 ---
 
 ## 1. Task context
@@ -17,8 +17,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
-
-Produce a **concrete, implementable** design description — not vague vibes. Use approved copy as written (do not rewrite marketing/content). Stay on-system and clear craft (skill `apply-ux-quality`).
 
 ## 3. Background data, documents, and images
 

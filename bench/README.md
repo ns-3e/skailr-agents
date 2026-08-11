@@ -423,6 +423,25 @@ is **correct and runnable**, proven via **mock mode** + committed
 
 ## Known issues
 
+- **`claude -p` headless mode has an undocumented internal background-task
+  print-wait ceiling (`CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS`, ~600s) that can
+  terminate a session mid-turn if it's still waiting on output from a
+  background Bash task.** Found live, outside this harness — a `/yolo` dry run
+  whose `validator` spawned a long-running background re-verification got cut
+  off mid-Phase-6b with `Background tasks still running after 600s;
+  terminating.` printed to stdout and no further output (see
+  `IMPROVEMENT-BACKLOG.md`'s owner-dispatch-model entry for the full writeup).
+  **Checked whether this has already affected real campaign data: no** — zero
+  matches for that termination message across all real `stdout.log` files
+  under `bench-docker-out/results/` as of this writing, so treat this as a
+  preventive fix, not a confirmed-active regression in any published number on
+  this page. **Fixed** in `src/claude.mjs`: `invokeClaude()` now sets
+  `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0` by default on every real (non-mock)
+  spawn, overridable by an explicit caller-supplied `env`. Not yet verified by
+  a second live run that actually exercises the ceiling (would need real
+  spend); landed on code inspection + the mechanism this fixes being
+  independently reproduced once already.
+
 - **Skailr-arm prompts must carry an explicit slash command (`/yolo`,
   `/yolo-program`, `/patch`), never a plain-language ask.** A plain prompt
   relies on this repo's own `CLAUDE.md` intake-routing skill to self-route,

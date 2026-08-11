@@ -44,7 +44,7 @@ For each frontier `role: decide` ticket: claim, post `type: blocker` (or questio
 
 1. Load **board only** (low-res). Do not preload every ticket body.
 2. `node scripts/skailr/ticket-status.mjs --root <ARTIFACT_ROOT> --json` — use `parallel` (greedy frontier with disjoint same-role ownership).
-3. For each id in `parallel`: `node scripts/skailr/ticket-status.mjs claim --id <id> --root <ARTIFACT_ROOT>` **before** any Task.
+3. Claim every id in `parallel` **before** any Task, as **one `&&`-chained Bash call** covering the whole frontier batch, not one call per ticket — `node scripts/skailr/ticket-status.mjs claim --id <id1> --root <ARTIFACT_ROOT> && node scripts/skailr/ticket-status.mjs claim --id <id2> --root <ARTIFACT_ROOT> [&& …]`. A frontier of 2-3 tickets claimed as 2-3 separate top-level Bash calls is exactly the avoidable overhead `IMPROVEMENT-BACKLOG.md` L-11 measured. If `route-models`' per-dispatch model-usage append also fires for this same batch, append those lines to the same chain too.
 4. Dispatch claimed tickets **in one message as concurrent Tasks**, mapping role → agent:
 
 | role | Agent |
@@ -58,15 +58,27 @@ For each frontier `role: decide` ticket: claim, post `type: blocker` (or questio
 5. **Task context (paths only):** `ARTIFACT_ROOT=<root>` + ticket path + `spec.md` + board path. Story/research on demand. If a handoff exists at `handoff/<id>.md`, pass it as primary + ticket + spec.
 6. Prepend `route-models` Task prompt preamble. Instruct: implement only this ticket’s ACs + ownership globs; report to `$ARTIFACT_ROOT/tickets/<id>-report.md`; yield to `$ARTIFACT_ROOT/handoff/<id>.md` per `write-handoff-and-yield` (ticket id as slice key). Nested dispatch — also follow skill `emit-telemetry`: capture a `span-start` handle immediately before each worker Task and pass it verbatim to `span-end` after it resolves, with `--parent-span-id` = this board's own `span_id`, `--trace-id`/`--emitter-id` read from the run's `telemetry.json`, and `--agent-role`/`--agent-name` naming the worker (not the board). Derive `--status` from this step's own DONE/YIELD/failure/blocked handling.
 7. On `YIELD:` — keep ticket `claimed`, re-dispatch same role with handoff + ticket + spec. Cap **5** consecutive yields per ticket, then surface to human.
-8. On `DONE:` — read report; run:
+8. On `DONE:` — read report; run the resolve **and** the frontier recompute (step 9's
+   `ticket-status.mjs --json` read) **as one `&&`-chained Bash call**, not two — they
+   always run back to back for the same ticket:
 
 ```bash
-node scripts/skailr/ticket-status.mjs resolve --id <id> --gist "<one-line gist>" --root <ARTIFACT_ROOT>
+node scripts/skailr/ticket-status.mjs resolve --id <id> --gist "<one-line gist>" --root <ARTIFACT_ROOT> && node scripts/skailr/ticket-status.mjs --root <ARTIFACT_ROOT> --json
 ```
 
 Delete `handoff/<id>.md` if present. Workers already ran `cleanup-scoped.mjs purge` on their `DONE:` (own agent worktree caches only; no-op on shared checkout). Do **not** purge sibling worktrees or the main repo `target/`. Update progress **Tickets** table / Notes under `$ARTIFACT_ROOT/progress.md`.
-9. Recompute frontier. Graduate fog from board **Not yet specified** into new ticket files when a resolution made a question sharp (create file, then wire `blocked_by`, refresh board Tickets table). Rule mis-scoped tickets `out-of-scope` (update frontmatter + board **Out of scope**; do not add to **Done**). Ticket `blocked_by` may only reference tickets on **this** board — never feature IDs or other roots.
+9. Read the frontier from the chained call above (do not re-run it). Graduate fog from board **Not yet specified** into new ticket files when a resolution made a question sharp (create file, then wire `blocked_by`, refresh board Tickets table). Rule mis-scoped tickets `out-of-scope` (update frontmatter + board **Out of scope**; do not add to **Done**). Ticket `blocked_by` may only reference tickets on **this** board — never feature IDs or other roots.
 10. Repeat until `ticket-status` reports `complete: true`.
+
+## Contract-change fan-out
+
+Since `architect.md`'s spec is now seam-only (data model/API contract/ownership boundaries — not each owner's internal design), an owner discovering mid-build that the seam it was given is wrong or incomplete is a more consequential event than before: owners now design more independently, so misalignment surfaces later, during an owner's own build, not during one upfront architect pass that would have caught it earlier. When a `type: contract-change` targeting a seam section resolves (the channel router already re-dispatches whoever *posted* the blocker — this is the piece that's new): check every **other** role's tickets on this board:
+
+- `open` (unclaimed) → no action. It will read the corrected `spec.md` when claimed.
+- `claimed` and in-flight (not yet `DONE:`) → re-dispatch that ticket in a fresh Task with the corrected seam section appended to its context, same shape as a handoff re-dispatch.
+- already `done` → do **not** silently trust the stale report. Append a `progress.md` Note: `seam changed after <ticket-id> closed — flagged for e2e-verifier/validator`. This is what makes the later verification phases treat it as elevated risk instead of missing the drift entirely.
+
+Do this check as part of step 9's frontier recompute, immediately after the channel drain that resolved the contract-change — not deferred to board completion.
 
 ## Integration & budget discipline
 

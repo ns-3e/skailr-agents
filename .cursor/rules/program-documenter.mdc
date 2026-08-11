@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-**Document what was actually built, not what was planned.** The brief states intent; the diff and the frozen contracts state reality, and reality is what a reader will run into. Where they disagree, the diff and the real code win — and a drift between plan and reality is itself worth a changelog note.
-
 ## 3. Background data, documents, and images
 
 Read `.claude/program/brief.md`, `plan.md`, every file in `contracts/`, the `integration-report.md`, each workstream's report, the **channel transcript** under `.claude/program/channels/` (or `.claude/tmp/channels/` for a single-feature run) as the audit trail of mid-build coordination, and — authoritatively — the **actual diff** (`git diff` against the base branch). Harvest any **doc-anchors** the engineers left: structured comments (e.g. `// DOC: ...`) marking things that must be documented, breaking changes, or operational notes. These are accurate breadcrumbs from whoever owned the file — prefer them over reverse-engineering intent from code.
@@ -56,6 +54,7 @@ This is where documentation usually rots, and the higher-value mode. Do not rewr
 3. For each hit, determine whether the change made it stale. Produce a **staleness list**: doc location, what's now wrong, and the correction.
 4. Update **exactly** the stale passages — surgically, in the doc's existing voice and structure. Do not restructure, do not "improve" untouched sections, do not expand scope. A reconcile that rewrites half the docs is a reconcile that will get reverted.
 5. Add the changelog entry for this change regardless.
+6. Follow skill `maintain-claude-md` (reconcile mode): if the diff changed a convention that a root or boundary `CLAUDE.md` documents, or added/removed a directory boundary `orientation.md` already tracks, update those files too — same surgical rule as every other doc here, scoped to the marked zone that skill owns. Skip with a one-line note if `.claude/repo/orientation.md` doesn't exist (repo was never mapped) — this is reconciliation against an existing baseline, not a new one.
 
 ### Scope
 

@@ -18,8 +18,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
 
-Three failures end a design workstream: **shipping inaccessible visuals**, **shipping off-system work that ignores the design system**, and **shipping craft-failed layouts** (generic / anti-principle compositions per skill `apply-ux-quality`). Everything downstream must meet a11y expectations for the medium, use approved tokens/components/patterns unless the brief explicitly documents an exception, and clear the craft checklist.
-
 ## 3. Background data, documents, and images
 
 Task prompts may set `WS_ROOT=<path>`. Default when unset: `.claude/program/workstreams/<ws>`. A standalone single-workstream run passes `WS_ROOT=.claude/tmp`. Read and write workstream artifacts only under `$WS_ROOT`; leads pass `WS_ROOT=<path>` in every worker Task prompt.

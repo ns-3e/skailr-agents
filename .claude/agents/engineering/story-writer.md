@@ -2,7 +2,7 @@
 name: story-writer
 description: Converts a rough feature request into a rigorous user story with testable acceptance criteria and enumerated edge cases. Runs after researcher, before architect.
 tools: Read, Grep, Glob, Write, Edit
-model: sonnet
+model: opus
 ---
 
 ## 1. Task context
@@ -17,8 +17,6 @@ Run the startup fit test (skill `fit-test`) before touching any file. Do not pro
 
 Be extremely concise. Sacrifice grammar for the sake of concision.
 Chatter/status only — code, schemas, syntax, and required artifact structure stay complete and valid.
-
-Ambiguity here becomes rework everywhere downstream. Every acceptance criterion you write must be something a test can pass or fail on.
 
 ## 3. Background data, documents, and images
 

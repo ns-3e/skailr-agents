@@ -10,6 +10,170 @@ cell) and run-to-run variance is large — in some cases larger than the
 differences being compared. Treat every "delta" on this page as a lead
 worth investigating, not a settled result. See [Caveats](#caveats).
 
+## 2026-08-10 update: L-11 verification campaign — inconclusive on cost, no regression found, one grader false-negative traced to ground
+
+A third real campaign, same task set/shape, run against a fresh dangling ref
+(2.0.0 + `IMPROVEMENT-BACKLOG.md` L-11a/L-11b: the `agents_spawned` counting fix and
+the orchestrator-bookkeeping `&&`-chaining fix) to check whether L-11b's chaining
+actually reduced cost on `feature-api-keys`/`program-rbac`, the two tasks where the
+prior campaign found 21-37% of tool calls were unchained orchestrator bookkeeping.
+Total real spend: $35.42.
+
+| | `patch-webhook` | `feature-api-keys` | `program-rbac` |
+| --- | --- | --- | --- |
+| Vanilla | ✅ 95.0 / $0.56 / 196s / 25 tc | ✅ 94.0 / $0.97 / 357s / 40 tc | ❌→✅* 94.25 / $1.93 / 647s / 59 tc |
+| Skailr 2.0.0+L-11 | ✅ 95.0 / $0.51 / 173s / 36 tc, 0 agents | ❌† 79.17 / $15.29 / 4159s / 395 tc, 12 agents | ❌→✅* 95.0 / $17.34 / 4546s / 498 tc, 11 agents |
+| vs. 2.0.0 (prior real campaign, skailr arm) | $0.57→$0.51 (−11%), 235s→173s (−26%), 22→36 tc (+64%) | $8.40→$15.29 (+82%), 2542s→4159s (+64%), 314→395 tc (+26%), 8→12 agents (+50%) | $14.97→$17.34 (+16%), 3738s→4546s (+22%), 495→498 tc (+1%) |
+
+\* `program-rbac` re-graded with the fixed grader (PR #14, still unmerged) — both
+arms flip `false→true`. **Fourth consecutive real campaign where this happens to
+both arms**; treat as a confirmed, standing grader bug on this task, unrelated to
+Skailr.
+
+† See below — traced to ground, this is very likely a grading false-negative on a
+correctly-built, more security-hardened implementation, not a real product defect.
+Not re-graded (out of this pass's scope — the fix lives in a grading fixture, same
+category as the `program-rbac` bug above, and wasn't touched here).
+
+**Headline: this campaign does not confirm L-11b reduced cost, but it also finds no
+evidence L-11 caused any regression.** `feature-api-keys` got *more* expensive and
+slower, the opposite of the hoped-for direction — investigated directly against the
+real transcript rather than accepted or dismissed from the summary numbers:
+
+- **The cost/dispatch increase is real added work, not waste.** Real dispatch count
+  (transcript-traced) rose from 8 to 12. This is fully accounted for by
+  `auth-security-expert` minting for the first time on this task in any real
+  campaign — 3 extra dispatches (expert co-author on the story, story re-integration,
+  expert co-author on the spec) plus a 3rd backend-engineer ticket (a dedicated
+  security-E2E-tests ticket that didn't exist in the prior two campaigns' 2-ticket
+  boards). None of this is orchestrator bookkeeping; L-11b's fix doesn't target it.
+  This is not an apples-to-apples comparison to the prior campaign — this run did
+  objectively more, and more rigorous, work.
+- **The `solved: false` verdict traces to two grader convention mismatches, not a
+  product bug.** `critical_failures: ["revoked-keys-rejected"]`, but
+  `termination_reason: "finish"` (no crash/timeout) and Skailr's own internal
+  `validation-report.md` verdict was **SHIP**, zero blocking findings, all 28 ACs
+  passed with real, independently-reproduced test citations — including both ACs
+  covering revocation. Reading the real shipped code and the real spec resolves the
+  contradiction:
+  - The grader's `discoverRevoke()` guesses six conventional request shapes for the
+    revoke call; none match this run's real, spec-decided contract (`POST
+    /api-keys/revoke` with `{"keyId": "<id>"}` in the body — `spec.md`'s own
+    "DECISION-1", Adopted). The closest guess sends `{"id": "<id>"}`, which the
+    shipped handler correctly rejects with 400 (missing `keyId`) rather than 2xx, so
+    the prober never finds the real endpoint and marks the critical check failed.
+  - A second failing check, `hf-authenticate-with-api-key`, assumes an API key
+    authenticates the same `GET /api-keys` list endpoint it was created from. This
+    run's `spec.md` explicitly and deliberately names `POST /org/audit-events` as the
+    **only** API-key-authenticated surface — a recorded amendment driven by
+    `auth-security-expert` ("spec names exactly one... without which
+    AC-1/AC-15/AC-16/AC-17 are untestable"), matching the shipped code's own header
+    comment ("No endpoint accepts both credential types"). That's a *stricter*,
+    smaller-blast-radius credential scope than the grader assumes — a design choice,
+    not a defect.
+
+  Both failures are the grading harness's implicit conventions failing to anticipate
+  a correctly spec-conformant, more security-hardened design — first exposed this
+  campaign because it's the first time `auth-security-expert`'s scoping amendment
+  landed in this task's spec. Full trace: `IMPROVEMENT-BACKLOG.md` L-12a. Not
+  silently re-graded or waved off — recorded as a harness gap needing its own fix,
+  same policy as the `program-rbac` grader bug.
+- **`patch-webhook` remains a clean win** — solved/quality tied at 95 on both arms,
+  skailr cheaper (−11%) and faster (−26%) than the prior campaign despite more tool
+  calls (22→36, from more granular edits plus a Skill invocation and artifact
+  writes — a healthy composition, not waste; see raw run index).
+- **No evidence L-11a or L-11b caused any regression.** One `&&`-chain in this
+  campaign's `feature-api-keys` run did fail mid-chain and silently skip a trailing
+  `render progress` call (visible as `docs: pending` in the artifact despite a clean
+  finish) — traced to an agent-invented `db.mjs feature set-status` subcommand that
+  does not exist and that no Skailr instruction (including L-11b's own edits) ever
+  tells an agent to call. Cosmetic only (didn't affect grading or real DB state) but
+  a real, generic fragility of the `&&`-chaining pattern this pass extended — logged
+  as `IMPROVEMENT-BACKLOG.md` L-12c, not caused by L-11b specifically.
+- **Two independent minor findings surfaced along the way**, both logged in
+  `IMPROVEMENT-BACKLOG.md` (L-12b, L-12d) rather than acted on in this pass: a
+  first-time expert-mint schema-validation retry, and the honest bottom line that
+  this campaign neither confirms nor contradicts L-11b's cost hypothesis — a cleaner
+  re-run (same tasks, no new expert mint) would be needed to isolate that fix's own
+  effect in isolation.
+
+## 2026-08-10 update: 2.0.0 real campaign — real, measured improvement on the multi-agent path
+
+2.0.0 is the owner-dispatch model (`IMPROVEMENT-BACKLOG.md` L-10) plus the lean-path
+generalization (L-8), hierarchical `CLAUDE.md` maintenance (L-9), a 27-file boilerplate
+dedup, and two bugs found and fixed via a live dry run (`check-ownership.mjs`'s
+backtick-parsing bug; `bench/`'s own undocumented `claude -p` background-task ceiling —
+see `CHANGELOG.md`'s 2.0.0 entry for the full list). Real campaign, same task set, same
+"smoke" shape (all 3 tasks × both arms × 1 rep) as every prior campaign on this page,
+run against a git ref built from the exact working tree that shipped as 2.0.0 (not a
+tagged commit — see [Caveats](#caveats) for what that means for reproducibility).
+Total real spend: $27.16.
+
+| | `patch-webhook` | `feature-api-keys` | `program-rbac` |
+| --- | --- | --- | --- |
+| Vanilla | ✅ 95.0 / $0.83 / 286s / 36 tc | ✅ 94.0 / $0.97 / 343s / 47 tc | ❌→✅* 94.25 / $1.42 / 475s / 49 tc |
+| Skailr 2.0.0 | ✅ 95.0 / $0.57 / 235s / 22 tc, 0 agents† | ✅ 92.5 / $8.40 / 2542s / 314 tc, 8 agents† | ❌→✅* 95.0 / $14.97 / 3738s / 495 tc, 10 agents† |
+| vs. 1.15.0+L8+L9 (last real campaign, skailr arm) | $0.66→$0.57 (−14%), 258s→235s (−9%), 36→22 tc (−39%) | $13.95→$8.40 (−40%), 3925s→2542s (−35%), 435→314 tc (−28%), 8→8 agents† (no change) | $15.11→$14.97 (−1%), 4315s→3738s (−13%), 567→495 tc (−13%) |
+
+† Agent counts are **corrected** from real transcript tracing, not the harness's own
+`agents_spawned` field (found broken this release — see the note below the table).
+
+\* `program-rbac` scores shown are **re-graded with the fixed grader** (`IMPROVEMENT-BACKLOG.md`
+L-10 / Unit 2's diagnosis, PR #14, still unmerged) — both arms' original grader output
+said `solved: false` on the same two critical requirements as every prior run; re-run
+through the corrected grader both flip to `solved: true`, zero critical failures. This is
+the fourth time in a row this re-grade has been checked (both prior campaign runs plus
+these two) and it flips clean every time. Raw (un-regraded) numbers are in the raw run
+index below for the record.
+
+**Headline reads:**
+
+- **`patch-webhook` is now a clean, outright win** — cheaper, faster, and tied on
+  quality, via the inline-fix carve-out (`agents_spawned: 0`). Consistent with the
+  1.15.0 result; the win held.
+- **`feature-api-keys` improved substantially on the skailr arm without a quality
+  cost** — cost down 40%, wall time down 35%, tool calls down 28% vs. the immediately
+  prior real campaign, quality essentially flat (92.5 vs. 91.5, within this page's own
+  noise band). Vanilla still wins outright on cost/time here by a wide margin (this
+  task is cross-cutting + sensitive-surface, so it never qualifies for the lean path,
+  and L-10's Increment 2 — broadening lean-path eligibility further — is deliberately
+  not part of this release).
+- **Correction (this page originally reported "agent count dropped from 4 to 2... plausibly an
+  L-10 effect" here — that number was wrong, not just unconfirmed.**
+  `skailr_diagnostics.agents_spawned` turned out to be a broken metric: it never counted
+  real dispatches, only regex-matched artifact text (mostly ticket-frontmatter `role:`
+  lines). Re-derived directly from the real session transcript
+  (`events.jsonl`): **`feature-api-keys` actually spawned 8 subagents this campaign,
+  same as the prior one** — researcher, story-writer, architect, backend-engineer×2,
+  e2e-verifier, validator, program-documenter. L-10 doesn't touch dispatch count (that's
+  Increment 2, still deferred), so no drop happened at all; the metric was just wrong.
+  **The real driver of this campaign's improvement, found by tracing the same
+  transcript: the orchestrator's own bookkeeping Bash calls (ticket claim/resolve,
+  model-usage logging, phase-completion tracking) were firing as separate top-level
+  Bash calls instead of being chained — 115 of 314 total tool calls on this run (37%)
+  were the orchestrator itself, more than any single subagent dispatch.** Fixed this
+  campaign's *code paths* going forward (`run-ticket-board`, `track-phase` skills now
+  chain these calls, matching the pattern `yolo.md` already used successfully in two
+  other spots) but this specific campaign predates that fix — the improvement above is
+  real but came from L-10's thinner spec/engineer-autonomy design, not from the
+  bookkeeping fix, which lands in this same 2.0.0 release without yet being
+  re-benchmarked. See `IMPROVEMENT-BACKLOG.md` L-11 for the full trace.
+- **`program-rbac` improved modestly** (cost/time/tool-calls each down ~13% on the
+  skailr arm) but remains **the most expensive gap on this page** — skailr still costs
+  roughly 10x vanilla for what, once correctly graded, is now the *same* successful
+  outcome. Real dispatch count here (same transcript-tracing method) is 10, not the
+  reported 7. Unlike `feature-api-keys`, **most of this run's cost is real work
+  volume, not orchestration waste**: the 5 build-tier dispatches (one per workstream)
+  account for 52% of all tool calls, the closing verify/validate/docs trio another 21%
+  — only 21% is orchestrator overhead, and roughly a third of *that* is the same
+  bookkeeping-batching issue L-11 fixes. A 5-workstream program legitimately needs 5
+  separate build dispatches; this page shouldn't keep implying the whole gap is
+  fixable overhead when the evidence now says most of it isn't.
+- **Vanilla solved all three tasks this campaign**, including the two
+  (`patch-webhook`, `feature-api-keys`) it failed in the immediately prior real
+  campaign — supporting this page's standing read that those failures were run-to-run
+  noise, not a trend, rather than anything about Skailr's own behavior.
+
 ## 2026-08-09 update: v1.15.0 re-benchmarked — mixed, not a clean win
 
 Everything below this note through "Skailr 1.14.0 real campaigns: what we found" is
@@ -505,6 +669,22 @@ no sound fix identified) and remains the thing to watch.
 
 ## Caveats
 
+- **The 2.0.0 campaign's `skailr_sha` is not a tagged, pushed commit.** It's a
+  `git stash create` dangling object over the exact working tree that shipped as
+  2.0.0 at benchmark time — chosen deliberately to measure the real, current pack
+  state without committing or merging anything (see `IMPROVEMENT-BACKLOG.md`'s
+  owner-dispatch-model entry for why). It resolves via `git cat-file`/`git archive`
+  from this local clone's object database, same mechanism a tag would use, but it is
+  **not reachable from any branch and will be garbage-collected** on a routine `git
+  gc` unless something references it — so this exact ref cannot be re-resolved from
+  a fresh clone or after local gc, only the numbers recorded here survive. Re-running
+  this exact comparison later needs a real tagged `v2.0.0` commit, not this sha.
+- **`program-rbac`'s 2.0.0 scores are re-graded**, same as the 1.15.0 campaign's —
+  the original (un-fixed) grader output for both arms is preserved in each run's
+  `grader.json`; the corrected numbers used in the headline table come from
+  `grader.v2.json`, produced by re-running `bench/graders/program-rbac`'s fixed
+  version (`IMPROVEMENT-BACKLOG.md` L-10 / PR #14, still unmerged) against the same
+  frozen workspace snapshot — zero additional spend, no agent re-invocation.
 - **n is small everywhere.** Program-rbac's pre-1.14.0 cost range ($2.79–$7.87)
   and feature-api-keys' quality range (30–95) are both wider than most of the
   deltas on this page. Don't treat single-digit percentage differences as
@@ -660,3 +840,77 @@ from the harness default of 100 to clear this campaign's $230 worst-case ceiling
 `program-rbac`'s and `feature-api-keys`' per-task `max_budget_usd` overrides of $50
 each, × 2 arms, dominate that ceiling; actual spend landed far below it, consistent
 with every prior campaign on this page).
+
+**Skailr 1.15.0+L8+L9 real campaign** (pre-2.0.0 checkpoint — L-8 lean-path
+proportionality and L-9 hierarchical `CLAUDE.md`, landed but not yet re-benchmarked
+at the time; `program-rbac` re-graded, same method as above):
+
+| Task | Arm | run_id | skailr_sha | solved | quality | cost (reported) | wall (s) | tool calls | critical failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| feature-api-keys | baseline | `feature-api-keys_baseline_rep0_1e10b043e8` | n/a | false | 88.55 | $1.0505 | 408.8 | 44 | none (hidden-test miss) |
+| feature-api-keys | skailr | `feature-api-keys_skailr_rep0_c7b7952e93` | `aa8e435c` | true | 91.50 | $13.9535 | 3925.2 | 435 | — |
+| patch-webhook | baseline | `patch-webhook_baseline_rep0_95a4cc647a` | n/a | false | 80.00 | $0.4758 | 148.0 | 23 | `exactly-once-processing` |
+| patch-webhook | skailr | `patch-webhook_skailr_rep0_1875a563bf` | `aa8e435c` | true | 95.00 | $0.6554 | 258.1 | 36 | — |
+| program-rbac | baseline | `program-rbac_baseline_rep0_15cd20f60e` | n/a | true* | 94.25* | $1.6118 | 533.9 | 60 | none* (orig: `invitation-single-use`, `audit-events-emitted`) |
+| program-rbac | skailr | `program-rbac_skailr_rep0_5a19b05d2b` | `aa8e435c` | true* | 95.00* | $15.1085 | 4314.7 | 567 | none* (orig: same two) |
+
+\* re-graded, see [Caveats](#caveats). `aa8e435c` = `aa8e435c705e664ebd43a096ac9da75933e05d16`,
+a dangling `git stash create` ref, not a tagged commit (see Caveats — this exact sha is
+not expected to survive a `git gc`). Both vanilla-arm failures on `patch-webhook` and
+`feature-api-keys` in this campaign are why this page's running read leaned toward
+"run-to-run noise, not a trend" — confirmed by the 2.0.0 campaign below, where vanilla
+solved both again.
+
+**Skailr 2.0.0 real campaign** (`docs/BENCHMARKS.md` 2026-08-10 update above has the
+narrative; raw rows here):
+
+| Task | Arm | run_id | skailr_sha | solved | quality | cost (reported) | wall (s) | tool calls | agents† | critical failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| feature-api-keys | baseline | `feature-api-keys_baseline_rep0_28b35b941b` | n/a | true | 94.00 | $0.9746 | 343.0 | 47 | — | — |
+| feature-api-keys | skailr | `feature-api-keys_skailr_rep0_f058923bee` | `7d2173f5` | true | 92.50 | $8.3997 | 2542.3 | 314 | 8 | — |
+| patch-webhook | baseline | `patch-webhook_baseline_rep0_b022fd7b87` | n/a | true | 95.00 | $0.8290 | 286.0 | 36 | — | — |
+| patch-webhook | skailr | `patch-webhook_skailr_rep0_d2b533e396` | `7d2173f5` | true | 95.00 | $0.5670 | 235.0 | 22 | 0 | — |
+| program-rbac | baseline | `program-rbac_baseline_rep0_3d8eba0872` | n/a | true* | 94.25* | $1.4223 | 475.4 | 49 | — | none* (orig: `invitation-single-use`, `audit-events-emitted`) |
+| program-rbac | skailr | `program-rbac_skailr_rep0_34c73b0977` | `7d2173f5` | true* | 95.00* | $14.9652 | 3737.9 | 495 | 10 | none* (orig: same two) |
+
+† `agents` here is the **corrected** count (real `Agent`-tool dispatches counted
+directly from each run's `events.jsonl`), not the harness's own `skailr_diagnostics.agents_spawned`
+field, which this release found to be broken (reported 2 and 7 respectively for these
+same two runs — see the note above and `IMPROVEMENT-BACKLOG.md` L-11).
+
+\* re-graded, see [Caveats](#caveats). `7d2173f5` = `7d2173f5285f4966a7b303a2c90981cb529b4ff2`,
+also a dangling `git stash create` ref (the exact 2.0.0 working tree at benchmark time —
+see Caveats for what that means for re-resolving this exact comparison later). Total real
+spend across all 6 runs: $27.16, well under the `--max-campaign-usd 250` guard.
+
+**Skailr 2.0.0+L-11 real campaign** (`docs/BENCHMARKS.md` 2026-08-10 "L-11
+verification campaign" update above has the narrative; raw rows here):
+
+| Task | Arm | run_id | skailr_sha | solved | quality | cost (reported) | wall (s) | tool calls | agents | critical failures |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| feature-api-keys | baseline | `feature-api-keys_baseline_rep0_5ee150b50a` | n/a | true | 94.00 | $0.9663 | 356.6 | 40 | — | — |
+| feature-api-keys | skailr | `feature-api-keys_skailr_rep0_11bbbbb09c` | `51dcd50d` | false‡ | 79.17 | $15.2877 | 4159.3 | 395 | 12 | `revoked-keys-rejected` |
+| patch-webhook | baseline | `patch-webhook_baseline_rep0_d3083e6640` | n/a | true | 95.00 | $0.5556 | 196.4 | 25 | — | — |
+| patch-webhook | skailr | `patch-webhook_skailr_rep0_1875a563bf` | `51dcd50d` | true | 95.00 | $0.5113 | 172.9 | 36 | 0 | — |
+| program-rbac | baseline | `program-rbac_baseline_rep0_0ff5f937b0` | n/a | true* | 94.25* | $1.9300 | 647.3 | 59 | — | none* |
+| program-rbac | skailr | `program-rbac_skailr_rep0_984ff79335` | `51dcd50d` | true* | 95.00* | $17.3407 | 4546.3 | 498 | 11 | none* |
+
+‡ See the narrative above and `IMPROVEMENT-BACKLOG.md` L-12a — traced directly to two
+grader convention mismatches (a request-body field-name guess, and an assumed
+API-key-auth endpoint) against a correctly spec-conformant, more security-hardened
+implementation, not a real product defect. Not re-graded; out of this pass's scope.
+
+\* re-graded, see [Caveats](#caveats) — fourth consecutive campaign this exact flip
+has held for `program-rbac`, both arms. `agents` here is the real, transcript-traced
+dispatch count (same method as the 2.0.0 table above), not
+`skailr_diagnostics.agents_spawned` (which L-11a already fixed going forward — this
+campaign's own numbers use the corrected counter).
+
+`51dcd50d` = `51dcd50d295affa5f8ac8acf753c6378597741c3`, a dangling `git stash create`
+ref (2.0.0 + L-11a/L-11b working tree at benchmark time — see Caveats). Total real
+spend across all 6 runs: $35.42, well under the `--max-campaign-usd 250` guard. Every
+row above was confirmed directly against its own `run.json` before publishing — the
+results directory holds multiple stale entries per task/arm from earlier campaigns
+and mock sanity checks (same pre-existing pollution issue noted in Caveats), and one
+stale mock-mode `patch-webhook` baseline artifact was caught and discarded mid-trace
+before it could be mistaken for this campaign's real data.

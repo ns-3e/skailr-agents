@@ -19,7 +19,7 @@ Pack maintainers run `./scripts/remirror.sh` after applying a profile. Installed
 
 | Profile | Intent |
 | ------- | ------ |
-| `balanced` | Worker roles that execute against an Opus-authored spec — research/story **and** the backend/frontend engineers, plus `content-writer`, `designer`, `fin-modeler` — on Sonnet; architect, leads, planners (`pm-planner`, `channel-planner`), verifiers, and validators on Opus. `data-engineer` stays Opus (schema reasoning often lacks a full upstream spec) |
+| `balanced` | Opus by default for every role, including workers (backend/frontend engineers, researcher, story-writer, and the rest of the individual-contributor roles) — the escalation logs on real campaigns showed retries after a validator/e2e failure almost never actually bumped tier in practice, so the floor moved up instead of relying on escalation to catch it. The three roles that own a program's or portfolio's high-level plan (`architect`, `program-architect`, `portfolio-architect`) route to **Fable** instead, when available, as the dedicated planning/design model. `status-reporter` is the one deliberate exception, staying on Sonnet — a pure digest-compile role with no judgment calls, matching the `quality` profile's own precedent |
 | `economy` | Digests (`status-reporter`, `risk-analyst`) and templated workers (`legal-analyst`; planners drop to Haiku in this profile only) → Haiku; writers/docs → Sonnet; engineers and hard-judgment roles stay Opus |
 | `quality` | Almost everything Opus; only `status-reporter` stays Sonnet |
 
@@ -49,6 +49,10 @@ Before every subagent Task, orchestrators (skill `route-models`):
 2. **Downgrade** one tier for thin channel answers / pure digests (never below Haiku; never for `protected` roles).
 3. **Escalate once** on quality-gate retry (thin research, ownership overlap, failed e2e, DO NOT SHIP / SHIP WITH FIXES).
 4. **Log** one line to `.claude/tmp/model-usage.md` (feature) or `.claude/program/model-usage.md` (program).
+
+**Note on escalation headroom in `balanced`:** most roles in this profile now start at Opus, the top of the `escalation` ladder (`haiku` → `sonnet` → `opus`) — a retry has nowhere left to escalate to, which is intentional (the role already gets the strongest tier on the ladder from its first dispatch, not just after a failure). Real campaign logs before this change showed step 3 rarely fired in practice even when it should have (a caught security bug's fix dispatch stayed on the same tier that produced it) — moving the floor up removes the dependency on that step actually triggering for these roles.
+
+**High-level planning roles route to Fable, not the tier ladder.** `architect` (feature seam), `program-architect` (program decomposition/contracts), and `portfolio-architect` (portfolio decomposition) are mapped directly to `"fable"` in `model-routing.json`'s `balanced` profile, the same way any other role maps to `"opus"` or `"sonnet"` — there is no separate indirection key and no automatic fallback wired into `apply-model-routing.mjs`. If Fable turns out to be unavailable in a given account/environment, the dispatch will fail rather than silently downgrade; a maintainer switches that role back to `"opus"` in the config (and re-runs `apply-model-routing.mjs`) the same way any other role's tier gets changed. Not yet verified end-to-end against a real Claude Code subagent Task dispatch — confirmed only that the installed CLI (`claude --help`) lists `fable` as a recognized `--model` alias.
 
 YOLO commands honor the active profile and escalate-on-retry like everything else.
 

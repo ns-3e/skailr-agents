@@ -11,7 +11,9 @@ Usage: ./install.sh <target-project-path> [--claude-only|--cursor-only]
 Copies the packaged agent library into a project:
   .claude/agents/  .claude/commands/  .claude/teams/  .claude/skills/
   .claude/program/schemas/  .claude/settings.json  .claude/settings.skailr.json  .claude/intake.md
-  CLAUDE.md (plain-chat intake for Claude Code)
+  CLAUDE.md (plain-chat intake for Claude Code — only the marked intake zone is
+    kept in sync; a project-owned conventions zone, if /map-repo has written one,
+    survives every install/upgrade untouched)
   scripts/skailr/  scripts/hooks/
   .cursor/rules/   .cursor/commands/
   Creates .claude/tmp/, .claude/program/, .claude/repo/, and .skailr/
@@ -64,6 +66,57 @@ install_scripts() {
   if [[ -f "$SCRIPT_DIR/scripts/hooks/pre-commit.sample" ]]; then
     cp "$SCRIPT_DIR/scripts/hooks/pre-commit.sample" "$TARGET/scripts/hooks/"
     echo "  + scripts/hooks/pre-commit.sample"
+  fi
+}
+
+# CLAUDE.md has two independently-owned zones (full contract: skill
+# maintain-claude-md) — a Skailr-owned intake block, kept in sync on every
+# install/upgrade exactly as CLAUDE.md always has been, and a project-owned
+# conventions block written later by /map-repo (never by this installer) that
+# must survive an upgrade untouched. Same class of problem settings.skailr.json
+# and .claude/experts/ already solve for their own files — a blind overwrite
+# here would silently destroy accumulated project knowledge on the next
+# install.sh run. Portable POSIX sed/awk only; no node/python dependency in the
+# installer itself (see IMPROVEMENT-BACKLOG.md B-5 for why that's off the table).
+install_claude_md() {
+  local pack="$SCRIPT_DIR/CLAUDE.md" target="$TARGET/CLAUDE.md"
+  [[ -f "$pack" ]] || return 0
+
+  if [[ ! -f "$target" ]]; then
+    cp "$pack" "$target"
+    echo "  + CLAUDE.md"
+    return 0
+  fi
+
+  if grep -q '<!-- skailr:intake:start -->' "$target" 2>/dev/null \
+     && grep -q '<!-- skailr:intake:end -->' "$target" 2>/dev/null; then
+    local pack_block tmp
+    pack_block="$(mktemp)"
+    tmp="$(mktemp)"
+    sed -n '/<!-- skailr:intake:start -->/,/<!-- skailr:intake:end -->/p' "$pack" > "$pack_block"
+    awk -v blockfile="$pack_block" '
+      /<!-- skailr:intake:start -->/ {
+        while ((getline bline < blockfile) > 0) print bline
+        close(blockfile)
+        skipping = 1
+        next
+      }
+      skipping && /<!-- skailr:intake:end -->/ { skipping = 0; next }
+      skipping { next }
+      { print }
+    ' "$target" > "$tmp"
+    mv "$tmp" "$target"
+    rm -f "$pack_block"
+    echo "  = CLAUDE.md (intake zone refreshed; project conventions preserved)"
+  else
+    # No (complete) Skailr zone yet — first install over a human's own CLAUDE.md,
+    # or an upgrade from before this marker existed. Append rather than guess at
+    # or destroy unknown existing content.
+    local tmp
+    tmp="$(mktemp)"
+    { cat "$target"; echo; echo; cat "$pack"; } > "$tmp"
+    mv "$tmp" "$target"
+    echo "  = CLAUDE.md (intake block appended; existing content preserved)"
   fi
 }
 
@@ -145,10 +198,7 @@ install_claude() {
     echo "  + .claude/intake.md"
   fi
 
-  if [[ -f "$SCRIPT_DIR/CLAUDE.md" ]]; then
-    cp "$SCRIPT_DIR/CLAUDE.md" "$TARGET/CLAUDE.md"
-    echo "  + CLAUDE.md"
-  fi
+  install_claude_md
 
   [[ -f "$TARGET/.claude/tmp/.gitkeep" ]] || touch "$TARGET/.claude/tmp/.gitkeep"
   [[ -f "$TARGET/.claude/program/.gitkeep" ]] || touch "$TARGET/.claude/program/.gitkeep"

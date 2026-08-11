@@ -37,6 +37,49 @@ function Install-Scripts {
     }
 }
 
+# CLAUDE.md has two independently-owned zones (full contract: skill
+# maintain-claude-md) — a Skailr-owned intake block, kept in sync on every
+# install/upgrade exactly as CLAUDE.md always has been, and a project-owned
+# conventions block written later by /map-repo (never by this installer) that
+# must survive an upgrade untouched. Same class of problem settings.skailr.json
+# already solves for its own file — a blind overwrite here would silently
+# destroy accumulated project knowledge on the next install.ps1 run.
+function Install-ClaudeMd {
+    $pack = Join-Path $ScriptDir "CLAUDE.md"
+    $target = "$Target\CLAUDE.md"
+    if (-not (Test-Path $pack)) { return }
+
+    if (-not (Test-Path $target)) {
+        Copy-Item $pack $target -Force
+        Write-Host "  + CLAUDE.md"
+        return
+    }
+
+    $startMarker = "<!-- skailr:intake:start -->"
+    $endMarker = "<!-- skailr:intake:end -->"
+    $blockPattern = [regex]::Escape($startMarker) + "(?s).*?" + [regex]::Escape($endMarker)
+
+    $packText = Get-Content $pack -Raw
+    $targetText = Get-Content $target -Raw
+    $packBlockMatch = [regex]::Match($packText, $blockPattern)
+    $targetBlockMatch = [regex]::Match($targetText, $blockPattern)
+
+    if ($packBlockMatch.Success -and $targetBlockMatch.Success) {
+        $newText = $targetText.Substring(0, $targetBlockMatch.Index) `
+            + $packBlockMatch.Value `
+            + $targetText.Substring($targetBlockMatch.Index + $targetBlockMatch.Length)
+        Set-Content -Path $target -Value $newText -NoNewline
+        Write-Host "  = CLAUDE.md (intake zone refreshed; project conventions preserved)"
+    } else {
+        # No (complete) Skailr zone yet — first install over a human's own CLAUDE.md,
+        # or an upgrade from before this marker existed. Append rather than guess at
+        # or destroy unknown existing content.
+        $newText = $targetText.TrimEnd() + "`r`n`r`n" + $packText
+        Set-Content -Path $target -Value $newText -NoNewline
+        Write-Host "  = CLAUDE.md (intake block appended; existing content preserved)"
+    }
+}
+
 function Install-Claude {
     $dirs = @(
         "$Target\.claude\agents",
@@ -111,11 +154,7 @@ function Install-Claude {
         Write-Host "  + .claude/intake.md"
     }
 
-    $claudeMd = Join-Path $ScriptDir "CLAUDE.md"
-    if (Test-Path $claudeMd) {
-        Copy-Item $claudeMd "$Target\CLAUDE.md" -Force
-        Write-Host "  + CLAUDE.md"
-    }
+    Install-ClaudeMd
 
     foreach ($keep in @("$Target\.claude\tmp\.gitkeep", "$Target\.claude\program\.gitkeep", "$Target\.claude\repo\.gitkeep")) {
         if (-not (Test-Path $keep)) { New-Item -ItemType File -Path $keep -Force | Out-Null }

@@ -3,7 +3,7 @@ description: Read-only codebase cartographer. Maps existing patterns, prior art,
 alwaysApply: false
 ---
 
-**Model (Cursor Task):** sonnet — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
+**Model (Cursor Task):** opus — pass this as the Task model when dispatching this role. See `.cursor/model-routing.md` and skill `route-models`.
 
 <!-- Cursor limitation: Claude Code tools are [Read, Grep, Glob, Write, Edit]. Cursor rules cannot enforce tool allowlists; honor the restriction in prose below. -->
 
