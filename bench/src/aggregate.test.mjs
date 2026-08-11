@@ -26,7 +26,7 @@ function tok(n) {
   return { input: n, output: n, cache_read: 0, cache_create: 0 };
 }
 
-function makeRun({ task_id, arm, rep, solved, quality_score, cost, wall_clock_s = 100, tokens = 1000 }) {
+function makeRun({ task_id, arm, rep, solved, quality_score, cost, wall_clock_s = 100, tokens = 1000, campaign_id }) {
   const tokens_obj = tok(tokens);
   return {
     identity: {
@@ -39,6 +39,7 @@ function makeRun({ task_id, arm, rep, solved, quality_score, cost, wall_clock_s 
       skailr_version: arm === "skailr" ? "1.11.0" : null,
       fixture_sha: "fixsha",
       timestamp: "2026-08-07T00:00:00Z",
+      ...(campaign_id ? { campaign_id } : {}),
     },
     environment: { claude_code_version: "2.1.224", model_id: "claude-sonnet-4-5-20250929", os: "linux", container: null, node_version: "22.22.2" },
     outcome: {
@@ -184,4 +185,86 @@ test("getCachedAggregate: recomputes when run count changes (cache invalidation)
   writeCampaign(dir, [makeRun({ task_id: "t", arm: "baseline", rep: 1, solved: true, quality_score: 80, cost: 1 })]);
   const second = getCachedAggregate(dir);
   assert.equal(second.n_runs, 2);
+});
+
+// ---------------------------------------------------------------------------
+// campaign_id scoping (README "Known issues": results/ is one flat namespace
+// shared by every invocation ever made — mock or real, from any commit —
+// and series_id can't disambiguate two campaigns sharing the same Claude
+// Code version + model, since it's a pure hash of those two inputs, not a
+// per-invocation token. Reproduces the exact observed failure: a campaign's
+// own generated aggregate/report silently including foreign runs left over
+// from an earlier invocation in the same results dir.
+// ---------------------------------------------------------------------------
+
+test("listRunRecords: campaignId filter returns only the matching campaign's runs, ignoring foreign runs in the same dir", () => {
+  const dir = mkTmp();
+  // "This campaign's real runs" — 2 runs, freshly minted campaign_id.
+  writeCampaign(dir, [
+    makeRun({ task_id: "patch-webhook", arm: "baseline", rep: 0, solved: true, quality_score: 80, cost: 1, campaign_id: "campaign_real" }),
+    makeRun({ task_id: "patch-webhook", arm: "skailr", rep: 0, solved: true, quality_score: 90, cost: 1.2, campaign_id: "campaign_real" }),
+  ]);
+  // "Stale foreign runs from a prior invocation" — same task/arm shape,
+  // different campaign_id, sitting in the exact same flat namespace (the
+  // bug: nothing used to scope on this).
+  writeCampaign(dir, [
+    makeRun({ task_id: "patch-webhook", arm: "baseline", rep: 1, solved: false, quality_score: 20, cost: 1, campaign_id: "campaign_stale" }),
+    makeRun({ task_id: "feature-api-keys", arm: "baseline", rep: 0, solved: false, quality_score: 10, cost: 3, campaign_id: "campaign_stale" }),
+  ]);
+
+  const filtered = listRunRecords(dir, { campaignId: "campaign_real" });
+  assert.equal(filtered.length, 2, "only campaign_real's own runs should be returned");
+  assert.ok(filtered.every((e) => e.record.identity.campaign_id === "campaign_real"));
+
+  // Backward-compat case: omitting the filter must still return EVERY
+  // run.json found, exactly as before this field existed — the pre-fix
+  // behavior, unchanged.
+  const unfiltered = listRunRecords(dir);
+  assert.equal(unfiltered.length, 4, "omitting campaignId must return every run.json, unscoped");
+});
+
+test("listRunRecords: campaignId filter excludes records with no campaign_id at all (pre-fix run.json)", () => {
+  const dir = mkTmp();
+  writeCampaign(dir, [
+    makeRun({ task_id: "t", arm: "baseline", rep: 0, solved: true, quality_score: 80, cost: 1, campaign_id: "campaign_real" }),
+    // No campaign_id field — simulates a run.json written before this field
+    // existed. Must never accidentally match a specific campaignId filter.
+    makeRun({ task_id: "t", arm: "baseline", rep: 1, solved: true, quality_score: 80, cost: 1 }),
+  ]);
+
+  const filtered = listRunRecords(dir, { campaignId: "campaign_real" });
+  assert.equal(filtered.length, 1);
+  assert.equal(filtered[0].record.identity.campaign_id, "campaign_real");
+
+  // But omitting the filter finds both — including the field-less record —
+  // exactly like every run.json ever written before this fix.
+  const unfiltered = listRunRecords(dir);
+  assert.equal(unfiltered.length, 2);
+  assert.equal(unfiltered.filter((e) => e.record.identity.campaign_id === undefined).length, 1);
+});
+
+test("aggregateCampaign: campaignId option reproduces the exact Known-issues scenario — a smoke campaign's aggregate must not silently include stale foreign runs", () => {
+  const dir = mkTmp();
+  // 3-task x 2-arm x 1-rep smoke campaign => 6 real runs for campaign_smoke.
+  const tasks = ["patch-webhook", "feature-api-keys", "program-rbac"];
+  const realRuns = [];
+  for (const task_id of tasks) {
+    for (const arm of ["baseline", "skailr"]) {
+      realRuns.push(makeRun({ task_id, arm, rep: 0, solved: true, quality_score: 80, cost: 1, campaign_id: "campaign_smoke" }));
+    }
+  }
+  writeCampaign(dir, realRuns);
+  // 2 stale directories left over from an earlier invocation (matching
+  // task/arm names, different campaign_id) — the exact pollution observed
+  // 2026-08-09.
+  writeCampaign(dir, [
+    makeRun({ task_id: "patch-webhook", arm: "baseline", rep: 1, solved: false, quality_score: 10, cost: 1, campaign_id: "campaign_old" }),
+    makeRun({ task_id: "feature-api-keys", arm: "skailr", rep: 1, solved: false, quality_score: 10, cost: 1, campaign_id: "campaign_old" }),
+  ]);
+
+  const scoped = aggregateCampaign(dir, { campaignId: "campaign_smoke" });
+  assert.equal(scoped.n_runs, 6, "scoped aggregate must report exactly the 6 runs this campaign produced, not 8");
+
+  const unscoped = aggregateCampaign(dir);
+  assert.equal(unscoped.n_runs, 8, "omitting campaignId reproduces the historical (buggy) unscoped total, unchanged");
 });

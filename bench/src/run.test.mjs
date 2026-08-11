@@ -366,3 +366,46 @@ test("AC-1: runCampaign completes reps x arms runs unattended in MOCK mode, each
     assert.equal(validate(run, "run").valid, true);
   }
 });
+
+test("campaign_id: runCampaign mints one campaign_id and stamps it into every run.json it writes", async () => {
+  const { dir, sha } = mkGitFixture();
+  const config = loadConfig();
+  const task = baseTask({ fixtureDir: dir, sha });
+  const results = await runCampaign({
+    tasks: [task], reps: 2, config, mock: true, flavor: "solved",
+    runGrader: stubGraderSolved(), resultsRoot: mkTmp("results"), workspaceRoot: mkTmp("wsroot"),
+    rng: () => 0.42,
+  });
+  assert.equal(typeof results.campaignId, "string");
+  assert.match(results.campaignId, /^campaign_/);
+  for (const { run } of results) {
+    assert.equal(run.identity.campaign_id, results.campaignId);
+  }
+});
+
+test("campaign_id: two separate runCampaign invocations mint different campaign_ids", async () => {
+  const { dir, sha } = mkGitFixture();
+  const config = loadConfig();
+  const task = baseTask({ fixtureDir: dir, sha });
+  const a = await runCampaign({
+    tasks: [task], reps: 1, config, mock: true, flavor: "solved",
+    runGrader: stubGraderSolved(), resultsRoot: mkTmp("results"), workspaceRoot: mkTmp("wsroot"),
+  });
+  const b = await runCampaign({
+    tasks: [task], reps: 1, config, mock: true, flavor: "solved",
+    runGrader: stubGraderSolved(), resultsRoot: mkTmp("results"), workspaceRoot: mkTmp("wsroot"),
+  });
+  assert.notEqual(a.campaignId, b.campaignId);
+});
+
+test("campaign_id: runOne without a campaignId opt (e.g. called directly, outside a campaign) omits identity.campaign_id entirely — backward compatible", async () => {
+  const { dir, sha } = mkGitFixture();
+  const config = loadConfig();
+  const task = baseTask({ fixtureDir: dir, sha });
+  const { run } = await runOne({
+    task, arm: "baseline", rep: 0, config, mock: true, flavor: "solved",
+    runGrader: stubGraderSolved(), resultsRoot: mkTmp("results"), workspaceRoot: mkTmp("wsroot"),
+  });
+  assert.equal(validate(run, "run").valid, true);
+  assert.equal("campaign_id" in run.identity, false);
+});

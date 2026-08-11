@@ -23,7 +23,11 @@
         "skailr_sha": { "type": ["string", "null"] },
         "skailr_version": { "type": ["string", "null"] },
         "fixture_sha": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" }
+        "timestamp": { "type": "string", "format": "date-time" },
+        "campaign_id": {
+          "type": "string",
+          "description": "Freshly-minted, unique-per-invocation ID stamped by run.mjs so a campaign's own runs can be scoped apart from every other run.json sharing the same results/ directory (see bench/README.md Known issues). Optional and NOT derived from series_id (which is deterministic and can collide across separate campaigns) — omitted entirely on run.json written before this field existed."
+        }
       }
     },
     "environment": {
