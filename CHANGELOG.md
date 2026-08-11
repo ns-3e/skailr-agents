@@ -2,6 +2,85 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.0] — 2026-08-11
+
+**The thin-layer rebuild.** Every real benchmark campaign
+(`docs/BENCHMARKS.md`) showed the ≤2.x operating model costing 9–16x vanilla
+Claude Code on time and dollars for equal-or-worse quality — and every release
+that improved the numbers did so by removing machinery. 3.0 finishes the job:
+Skailr is now a thin layer that keeps only what the benchmarks proved pays —
+durable CLAUDE.md context, fresh-context verification behind a blocking Stop
+hook, and disciplined scale-out for genuinely context-exceeding scope. Full
+evidence trail, structural diagnosis, and keep/delete manifest:
+`docs/DESIGN-3.0.md`.
+
+### Removed
+
+- The 40-agent roster: the multi-domain org sim (content/design/finance/
+  legal/marketing/pm/portfolio, 26 agents), the expert mint/scout/curate
+  pipeline, and the engineering relay chain
+  (researcher→story-writer→architect→backend/frontend/data engineers,
+  e2e-verifier, validator, program-documenter, program-validator,
+  integration-verifier as separate roles).
+- 11 commands (ship-feature, build-feature, continue-feature, discover,
+  plan-program, build-program, continue-program, discover-portfolio,
+  plan-portfolio, status-portfolio, mint-expert) and 24 skills (route-models,
+  emit-telemetry, fit-test, track-phase, run-ticket-board, route-channels,
+  consult-or-mint, sync-lineage, write-handoff-and-yield, …).
+- The coordination machinery those roles fed: SQLite phase DB
+  (`db.mjs`/`lib/`), ticket board, channel message bus, telemetry spans,
+  model-routing config + applier (agents now carry `model: inherit` — the
+  session's model is the routing), 19 scripts, 23 schema/template files,
+  `.claude/teams/`, `.claude/model-routing.json`, the `route-prompt` and
+  `check-phase-tracking` hooks, and the check-blocks/check-agent-tools/
+  check-experts/check-contracts/validate-channels lint layer.
+- Stale docs for removed systems (TELEMETRY, MODEL_ROUTING, CONTEXT_BUDGET,
+  experts, YOLO, INTAKE, MAP_REPO).
+
+### Added
+
+- **`/build`** — main-session-led feature delivery: the model that read the
+  code writes the code. Parallel `researcher` recon and `engineer`
+  fan-out only where context isolation genuinely helps; proportional
+  `verifier` dispatch by blast-radius rubric; auto-resume from
+  `.claude/tmp/progress.md`; CLAUDE.md reconcile at close.
+- **`/program`** — the only multi-writer path, gated on scope exceeding one
+  context window: seam-only planning by `program-architect`, parallel
+  `engineer` workstreams, mechanical ownership checks, seam-focused
+  verification, auto-resume from `.claude/program/progress.md`.
+- **`verifier` agent** — e2e-verifier + validator folded into one
+  fresh-context adversarial role writing `verification-report.md`.
+- **`engineer` agent** — owns a disjoint slice end to end and designs its own
+  internals (completes 2.0's owner-dispatch direction).
+- Installer **retire phase** (both installers): exact pack-owned ≤2.x paths
+  are removed from consumer installs on upgrade; consumer data
+  (`.claude/experts/`, program runtime, CLAUDE.md conventions zone) is never
+  touched. New CI smokes for the retire phase and the Stop-hook gate.
+
+### Changed
+
+- `/patch` rewritten as pure-inline (the 1.15.0 carve-out, now the whole
+  command): no dispatches, no artifacts beyond the diff and a short report.
+- `/map-repo` rewritten around its flagship output: orientation +
+  hierarchical CLAUDE.md tree + draft ownership sketch. `/yolo` and
+  `/yolo-program` remain as thin aliases for `/build` / `/program`.
+- `check-blocking-findings.mjs` no longer reads the (removed) SQLite DB;
+  it parses `verification-report.md` (new verifier paths first, pre-3.0
+  report paths still honored for in-flight runs).
+- `doctor.mjs`, `remirror.sh`, both installers, CI, and the npm/plugin
+  manifests all trimmed to the new pack shape (manifest: 17 artifacts, was
+  ~100). The update-check/migration chain is intact and unchanged;
+  `settings.skailr.json`'s `telemetry.enabled` key is now vestigial.
+
+### Migration notes
+
+Run any installer over an existing project to upgrade in place — the retire
+phase removes the old pack files. In-flight ≤2.x runs (`progress.md` ledgers,
+ticket boards) are not resumable by 3.0's commands; finish or abandon them
+before upgrading. Minted experts under `.claude/experts/` are preserved on
+disk but no longer read — convert anything valuable into a project skill or a
+CLAUDE.md convention.
+
 ## [2.0.0] — 2026-08-10
 
 Rebuild of the feature-tier orchestration core, driven by real bench data showing

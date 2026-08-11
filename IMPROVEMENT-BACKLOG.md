@@ -853,3 +853,32 @@ L-11 campaigns, for comparability) would be needed to (a) confirm Fable dispatch
 actually work end-to-end and (b) measure the real cost/quality tradeoff of the
 opus floor-raise. Not spent on as part of this pass — flagging as the natural next
 step, same discipline as every other unverified change this session.
+
+## 2026-08-11 — 3.0.0: the thin-layer rebuild (supersedes most open leads)
+
+**Decision, not a lead.** The full benchmark record (four real campaigns,
+`docs/BENCHMARKS.md`) converged on one reading: every measured improvement came
+from removing Skailr machinery, the multi-agent relay pipeline cost 9–16x vanilla
+for equal-or-worse quality, and the only mechanism with proven positive effect
+was the blocking Stop hook. 3.0.0 rebuilt the pack around that evidence — 4
+agents, 4 commands (+2 aliases), 2 skills, 1 blocking hook. Full rationale and
+keep/delete manifest: `docs/DESIGN-3.0.md`; change list: `CHANGELOG.md` §3.0.0.
+
+Effect on standing leads: L-2/L-3/L-4/L-8/L-10/L-11b are subsumed (their
+direction — remove overhead, thin the front end, let owners design their own
+slices — is now the whole architecture). L-13 (balanced-profile model routing)
+is retired: routing itself is gone; agents ship `model: inherit`. L-12a's
+grader-convention gap and the `program-rbac` grader bug (PR #14) remain real,
+open harness issues unaffected by the rebuild. B-12 (per-agent prompt
+tightening) is moot for retired agents; the four 3.0 agents were written fresh.
+
+## L-14 — Re-benchmark 3.0.0 against vanilla — **the next spend, nothing else first**
+
+Same three tasks, both arms, real spend. Bench task YAMLs still send `/yolo` /
+`/yolo-program` on the skailr arm — now thin aliases into `/build` / `/program`,
+so the harness needs no changes. Predictions to test (from DESIGN-3.0.md):
+`/patch` holds its win; `/build` lands ≤2x vanilla cost with equal-or-better
+quality via the verifier; `/program` drops far below the 2.x ~10x multiple
+(and, per the scope gate, may legitimately route program-rbac to `/build`).
+If `/build` can't beat vanilla on quality at ≤2x cost, the next lever is the
+verifier rubric, not more orchestration.
