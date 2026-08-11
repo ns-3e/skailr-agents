@@ -10,6 +10,60 @@ cell) and run-to-run variance is large — in some cases larger than the
 differences being compared. Treat every "delta" on this page as a lead
 worth investigating, not a settled result. See [Caveats](#caveats).
 
+## 2026-08-11 update: 3.0.0 thin-layer campaign — Skailr solves 4/4, at or below vanilla cost on 3 of 4 tasks
+
+First real campaign against the 3.0.0 rebuild (`docs/DESIGN-3.0.md`): one
+campaign (`20260811T052149Z-series_1`, local-only under `bench-docker-out/`),
+all 4 tasks × both arms × 1 rep, sequential, real spend, `--skailr-ref
+v3.0.0` (a real pushed tag this time). First campaign to include the new
+`feature-status-lookup` task (PR #13) and the first where the corrected
+`program-rbac` grader (PR #14) is merged rather than applied as a re-grade.
+**Total real spend for the entire campaign: $8.82** — prior campaigns cost
+$27–35 for fewer tasks.
+
+| | `patch-webhook` | `feature-status-lookup` | `feature-api-keys` | `program-rbac` |
+| --- | --- | --- | --- | --- |
+| Vanilla | ❌ 80 / $0.51 / 185s / 25 tc | ✅ 95 / $0.60 / 192s / 29 tc | ✅ 95 / $1.10 / 500s / 40 tc | ❌ 89.25 / $1.81 / 566s / 61 tc |
+| Skailr 3.0.0 | ✅ 95 / $0.91 / 384s / 36 tc, 0 agents | ✅ 95 / $0.47 / 162s / 36 tc, 0 agents | ✅ 95 / $0.91 / 353s / 50 tc, 0 agents | ✅ 94.25 / $2.52 / 932s / 124 tc, 4 dispatches |
+| vs. 2.0.0+L-11 (prior real campaign, skailr arm) | $0.51→$0.91, 173s→384s (variance band; solved both) | — (new task) | **$15.29→$0.91 (−94%), 4159s→353s (−92%), 395→50 tc, 12→0 agents** | **$17.34→$2.52 (−85%), 4546s→932s (−79%), 498→124 tc, 11→4 dispatches** |
+
+Agent counts are transcript-traced (unique `parent_tool_use_id`), same method
+as the L-11a correction.
+
+**Headline reads:**
+
+- **Skailr solved 4/4; vanilla solved 2/4.** Both vanilla failures are single
+  hidden-test misses of previously-documented classes: `patch-webhook`'s
+  `exactly-once-processing` (the same probe a 1.14.0-era skailr run missed —
+  run-to-run variance on this fixture cuts both ways) and `program-rbac`'s
+  `hf-admin-can-revoke-invitation` ("no revoke shape succeeded" — the same
+  grader-shape-guessing class as L-12a; the *other* 11 hidden tests, including
+  the formerly-chronic `invitation-single-use`, now pass under the merged
+  fixed grader).
+- **The multi-agent cost gap is gone.** `feature-api-keys`, the task that cost
+  Skailr $8.40–$15.29 across three 2.x campaigns, was built by `/build`
+  **inline with zero subagents** at $0.91 — cheaper than the vanilla run in
+  the same campaign — with quality tied at 95 and identical solve. This is
+  the direct payoff of the 3.0 design: the model that read the code writes
+  the code, and dispatch happens only when isolation pays.
+- **`program-rbac` was the only run to use the machinery, proportionally.**
+  4 dispatches (program-architect, engineers, verifier) instead of 2.x's
+  10–12; $2.52 instead of $14.97–17.34; 932s instead of 3738–4546s — and the
+  only solved outcome of this task in the campaign. n=1, and the merged
+  grader fix means prior 2.x runs also re-grade as solved, so the honest
+  claim is equal-or-better outcome at ~15% of the cost, not "first solve
+  ever."
+- **`feature-status-lookup` (lean-path task): skailr beat vanilla on cost
+  and time** ($0.47 vs $0.60, 162s vs 192s) with zero agents — `/build`
+  behaving as designed on a small feature.
+- **`patch-webhook` cost more than the prior skailr run** ($0.91 vs $0.51,
+  384s vs 173s) while solving at 95. Within this fixture's documented
+  variance band; worth watching, not yet a trend. Vanilla failed the same
+  fixture this campaign.
+- Same n=1-per-cell caveats as every campaign on this page. The 3.0 result
+  is a lead — a very strong one, across four tasks simultaneously — not a
+  settled distribution.
+
 ## 2026-08-10 update: L-11 verification campaign — inconclusive on cost, no regression found, one grader false-negative traced to ground
 
 A third real campaign, same task set/shape, run against a fresh dangling ref

@@ -882,3 +882,19 @@ quality via the verifier; `/program` drops far below the 2.x ~10x multiple
 (and, per the scope gate, may legitimately route program-rbac to `/build`).
 If `/build` can't beat vanilla on quality at ≤2x cost, the next lever is the
 verifier rubric, not more orchestration.
+
+## L-14 — RESULT (2026-08-11): 3.0.0 re-benchmark ran — 4/4 solved, multi-agent cost gap closed
+
+Campaign `20260811T052149Z-series_1` (local-only), all 4 tasks × both arms × 1
+rep, `--skailr-ref v3.0.0`, total real spend $8.82. Skailr solved 4/4 (vanilla
+2/4). `feature-api-keys`: $15.29 → $0.91 (−94%), 12 → 0 agents, built inline by
+/build, cheaper than vanilla in the same campaign. `program-rbac`: $17.34 →
+$2.52 (−85%), 11 → 4 dispatches, solved at 94.25 under the merged PR #14
+grader. `feature-status-lookup` beat vanilla on cost and time with 0 agents.
+`patch-webhook` solved at 95 but cost more than the prior skailr run ($0.91 vs
+$0.51 — inside this fixture's variance band; watch, don't react). Full table:
+`docs/BENCHMARKS.md` § 2026-08-11. Predictions from DESIGN-3.0.md: all met or
+exceeded (predicted ≤2x vanilla on /build; observed *below* vanilla on 2 of 3
+build-tier tasks). Remaining open harness issue: `program-rbac`'s
+`hf-admin-can-revoke-invitation` probe still guesses request shapes (L-12a
+class) — it failed the vanilla arm this campaign on a shape mismatch.
