@@ -42,6 +42,50 @@ development lab behind the project. More at [skailr.io](https://skailr.io).
 
 ---
 
+## 📊 Benchmarked against vanilla Claude Code
+
+Real-spend A/B campaign (2026-08-11, `20260811T052149Z-series_1`): identical
+prompts, fixtures, model (`claude-sonnet-4-5`), and Claude Code version
+(2.1.224) in disposable containers — the only variable is whether
+skailr-agents v3.0.0 is installed. Correctness is decided by hidden graders
+the agent can never see. Total campaign spend: **$8.82**.
+
+**The tasks:**
+
+| Task | What the agent is asked to do |
+| --- | --- |
+| `patch-webhook` | Fix a duplicate-webhook-processing bug: `POST /webhooks` may receive the same `event_id` twice, including concurrently — each must be processed at most once, with repeats returning the stored result |
+| `feature-status-lookup` | Add a `GET /webhooks/:event_id/status` endpoint returning the stored processing result (404 if unknown) without changing the existing POST contract |
+| `feature-api-keys` | Add organization-scoped API keys: create/list/revoke, key shown only once, raw keys never stored, secure-hash authentication of subsequent requests |
+| `program-rbac` | Implement org team invitations + role-based access control: invite by email, Member/Admin roles, pending-invitation management, enforcement, audit events |
+
+**The results:**
+
+| Task | Arm | Solved | Quality /100 | Wall time | Cost | Output tokens† | Tool calls | Subagents |
+| --- | --- | :-: | :-: | --: | --: | --: | --: | :-: |
+| `patch-webhook` | Vanilla | ❌ | 80 | 3m 05s | $0.51 | 8.9k | 25 | 0 |
+| | **Skailr 3.0.0** | **✅** | **95** | 6m 24s | $0.91 | 17.4k | 36 | 0 |
+| `feature-status-lookup` | Vanilla | ✅ | 95 | 3m 12s | $0.60 | 8.1k | 29 | 0 |
+| | **Skailr 3.0.0** | **✅** | **95** | **2m 42s** | **$0.47** | **7.3k** | 36 | 0 |
+| `feature-api-keys` | Vanilla | ✅ | 95 | 8m 20s | $1.10 | 28.0k | 40 | 0 |
+| | **Skailr 3.0.0** | **✅** | **95** | **5m 53s** | **$0.91** | **18.4k** | 50 | 0 |
+| `program-rbac` | Vanilla | ❌ | 89.25 | 9m 26s | $1.81 | 35.8k | 61 | 0 |
+| | **Skailr 3.0.0** | **✅** | **94.25** | 15m 32s | $2.52 | 3.4k† | 124 | 4 |
+
+**Skailr solved 4/4; vanilla solved 2/4** — and Skailr was cheaper *and*
+faster than vanilla on both mid-size features. The one run that used
+subagents (`program-rbac`) used 4 proportional dispatches (architect →
+engineers → verifier) versus 10–12 in Skailr 2.x, at 15% of 2.x's cost. For
+history and caveats (n=1 per cell; run-to-run variance) see
+[docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
+† Output tokens are main-session only — the harness cannot attribute subagent
+token usage (a documented stream-json limitation), which affects only the
+`program-rbac` Skailr cell; its dollar cost is complete and includes all
+subagents.
+
+---
+
 ## Install (30 seconds)
 
 <details>
