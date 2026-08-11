@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.1] — 2026-08-11
+
+### Fixed
+
+- **Installer CLAUDE.md merge: pre-2.0.0 legacy files no longer produce two
+  intake blocks.** A CLAUDE.md written before the intake-zone markers existed
+  (1.x installs: a wholly-generated copy headed by the remirror comment, "do
+  not hand-edit") has no markers, so the 3.0.0 upgrade took the conservative
+  append path and stacked the new marked block under the stale unmarked
+  intake — leaving routing prose that names deleted commands above the
+  authoritative zone (observed in a real upgraded project). Both installers
+  now recognize a wholly-generated legacy file (generated first line + no
+  `skailr:conventions` zone ⇒ no project-owned content by construction) and
+  replace it outright; a file with any project content or a non-generated
+  first line still takes the existing merge/append paths untouched. New CI
+  smoke covers the legacy-replace and user-content-preserved cases.
+  Re-running any installer over an affected project heals the duplicate.
+
 ## [3.0.0] — 2026-08-11
 
 **The thin-layer rebuild.** Every real benchmark campaign

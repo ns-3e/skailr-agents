@@ -1,6 +1,6 @@
 {
   "name": "skailr-agents",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Thin layer over Claude Code — main-session-led builds, fresh-context verification, durable CLAUDE.md context",
   "scripts": {
     "check:ownership": "node scripts/skailr/check-ownership.mjs",
