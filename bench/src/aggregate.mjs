@@ -11,8 +11,21 @@ import fs from "node:fs";
 import path from "node:path";
 import { atomicWriteJson } from "./lib/fsutil.mjs";
 
-/** Recursively find every `run.json` under `campaignDir` and parse it. */
-export function listRunRecords(campaignDir) {
+/**
+ * Recursively find every `run.json` under `campaignDir` and parse it.
+ *
+ * `opts.campaignId`, when given, scopes the results to only the records
+ * whose `identity.campaign_id` matches — see "Known issues" in
+ * bench/README.md: results/ is one flat namespace shared by every
+ * invocation ever made, and `series_id` alone can't disambiguate two
+ * campaigns run the same day with the same Claude Code version + model.
+ * A record with no `campaign_id` at all (every run.json written before this
+ * field existed) never matches a filter and is skipped when one is given.
+ * Omitting `opts.campaignId` entirely preserves the historical, unscoped
+ * behavior exactly — every run.json found, regardless of campaign_id.
+ */
+export function listRunRecords(campaignDir, opts = {}) {
+  const { campaignId } = opts;
   const records = [];
   function walk(dir) {
     let entries;
@@ -27,6 +40,7 @@ export function listRunRecords(campaignDir) {
         walk(full);
       } else if (entry.isFile() && entry.name === "run.json") {
         const record = JSON.parse(fs.readFileSync(full, "utf8"));
+        if (campaignId !== undefined && record.identity?.campaign_id !== campaignId) continue;
         records.push({ record, runDir: dir, path: full });
       }
     }
@@ -171,9 +185,13 @@ export function aggregateGroup({ task_id, arm, entries }, opts = {}) {
 /**
  * Aggregate an entire campaign directory into groups keyed by task×arm.
  * Pure w.r.t. the filesystem beyond reading run.json files.
+ *
+ * `opts.campaignId`, when given, is forwarded to `listRunRecords` to scope
+ * aggregation to one campaign invocation's own runs (see that function's
+ * doc comment). Omitting it preserves the historical unscoped behavior.
  */
 export function aggregateCampaign(campaignDir, opts = {}) {
-  const entries = listRunRecords(campaignDir);
+  const entries = listRunRecords(campaignDir, { campaignId: opts.campaignId });
   const groups = groupByTaskArm(entries);
   const seriesIds = new Set(entries.map((e) => e.record.identity.series_id));
   return {
@@ -191,8 +209,16 @@ export function aggregateCampaign(campaignDir, opts = {}) {
  * campaign don't recompute bootstrap resampling every time. Cache is
  * invalidated by run.json count changing (cheap staleness check — campaigns
  * are otherwise immutable per-run).
+ *
+ * The on-disk cache is unscoped (one file per `campaignDir`, no campaign_id
+ * in its key), so a `campaignId`-filtered call would either poison the
+ * shared cache for unfiltered callers or silently reuse a wrongly-scoped
+ * cached result. Rather than build out a scoped cache key for a codepath
+ * `publish-campaign.mjs` doesn't use, `opts.campaignId` bypasses the cache
+ * entirely and always recomputes.
  */
 export function getCachedAggregate(campaignDir, opts = {}) {
+  if (opts.campaignId !== undefined) return aggregateCampaign(campaignDir, opts);
   const cachePath = opts.cacheFile || path.join(campaignDir, ".aggregate-cache.json");
   if (fs.existsSync(cachePath)) {
     try {
